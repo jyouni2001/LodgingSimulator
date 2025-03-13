@@ -78,7 +78,7 @@ public class PlacementSystem : MonoBehaviour
         // 실수형으로 중앙 조정 계산 (Vector3 사용)
         Vector3 adjustedPositionOffset = new Vector3(
             (objectSize.x - 1) * 0.25f, // 2x2면 0.5, 3x3면 1.0 등
-            database.objectsData[selectedObjectIndex].Prefab.gameObject.transform.position.y / 2,
+            database.objectsData[selectedObjectIndex].Prefab.gameObject.transform.position.y,
             (objectSize.y - 1) * 0.25f 
         );
 
@@ -101,7 +101,7 @@ public class PlacementSystem : MonoBehaviour
             database.objectsData[selectedObjectIndex].ID,
             placedGameObjects.Count - 1);
         
-        Debug.Log($"리스트 사이즈 :  {placedGameObjects.Count}");
+        Debug.Log($"현재 설치된 오브젝트 :  {placedGameObjects.Count}");
     }
 
     private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex)
@@ -146,7 +146,7 @@ public class PlacementSystem : MonoBehaviour
         Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
         Vector3 adjustedPositionOffset = new Vector3(
             (objectSize.x - 1) * 0.25f,
-            0f,//database.objectsData[selectedObjectIndex].Prefab.gameObject.transform.position.y,
+            database.objectsData[selectedObjectIndex].Prefab.gameObject.transform.position.y,
             (objectSize.y - 1) * 0.25f
         );
         Vector3 pos = grid.GetCellCenterWorld(gridPosition);
