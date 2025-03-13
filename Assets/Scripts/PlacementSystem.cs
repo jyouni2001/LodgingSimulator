@@ -102,11 +102,11 @@ public class PlacementSystem : MonoBehaviour
             placedGameObjects.Count - 1);
 
         // 미리보기 객체 제거
-        if (previewObject != null)
+        /*if (previewObject != null)
         {
             Destroy(previewObject);
             previewObject = null;
-        }
+        }*/
 
     }
 
