@@ -14,19 +14,23 @@ public class InputManager : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0)) OnClicked?.Invoke();
+        if (Input.GetMouseButtonDown(0)) OnClicked?.Invoke(); 
         if (Input.GetKeyDown(KeyCode.Escape)) OnExit?.Invoke();
     }
 
     public Vector3 GetSelectedMapPosition()
     {
+        #region 마우스 위치
         Vector3 mousePos = Input.mousePosition;     // 마우스커서 위치 변수에 할당
         mousePos.z = cam.nearClipPlane;             // 마우스 z 값 최소 클리핑 고정
+        #endregion
+        
+        #region Ray
         Ray ray = cam.ScreenPointToRay(mousePos);   // Ray를 마우스에서 발사
         RaycastHit hit;
-
         if(Physics.Raycast(ray, out hit, 100, placementLayermask)) lastPosition = hit.point; // 100거리 만큼 Layermask에만 ray 발사  
-
+        #endregion
+        
         return lastPosition;
     }
 }

@@ -3,18 +3,18 @@ using UnityEngine;
 
 public class PlacementSystem : MonoBehaviour
 {
-    [SerializeField] private GameObject   mouseIndicator, cellIndicator;
-    [SerializeField] private InputManager inputManager;
-    [SerializeField] private Grid         grid;
-    [SerializeField] private ObjectsDatabaseSO database;
-    [SerializeField] private GameObject gridVisualization;
-    [SerializeField] private GameObject previewObject; // 미리보기 객체를 저장할 변수
-    private int selectedObjectIndex = -1;
-    private GridData floorData, furnitureData;
-    [SerializeField] private Renderer previewRenderer;
-    private List<GameObject> placedGameObjects = new();
+    [SerializeField] private GameObject   mouseIndicator;   // 인디케이터 (커서)
+    [SerializeField] private GameObject   cellIndicator;    // 인디케이터 (셀커서)
+    [SerializeField] private InputManager inputManager;     // 인풋매니저
+    [SerializeField] private Grid         grid;             // 그리드 컴포넌트
+    [SerializeField] private ObjectsDatabaseSO database;    // 데이터
+    [SerializeField] private GameObject gridVisualization;  // 그리드
+    [SerializeField] private GameObject previewObject;      // 미리보기 객체를 저장할 변수
     
-    public float cellHeight;
+    private int selectedObjectIndex = -1;   // 인덱스 초기화
+    private GridData floorData, furnitureData;  // 그리드 데이터
+    private Renderer previewRenderer;   // 미리보기 머티리얼 렌더러
+    private List<GameObject> placedGameObjects = new(); // 리스트 선언
 
     private void Start()
     {
@@ -39,9 +39,8 @@ public class PlacementSystem : MonoBehaviour
         gridVisualization.SetActive(true);
         cellIndicator.SetActive(true);
 
-        // 미리보기 객체 생성
+        // 미리보기 생성
         previewObject = Instantiate(database.objectsData[selectedObjectIndex].Prefab);
-        // 미리보기 객체의 모든 렌더러를 찾아 반투명 하얀색으로 설정
         Renderer[] renderers = previewObject.GetComponentsInChildren<Renderer>();
         foreach (Renderer renderer in renderers)
         {
@@ -75,9 +74,8 @@ public class PlacementSystem : MonoBehaviour
 
         // 객체 크기 가져오기 (추가)
         Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
-        // 실수형으로 중앙 조정 계산 (Vector3 사용)
         Vector3 adjustedPositionOffset = new Vector3(
-            (objectSize.x - 1) * 0.25f, // 2x2면 0.5, 3x3면 1.0 등
+            (objectSize.x - 1) * 0.25f, 
             database.objectsData[selectedObjectIndex].Prefab.gameObject.transform.position.y,
             (objectSize.y - 1) * 0.25f 
         );
@@ -96,6 +94,7 @@ public class PlacementSystem : MonoBehaviour
         GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 
             ? floorData 
             : furnitureData;
+        
         selectedData.AddObjectAt(gridPosition, 
             database.objectsData[selectedObjectIndex].Size, 
             database.objectsData[selectedObjectIndex].ID,
