@@ -100,7 +100,9 @@ public class PlacementSystem : MonoBehaviour
             database.objectsData[selectedObjectIndex].Size, 
             database.objectsData[selectedObjectIndex].ID,
             placedGameObjects.Count - 1);
-
+        
+        Debug.Log($"리스트 사이즈 :  {placedGameObjects.Count}");
+        
         // 미리보기 객체 제거
         /*if (previewObject != null)
         {
