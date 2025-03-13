@@ -102,14 +102,6 @@ public class PlacementSystem : MonoBehaviour
             placedGameObjects.Count - 1);
         
         Debug.Log($"리스트 사이즈 :  {placedGameObjects.Count}");
-        
-        // 미리보기 객체 제거
-        /*if (previewObject != null)
-        {
-            Destroy(previewObject);
-            previewObject = null;
-        }*/
-
     }
 
     private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex)
@@ -143,9 +135,10 @@ public class PlacementSystem : MonoBehaviour
         
         // 마우스 인디케이터 위치
         Vector3 mousePosition = inputManager.GetSelectedMapPosition();
-        Vector3Int gridPosition = grid.WorldToCell(mousePosition);
         mouseIndicator.transform.position = mousePosition;
-
+        
+        Vector3Int gridPosition = grid.WorldToCell(mousePosition);
+        
         bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex);
         previewRenderer.material.color = placementValidity ? Color.white : Color.red;
 
@@ -157,7 +150,6 @@ public class PlacementSystem : MonoBehaviour
             (objectSize.y - 1) * 0.25f
         );
         Vector3 pos = grid.GetCellCenterWorld(gridPosition);
-        //pos.y = cellHeight;
         cellIndicator.transform.position = pos + adjustedPositionOffset;
         // 미리보기 객체 위치 업데이트
         if (previewObject != null)
@@ -169,10 +161,5 @@ public class PlacementSystem : MonoBehaviour
                 renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0f, 0f, 0.5f); // 유효하면 하얀색, 아니면 빨간색
             }
         }
-
-        /*// 셀 인디케이터 위치
-        Vector3 pos = grid.GetCellCenterWorld(gridPosition);
-        pos.y = cellHeight; // 높이 고정
-        cellIndicator.transform.position = pos;*/
     }
 }
