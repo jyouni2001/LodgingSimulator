@@ -15,7 +15,7 @@ public class PlacementSystem : MonoBehaviour
     private GridData floorData, furnitureData;  // 그리드 데이터
     private Renderer previewRenderer;   // 미리보기 머티리얼 렌더러
     private List<GameObject> placedGameObjects = new(); // 리스트 선언
-
+    private Quaternion previewRotation = Quaternion.identity; // 기본 회전값 (0도)
     private void Start()
     {
         StopPlacement();
@@ -69,26 +69,15 @@ public class PlacementSystem : MonoBehaviour
         Vector3Int gridPosition = grid.WorldToCell(mousePosition);
         
         bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex);
-        if (placementValidity == false) return;
-               
-
-        // 객체 크기 가져오기 (추가)
-        Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
-        Vector3 adjustedPositionOffset = new Vector3(
-            (objectSize.x - 1) * 0.25f, 
-            database.objectsData[selectedObjectIndex].Prefab.gameObject.transform.position.y,
-            (objectSize.y - 1) * 0.25f 
-        );
+        if (placementValidity == false) return;             
+        
 
         // 그리드 위치에 오프셋 적용 후 월드 위치 계산
-        Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition) + adjustedPositionOffset;
-        Debug.Log($"gridPoisiton = {gridPosition}, objectSize = {objectSize},AdjustedGridPosition = {worldPosition}");
-
+        Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition);
 
         GameObject newObject = Instantiate(database.objectsData[selectedObjectIndex].Prefab);
         newObject.transform.position = worldPosition;
-        //newObject.transform.position = grid.CellToWorld(gridPosition);
-        //newObject.transform.position = grid.GetCellCenterWorld(gridPosition);
+        newObject.transform.rotation = previewRotation;
 
         placedGameObjects.Add(newObject);
         GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 
@@ -135,29 +124,32 @@ public class PlacementSystem : MonoBehaviour
         // 마우스 인디케이터 위치
         Vector3 mousePosition = inputManager.GetSelectedMapPosition();
         mouseIndicator.transform.position = mousePosition;
-        
+
+        // 셀 인디케이터 위치
         Vector3Int gridPosition = grid.WorldToCell(mousePosition);
-        
+        cellIndicator.transform.position = grid.GetCellCenterWorld(gridPosition) - new Vector3(0, .25f, 0);        
+
+        // 중복건설 체크
         bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex);
         previewRenderer.material.color = placementValidity ? Color.white : Color.red;
+        
+                
 
-        // 객체 크기에 따라 미리보기 위치 조정
-        Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
-        Vector3 adjustedPositionOffset = new Vector3(
-            (objectSize.x - 1) * 0.25f,
-            database.objectsData[selectedObjectIndex].Prefab.gameObject.transform.position.y,
-            (objectSize.y - 1) * 0.25f
-        );
-        Vector3 pos = grid.GetCellCenterWorld(gridPosition);
-        cellIndicator.transform.position = pos + adjustedPositionOffset;
         // 미리보기 객체 위치 업데이트
         if (previewObject != null)
         {
-            previewObject.transform.position = pos + adjustedPositionOffset;
+            previewObject.transform.position = grid.GetCellCenterWorld(gridPosition);
+            previewObject.transform.rotation = previewRotation;
             Renderer[] renderers = previewObject.GetComponentsInChildren<Renderer>();
             foreach (Renderer renderer in renderers)
             {
                 renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0f, 0f, 0.5f); // 유효하면 하얀색, 아니면 빨간색
+            }
+
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                previewRotation = Quaternion.Euler(0, previewRotation.eulerAngles.y + 45, 0);
+                previewObject.transform.rotation = previewRotation;
             }
         }
     }
