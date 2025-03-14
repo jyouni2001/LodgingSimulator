@@ -8,7 +8,7 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private InputManager inputManager;     // 인풋매니저
     [SerializeField] private Grid         grid;             // 그리드 컴포넌트
     [SerializeField] private ObjectsDatabaseSO database;    // 데이터
-    [SerializeField] private GameObject gridVisualization;  // 그리드
+    [SerializeField] private GameObject gridVisualization;  // 시각화 그리드 
     [SerializeField] private GameObject previewObject;      // 미리보기 객체를 저장할 변수
     
     private int selectedObjectIndex = -1;   // 인덱스 초기화
@@ -160,5 +160,12 @@ public class PlacementSystem : MonoBehaviour
                 renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0f, 0f, 0.5f); // 유효하면 하얀색, 아니면 빨간색
             }
         }
+    }
+
+    public void ResizeMesh()
+    {
+        Vector3 scale = gridVisualization.transform.localScale;
+        scale += new Vector3(0.1f, 0.1f, 0.1f); // X, Y, Z 각각 0.5씩 증가
+        gridVisualization.transform.localScale = scale;
     }
 }
