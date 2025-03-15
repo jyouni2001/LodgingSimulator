@@ -10,19 +10,23 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private ObjectsDatabaseSO database;    // 데이터
     [SerializeField] private GameObject gridVisualization;  // 시각화 그리드 
     [SerializeField] private GameObject previewObject;      // 미리보기 객체를 저장할 변수
+    [SerializeField] private GameObject plane;              // 그리드 반경체크 플레인
     
-    private int selectedObjectIndex = -1;   // 인덱스 초기화
-    private GridData floorData, furnitureData;  // 그리드 데이터
-    private Renderer previewRenderer;   // 미리보기 머티리얼 렌더러
-    private List<GameObject> placedGameObjects = new(); // 리스트 선언
-    private Quaternion previewRotation = Quaternion.identity; // 기본 회전값 (0도)
-    private Vector3Int gridPosition;
+    private int              selectedObjectIndex = -1;      // 인덱스 초기화
+    private GridData         floorData, furnitureData;      // 그리드 데이터
+    private Renderer         previewRenderer;               // 미리보기 머티리얼 렌더러
+    private List<GameObject> placedGameObjects   = new();   // 리스트 선언
+    private Vector3Int       gridPosition;                  // 그리드 좌표
+    private Bounds           planeBounds;                   // 플레인 반경 좌표
+
+    private Quaternion       previewRotation     = Quaternion.identity; 
+    
     private void Start()
     {
         StopPlacement();
+        InitailizeGridDatas();
+        InitializeGridBounds();
 
-        floorData = new();
-        furnitureData = new();
         previewRenderer = cellIndicator.GetComponentInChildren<Renderer>();
     }
 
@@ -41,6 +45,40 @@ public class PlacementSystem : MonoBehaviour
 
         PreviewObjectFunc();
     }
+
+    #region 그리드 데이터 초기화
+
+    private void InitailizeGridDatas()
+    {
+        floorData = new();
+        furnitureData = new();
+    }
+
+    #endregion
+
+    #region 그리드 건설반경 초기화
+
+    private void InitializeGridBounds()
+    {
+        // Plane의 경계 계산 및 디버깅
+        if (plane != null)
+        {
+            Renderer planeRenderer = plane.GetComponent<Renderer>();
+            if (planeRenderer != null)
+            {
+                planeBounds = planeRenderer.bounds;
+                // Grid 셀 중심 오프셋(0.5) 반영하여 경계 확장
+                planeBounds.Expand(new Vector3(0, 1, 0));
+                Debug.Log($"Adjusted Plane Bounds: Min={planeBounds.min}, Max={planeBounds.max}, Center={planeBounds.center}, Size={planeBounds.size}");
+            }
+        }
+        else
+        {
+            Debug.LogError("Plane 오브젝트가 지정되지 않았습니다.");
+        }
+    }
+
+    #endregion
 
     #region 건축 시작
     public void StartPlacement(int ID)
@@ -161,8 +199,33 @@ public class PlacementSystem : MonoBehaviour
     private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
     {
         GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
-        return selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
+
+        // 1. GridData를 통한 중복 체크
+        if (!selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid))
+        {
+            return false;
+        }
+
+        // 2. Plane 경계 체크
+        List<Vector3Int> positionsToCheck = selectedData.CalculatePosition(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
+        foreach (Vector3Int pos in positionsToCheck)
+        {
+            Vector3 worldPos = grid.GetCellCenterWorld(pos);
+            if (!planeBounds.Contains(worldPos))
+            {
+                Debug.Log($"Position {pos} is outside Plane bounds: {worldPos}");
+                return false;
+            }
+        }
+
+        return true;
     }
+
+    /*private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
+    {
+        GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
+        return selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
+    }*/
 
     /*private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex)
     {
@@ -225,6 +288,7 @@ public class PlacementSystem : MonoBehaviour
     {
         Vector3 scale = gridVisualization.transform.localScale;
         scale += new Vector3(0.1f, 0.1f, 0.1f); // X, Y, Z 각각 0.5씩 증가
+        planeBounds.Expand(new Vector3(1f, 0, 1f));
         gridVisualization.transform.localScale = scale;
     }
     #endregion

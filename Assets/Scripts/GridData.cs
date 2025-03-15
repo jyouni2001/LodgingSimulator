@@ -25,7 +25,7 @@ public class GridData
     #endregion
 
     #region 그리드 좌표 계산
-    private List<Vector3Int> CalculatePosition(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid)
+    public List<Vector3Int> CalculatePosition(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid)
     {
         List<Vector3Int> positions = new List<Vector3Int>();
 
