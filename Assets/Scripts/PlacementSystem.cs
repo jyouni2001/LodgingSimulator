@@ -16,6 +16,7 @@ public class PlacementSystem : MonoBehaviour
     private Renderer previewRenderer;   // 미리보기 머티리얼 렌더러
     private List<GameObject> placedGameObjects = new(); // 리스트 선언
     private Quaternion previewRotation = Quaternion.identity; // 기본 회전값 (0도)
+    private Vector3Int gridPosition;
     private void Start()
     {
         StopPlacement();
@@ -25,6 +26,23 @@ public class PlacementSystem : MonoBehaviour
         previewRenderer = cellIndicator.GetComponentInChildren<Renderer>();
     }
 
+    private void Update()
+    {
+        if (selectedObjectIndex < 0) return;
+
+        // 마우스 인디케이터 위치
+        Vector3 mousePosition = inputManager.GetSelectedMapPosition();
+        mouseIndicator.transform.position = mousePosition;
+
+        // 셀 인디케이터 위치
+        gridPosition = grid.WorldToCell(mousePosition);
+        //Vector3Int gridPosition = grid.WorldToCell(mousePosition);
+        cellIndicator.transform.position = grid.GetCellCenterWorld(gridPosition) - new Vector3(0, .25f, 0);
+
+        PreviewObjectFunc();
+    }
+
+    #region 건축 시작
     public void StartPlacement(int ID)
     {
         StopPlacement();
@@ -39,6 +57,16 @@ public class PlacementSystem : MonoBehaviour
         gridVisualization.SetActive(true);
         cellIndicator.SetActive(true);
 
+        CreatePreview();
+
+        inputManager.OnClicked += PlaceStructure;
+        inputManager.OnExit += StopPlacement;
+    }
+    #endregion
+
+    #region 미리보기
+    public void CreatePreview()
+    {
         // 미리보기 생성
         previewObject = Instantiate(database.objectsData[selectedObjectIndex].Prefab);
         Renderer[] renderers = previewObject.GetComponentsInChildren<Renderer>();
@@ -52,12 +80,47 @@ public class PlacementSystem : MonoBehaviour
             material.EnableKeyword("_ALPHABLEND_ON");
             material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
+    }
+    #endregion
 
-        inputManager.OnClicked += PlaceStructure;
-        inputManager.OnExit += StopPlacement;
+    #region 오브젝트 배치
+    private void PlaceStructure()
+    {
+        if (inputManager.IsPointerOverUI())
+        {
+            return;
+        }
+
+        // 마우스 인디케이터 위치
+        Vector3 mousePosition = inputManager.GetSelectedMapPosition();
+        Vector3Int gridPosition = grid.WorldToCell(mousePosition);
+
+        bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex, previewRotation);
+        if (placementValidity == false) return;
+
+        // 그리드 위치에 오프셋 적용 후 월드 위치 계산
+        Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition);
+
+        GameObject newObject = Instantiate(database.objectsData[selectedObjectIndex].Prefab);
+        newObject.transform.position = worldPosition;
+        newObject.transform.rotation = previewRotation;
+
+        placedGameObjects.Add(newObject);
+        GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0
+            ? floorData
+            : furnitureData;
+
+        selectedData.AddObjectAt(gridPosition,
+            database.objectsData[selectedObjectIndex].Size,
+            database.objectsData[selectedObjectIndex].ID,
+            placedGameObjects.Count - 1,
+            previewRotation,  // 회전 정보 추가
+            grid);
+
+        Debug.Log($"현재 설치된 오브젝트 :  {placedGameObjects.Count}");
     }
 
-    private void PlaceStructure()
+    /*private void PlaceStructure()
     {
         if (inputManager.IsPointerOverUI())
         {
@@ -90,17 +153,28 @@ public class PlacementSystem : MonoBehaviour
             placedGameObjects.Count - 1);
         
         Debug.Log($"현재 설치된 오브젝트 :  {placedGameObjects.Count}");
+    }*/
+
+    #endregion
+
+    #region 점유상태 확인
+    private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
+    {
+        GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
+        return selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
     }
 
-    private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex)
+    /*private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex)
     {
         GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 
             ? floorData 
             : furnitureData;
         
         return selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size);
-    }
+    }*/
+    #endregion
 
+    #region 건축 종료
     private void StopPlacement()
     {
         selectedObjectIndex = -1;
@@ -116,24 +190,15 @@ public class PlacementSystem : MonoBehaviour
             previewObject = null;
         }
     }
+    #endregion    
 
-    private void Update()
+    #region 프리뷰 변경
+    private void PreviewObjectFunc()
     {
-        if (selectedObjectIndex < 0) return;
-        
-        // 마우스 인디케이터 위치
-        Vector3 mousePosition = inputManager.GetSelectedMapPosition();
-        mouseIndicator.transform.position = mousePosition;
-
-        // 셀 인디케이터 위치
-        Vector3Int gridPosition = grid.WorldToCell(mousePosition);
-        cellIndicator.transform.position = grid.GetCellCenterWorld(gridPosition) - new Vector3(0, .25f, 0);        
-
         // 중복건설 체크
-        bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex);
+        //bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex);
+        bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex, previewRotation);
         previewRenderer.material.color = placementValidity ? Color.white : Color.red;
-        
-                
 
         // 미리보기 객체 위치 업데이트
         if (previewObject != null)
@@ -148,16 +213,19 @@ public class PlacementSystem : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.R))
             {
-                previewRotation = Quaternion.Euler(0, previewRotation.eulerAngles.y + 45, 0);
+                previewRotation = Quaternion.Euler(0, previewRotation.eulerAngles.y + 90, 0);
                 previewObject.transform.rotation = previewRotation;
             }
         }
     }
+    #endregion
 
+    #region 그리드 사이즈 증가
     public void ResizeMesh()
     {
         Vector3 scale = gridVisualization.transform.localScale;
         scale += new Vector3(0.1f, 0.1f, 0.1f); // X, Y, Z 각각 0.5씩 증가
         gridVisualization.transform.localScale = scale;
     }
+    #endregion
 }
