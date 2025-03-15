@@ -40,7 +40,6 @@ public class PlacementSystem : MonoBehaviour
 
         // 셀 인디케이터 위치
         gridPosition = grid.WorldToCell(mousePosition);
-        //Vector3Int gridPosition = grid.WorldToCell(mousePosition);
         cellIndicator.transform.position = grid.GetCellCenterWorld(gridPosition) - new Vector3(0, .25f, 0);
 
         PreviewObjectFunc();
@@ -67,9 +66,7 @@ public class PlacementSystem : MonoBehaviour
             if (planeRenderer != null)
             {
                 planeBounds = planeRenderer.bounds;
-                // Grid 셀 중심 오프셋(0.5) 반영하여 경계 확장
                 planeBounds.Expand(new Vector3(0, 1, 0));
-                Debug.Log($"Adjusted Plane Bounds: Min={planeBounds.min}, Max={planeBounds.max}, Center={planeBounds.center}, Size={planeBounds.size}");
             }
         }
         else
