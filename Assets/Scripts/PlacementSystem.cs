@@ -6,16 +6,18 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private GameObject   mouseIndicator;   // 인디케이터 (커서)
     [SerializeField] private GameObject   cellIndicator;    // 인디케이터 (셀커서)
     [SerializeField] private InputManager inputManager;     // 인풋매니저
+    [SerializeField] private ObjectPlacer objectPlacer;
     [SerializeField] private Grid         grid;             // 그리드 컴포넌트
     [SerializeField] private ObjectsDatabaseSO database;    // 데이터
     [SerializeField] private GameObject gridVisualization;  // 시각화 그리드 
     [SerializeField] private GameObject previewObject;      // 미리보기 객체를 저장할 변수
     [SerializeField] private GameObject plane;              // 그리드 반경체크 플레인
     
+
     private int              selectedObjectIndex = -1;      // 인덱스 초기화
     private GridData         floorData, furnitureData;      // 그리드 데이터
     private Renderer         previewRenderer;               // 미리보기 머티리얼 렌더러
-    private List<GameObject> placedGameObjects   = new();   // 리스트 선언
+    //private List<GameObject> placedGameObjects   = new();   // 리스트 선언
     private Vector3Int       gridPosition;                  // 그리드 좌표
     private Bounds           planeBounds;                   // 플레인 반경 좌표
 
@@ -102,13 +104,20 @@ public class PlacementSystem : MonoBehaviour
     #region 미리보기
     public void CreatePreview()
     {
+        if (selectedObjectIndex < 0 || selectedObjectIndex >= database.objectsData.Count) return;
+
         // 미리보기 생성
         previewObject = Instantiate(database.objectsData[selectedObjectIndex].Prefab);
-        Renderer[] renderers = previewObject.GetComponentsInChildren<Renderer>();
+        ApplyPreviewMaterial(previewObject);
+    }
+
+    private void ApplyPreviewMaterial(GameObject obj)
+    {
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
         foreach (Renderer renderer in renderers)
         {
             Material material = renderer.material;
-            material.color = new Color(1f, 1f, 1f, 0.5f); // 하얀색 반투명 (알파값 0.5)
+            material.color = new Color(1f, 1f, 1f, 0.5f); // 하얀색 반투명
             material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             material.SetInt("_ZWrite", 0);
@@ -136,11 +145,13 @@ public class PlacementSystem : MonoBehaviour
         // 그리드 위치에 오프셋 적용 후 월드 위치 계산
         Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition);
 
-        GameObject newObject = Instantiate(database.objectsData[selectedObjectIndex].Prefab);
+        int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
+
+        /*GameObject newObject = Instantiate(database.objectsData[selectedObjectIndex].Prefab);
         newObject.transform.position = worldPosition;
         newObject.transform.rotation = previewRotation;
+        placedGameObjects.Add(newObject);*/
 
-        placedGameObjects.Add(newObject);
         GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0
             ? floorData
             : furnitureData;
@@ -148,11 +159,11 @@ public class PlacementSystem : MonoBehaviour
         selectedData.AddObjectAt(gridPosition,
             database.objectsData[selectedObjectIndex].Size,
             database.objectsData[selectedObjectIndex].ID,
-            placedGameObjects.Count - 1,
+            index,
             previewRotation,  // 회전 정보 추가
             grid);
 
-        Debug.Log($"현재 설치된 오브젝트 :  {placedGameObjects.Count}");
+        Debug.Log($"현재 설치된 오브젝트 :  {index}");
     }
 
     /*private void PlaceStructure()
