@@ -15,7 +15,7 @@ public class CameraCon : MonoBehaviour
     private float yVelocity = 0f;        // 현재 속도 (SmoothDamp에서 필요)
     private Vector3 offset;
     private float yaw = 0f;              // 좌우 회전 (Y축)
-    private float pitch = 60f;            // 상하 회전 (X축)
+    private float pitch = 70f;            // 상하 회전 (X축)
 
     [SerializeField] private CinemachineCamera cam;
 
@@ -23,7 +23,7 @@ public class CameraCon : MonoBehaviour
     {
         cam = GetComponent<CinemachineCamera>();
 
-        offset = new Vector3(0f, 5f, -4f);
+        offset = new Vector3(0f, 8f, -3f);
         targetOffsetY = offset.y;
 
         target.transform.position = offset;
@@ -81,7 +81,7 @@ public class CameraCon : MonoBehaviour
             pitch -= Input.GetAxis("Mouse Y") * rotationSpeed;
 
             // 상하 회전 각도 제한
-            pitch = Mathf.Clamp(pitch, 10f, 60f);
+            pitch = Mathf.Clamp(pitch, 0f, 80f);
 
             // 회전 적용
             target.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);

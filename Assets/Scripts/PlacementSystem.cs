@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class PlacementSystem : MonoBehaviour
@@ -11,7 +12,9 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private ObjectsDatabaseSO database;    // 데이터
     [SerializeField] private GameObject gridVisualization;  // 시각화 그리드 
     [SerializeField] private GameObject previewObject;      // 미리보기 객체를 저장할 변수
-    [SerializeField] private GameObject plane;              // 그리드 반경체크 플레인
+    //[SerializeField] private GameObject plane;              // 그리드 반경체크 플레인
+
+    [SerializeField] private List<GameObject> plane;
     
 
     private int              selectedObjectIndex = -1;      // 인덱스 초기화
@@ -19,7 +22,8 @@ public class PlacementSystem : MonoBehaviour
     private Renderer         previewRenderer;               // 미리보기 머티리얼 렌더러
     //private List<GameObject> placedGameObjects   = new();   // 리스트 선언
     private Vector3Int       gridPosition;                  // 그리드 좌표
-    private Bounds           planeBounds;                   // 플레인 반경 좌표
+    //private Bounds           planeBounds;                   // 플레인 반경 좌표
+    [SerializeField] private List<Bounds> planeBounds;
 
     private Quaternion       previewRotation     = Quaternion.identity; 
     
@@ -58,26 +62,96 @@ public class PlacementSystem : MonoBehaviour
     #endregion
 
     #region 그리드 건설반경 초기화
-
     private void InitializeGridBounds()
     {
+        // planeBounds 초기화
+        planeBounds.Clear();
+
         // Plane의 경계 계산 및 디버깅
-        if (plane != null)
+        if (plane is not null && plane.Count > 0)
         {
-            Renderer planeRenderer = plane.GetComponent<Renderer>();
-            if (planeRenderer != null)
+            // 첫 번째 오브젝트는 활성화 여부와 상관없이 처리
+            if (plane[0] is not null)
             {
-                planeBounds = planeRenderer.bounds;
-                planeBounds.Expand(new Vector3(0, 1, 0));
+                GameObject firstPlane = plane[0];
+                Renderer firstPlaneRenderer = firstPlane.GetComponent<Renderer>();
+                Debug.Log($"{firstPlaneRenderer} 리스트에 추가 (첫 번째 오브젝트)");
+
+                if (firstPlaneRenderer != null)
+                {
+                    Debug.Log($"첫 번째 오브젝트 처리됨");
+                    Bounds rendererBounds = firstPlaneRenderer.bounds;
+                    rendererBounds.Expand(new Vector3(0, 1, 0));
+                    planeBounds.Add(rendererBounds);
+                }
+                else
+                {
+                    Debug.LogWarning($"Plane {firstPlane.name}에 Renderer가 없습니다.");
+                }
             }
         }
-        else
+    }
+
+    /*private void InitializeGridBounds()
+    {
+        // Plane의 경계 계산 및 디버깅
+        if (plane is not null && plane.Count > 0)
         {
-            Debug.LogError("Plane 오브젝트가 지정되지 않았습니다.");
+            foreach (GameObject planeRend in plane)
+            {
+                Renderer planeRenderer = planeRend.GetComponent<Renderer>();
+                Debug.Log($"{planeRenderer} 리스트에 추가");
+
+                if (planeRenderer != null)
+                {
+                    Debug.Log($"여기는 되나?");
+                    // 각 planeRend의 경계를 계산하고 리스트에 추가
+                    Bounds rendererBounds = planeRenderer.bounds;
+                    rendererBounds.Expand(new Vector3(0, 1, 0));
+
+                    planeBounds.Add(rendererBounds); // List<Bounds>에 추가                    
+                }
+                else
+                {
+                    Debug.LogError("Plane 오브젝트가 지정되지 않았습니다.");
+                }
+            }
+        }
+    }*/
+
+    #endregion
+
+    #region UpdateGridBounds
+
+
+    private void UpdateGridBounds()
+    {
+        planeBounds.Clear();
+
+        // 나머지 오브젝트들은 활성화된 경우에만 처리
+        foreach (GameObject planeRend in plane) // 첫 번째 오브젝트 제외
+        {
+            if (planeRend.activeSelf) // 활성화된 객체인지 확인
+            {
+                Renderer planeRenderer = planeRend.GetComponent<Renderer>();
+                Debug.Log($"{planeRenderer} 리스트에 추가");
+
+                if (planeRenderer != null)
+                {
+                    Bounds rendererBounds = planeRenderer.bounds;
+                    rendererBounds.Expand(new Vector3(0, 1, 0));
+                    planeBounds.Add(rendererBounds);
+                }
+                else
+                {
+                    Debug.LogWarning($"Plane {planeRend.name}에 Renderer가 없습니다.");
+                }
+            }
         }
     }
 
     #endregion
+
 
     #region 건축 시작
     public void StartPlacement(int ID)
@@ -215,11 +289,35 @@ public class PlacementSystem : MonoBehaviour
         }
 
         // 2. Plane 경계 체크
-        List<Vector3Int> positionsToCheck = selectedData.CalculatePosition(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
+        /*List<Vector3Int> positionsToCheck = selectedData.CalculatePosition(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
         foreach (Vector3Int pos in positionsToCheck)
         {
             Vector3 worldPos = grid.GetCellCenterWorld(pos);
             if (!planeBounds.Contains(worldPos))
+            {
+                Debug.Log($"Position {pos} is outside Plane bounds: {worldPos}");
+                return false;
+            }
+        }*/
+
+        // 2. Plane 경계 체크
+        List<Vector3Int> positionsToCheck = selectedData.CalculatePosition(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
+        foreach (Vector3Int pos in positionsToCheck)
+        {
+            Vector3 worldPos = grid.GetCellCenterWorld(pos);
+            bool isWithinBounds = false;
+
+            // planeBounds 리스트를 순회하며 체크
+            foreach (Bounds bound in planeBounds)
+            {
+                if (bound.Contains(worldPos))
+                {
+                    isWithinBounds = true;
+                    break; // 한 번이라도 포함되면 루프 종료
+                }
+            }
+
+            if (!isWithinBounds)
             {
                 Debug.Log($"Position {pos} is outside Plane bounds: {worldPos}");
                 return false;
@@ -294,10 +392,11 @@ public class PlacementSystem : MonoBehaviour
     #region 그리드 사이즈 증가
     public void ResizeMesh()
     {
-        Vector3 scale = gridVisualization.transform.localScale;
+        UpdateGridBounds();
+        /*Vector3 scale = gridVisualization.transform.localScale;
         scale += new Vector3(0.1f, 0.1f, 0.1f); // X, Y, Z 각각 0.5씩 증가
         planeBounds.Expand(new Vector3(1f, 0, 1f));
-        gridVisualization.transform.localScale = scale;
+        gridVisualization.transform.localScale = scale;*/
     }
     #endregion
 }
