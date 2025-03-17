@@ -1,91 +1,90 @@
 using UnityEngine;
-using Cinemachine;
 using Unity.Cinemachine;
 
 public class CameraCon : MonoBehaviour
 {
-    public CinemachineVirtualCamera CinemachineCam; // CinemachineCamera -> CinemachineVirtualCamera
-    public float zoomSpeed = 2f;          // 줌 속도
-    public float moveSpeed = 10f;         // 이동 속도 (WASD)
-    public float rotationSpeed = 3f;      // 회전 속도 (마우스)
-    public float minZoom = 2f;            // 최소 줌 거리
-    public float maxZoom = 10f;           // 최대 줌 거리
-    public Vector2 boundaryX = new Vector2(-10f, 10f); // X축 이동 제한
-    public Vector2 boundaryZ = new Vector2(-10f, 10f); // Z축 이동 제한
+    public float zoomMultiplier = 10f;
+    public float moveSpeed = 10f;        // WASD 이동 속도
+    public float rotationSpeed = 5f;     // 회전 속도
+    public Transform target;             
+    public float minZoom = 2f;
+    public float maxZoom = 10f;
 
-    private CinemachineTransposer transposer; // CinemachinePositionComposer -> CinemachineTransposer
-    private float targetZoom;
-    private float yaw = 0f;              
-    private float pitch = 45f;            // 초기 상하 회전값
+    private float targetOffsetY;         // 목표 y 값
+    private float smoothTime = 0.5f;     // 부드러운 이동을 위한 감속 시간
+    private float yVelocity = 0f;        // 현재 속도 (SmoothDamp에서 필요)
+    private Vector3 offset;
+    private float yaw = 0f;              // 좌우 회전 (Y축)
+    private float pitch = 60f;            // 상하 회전 (X축)
+
+    [SerializeField] private CinemachineCamera cam;
 
     private void Start()
     {
-        if (CinemachineCam != null)
-        {
-            // Body 스테이지에서 CinemachineTransposer 가져오기
-            transposer = CinemachineCam.GetCinemachineComponent<CinemachineTransposer>();
-            if (transposer != null)
-            {
-                targetZoom = transposer.m_FollowOffset.z; // 초기 줌 값 설정 (z축 거리)
-            }
-            else
-            {
-                Debug.LogError("CinemachineTransposer가 CinemachineVirtualCamera에 없습니다. Body 설정을 확인하세요.");
-            }
-        }
+        cam = GetComponent<CinemachineCamera>();
+
+        offset = new Vector3(0f, 5f, -4f);
+        targetOffsetY = offset.y;
+
+        target.transform.position = offset;
     }
 
-    private void Update()
+    private void LateUpdate()
     {
-        if (CinemachineCam == null || transposer == null) return;
+        SmoothWheel();       // 줌 처리
+        HandleMovement();    // WASD 이동
+        HandleRotation();    // 마우스 우클릭 회전
 
-        HandleZoom();
-        HandleMovement();
-        HandleRotation();
+        // 카메라 위치 및 회전 적용
+        Vector3 targetPosition = new Vector3(
+            target is not null ? target.position.x : 0f,
+            offset.y,
+            target is not null ? target.position.z : 0f
+        );
+
+        target.transform.position = targetPosition;
     }
 
-    private void HandleZoom()
+    private void SmoothWheel()
     {
         float scrollInput = Input.GetAxisRaw("Mouse ScrollWheel");
         if (scrollInput != 0)
         {
-            targetZoom -= scrollInput * zoomSpeed; // 줌 방향은 필요에 따라 반전 가능
-            targetZoom = Mathf.Clamp(targetZoom, minZoom, maxZoom);
-            Vector3 followOffset = transposer.m_FollowOffset;
-            followOffset.z = Mathf.Lerp(followOffset.z, targetZoom, Time.deltaTime * 5f);
-            transposer.m_FollowOffset = followOffset;
+            targetOffsetY -= scrollInput * zoomMultiplier;
+            targetOffsetY = Mathf.Clamp(targetOffsetY, minZoom, maxZoom);
         }
+        offset.y = Mathf.SmoothDamp(offset.y, targetOffsetY, ref yVelocity, smoothTime);
     }
 
     private void HandleMovement()
     {
+        // WASD 입력 처리
         float horizontal = Input.GetAxisRaw("Horizontal"); // A/D
         float vertical = Input.GetAxisRaw("Vertical");     // W/S
 
         Vector3 moveDirection = new Vector3(horizontal, 0f, vertical).normalized;
         if (moveDirection.magnitude > 0)
         {
-            Vector3 move = Quaternion.Euler(0, yaw, 0) * moveDirection * moveSpeed * Time.deltaTime;
-            Vector3 newPosition = transform.position + move;
-
-            // 이동 범위 제한
-            newPosition.x = Mathf.Clamp(newPosition.x, boundaryX.x, boundaryX.y);
-            newPosition.z = Mathf.Clamp(newPosition.z, boundaryZ.x, boundaryZ.y);
-            
-            transform.position = newPosition;
+            // 카메라의 로컬 방향을 기준으로 이동
+            Vector3 move = transform.TransformDirection(moveDirection) * moveSpeed * Time.deltaTime;
+            move.y = 0f; // y축 이동은 줌으로만 제어
+            target.transform.position += move;
         }
     }
 
     private void HandleRotation()
     {
-        if (Input.GetMouseButton(1)) // 마우스 우클릭 시 회전
+        // 마우스 우클릭 중일 때만 회전
+        if (Input.GetMouseButton(1))
         {
             yaw += Input.GetAxis("Mouse X") * rotationSpeed;
             pitch -= Input.GetAxis("Mouse Y") * rotationSpeed;
 
-            pitch = Mathf.Clamp(pitch, 10f, 60f); // 상하 회전 제한
+            // 상하 회전 각도 제한
+            pitch = Mathf.Clamp(pitch, 10f, 60f);
 
-            CinemachineCam.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
+            // 회전 적용
+            target.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
         }
     }
 }
