@@ -15,8 +15,8 @@ public class PlacementSystem : MonoBehaviour
     //[SerializeField] private GameObject plane;              // 그리드 반경체크 플레인
 
     [SerializeField] private List<GameObject> plane;
-    
 
+    private Vector3 upOffset = new Vector3(-1f, 0f, -1f);
     private int              selectedObjectIndex = -1;      // 인덱스 초기화
     private GridData         floorData, furnitureData;      // 그리드 데이터
     private Renderer         previewRenderer;               // 미리보기 머티리얼 렌더러
@@ -46,7 +46,7 @@ public class PlacementSystem : MonoBehaviour
 
         // 셀 인디케이터 위치
         gridPosition = grid.WorldToCell(mousePosition);
-        cellIndicator.transform.position = grid.GetCellCenterWorld(gridPosition) - new Vector3(0, .25f, 0);
+        cellIndicator.transform.position = grid.GetCellCenterWorld(gridPosition) - new Vector3(0, .499f, 0);
 
         PreviewObjectFunc();
     }
@@ -389,7 +389,7 @@ public class PlacementSystem : MonoBehaviour
     }
     #endregion
 
-    #region 그리드 사이즈 증가
+    #region 버튼 기능
     public void ResizeMesh()
     {
         UpdateGridBounds();

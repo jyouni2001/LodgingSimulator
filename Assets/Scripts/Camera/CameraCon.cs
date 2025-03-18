@@ -1,5 +1,4 @@
 using UnityEngine;
-using Unity.Cinemachine;
 
 public class CameraCon : MonoBehaviour
 {
@@ -12,22 +11,19 @@ public class CameraCon : MonoBehaviour
 
     private float targetOffsetY;         // 목표 y 값
     private float smoothTime = 0.5f;     // 부드러운 이동을 위한 감속 시간
-    private float yVelocity = 0f;        // 현재 속도 (SmoothDamp에서 필요)
+    private float yVelocity;        // 현재 속도 (SmoothDamp에서 필요)
     private Vector3 offset;
-    private float yaw = 0f;              // 좌우 회전 (Y축)
-    private float pitch = 70f;            // 상하 회전 (X축)
+    [SerializeField] private float yaw = -90f;              // 좌우 회전 (Y축)
+    [SerializeField] private float pitch = 60f;            // 상하 회전 (X축)
 
-    [SerializeField] private CinemachineCamera cam;
-
+    [SerializeField] private Camera cam;
     private void Start()
     {
-        cam = GetComponent<CinemachineCamera>();
-
-        offset = new Vector3(0f, 8f, -3f);
+        offset = new Vector3(15f, 15f, 0f);
         targetOffsetY = offset.y;
 
         target.transform.position = offset;
-    }
+   }
 
     private void LateUpdate()
     {
@@ -42,7 +38,7 @@ public class CameraCon : MonoBehaviour
             target is not null ? target.position.z : 0f
         );
 
-        target.transform.position = targetPosition;
+        if (target is not null) target.transform.position = targetPosition;
     }
 
     private void SmoothWheel()
@@ -63,10 +59,11 @@ public class CameraCon : MonoBehaviour
         float vertical = Input.GetAxisRaw("Vertical");     // W/S
 
         Vector3 moveDirection = new Vector3(horizontal, 0f, vertical).normalized;
+        Debug.Log($"moveDirection = {moveDirection}");
         if (moveDirection.magnitude > 0)
         {
             // 카메라의 로컬 방향을 기준으로 이동
-            Vector3 move = transform.TransformDirection(moveDirection) * moveSpeed * Time.deltaTime;
+            Vector3 move = transform.TransformDirection(moveDirection) * (moveSpeed * Time.deltaTime);
             move.y = 0f; // y축 이동은 줌으로만 제어
             target.transform.position += move;
         }

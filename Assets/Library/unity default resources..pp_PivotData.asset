@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 583688de1c5b4ce4e9435544090f390c, type: 3}
   m_Name: unity default resources..pp_PivotData
   m_EditorClassIdentifier: 
-  PivotDelta: {x: -0.40000013, y: -0.000000059604645, z: 0.00093936175}
+  PivotDelta: {x: 0.24992737, y: 0.000000029802322, z: 0}
   OriginalMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   ModifiedMesh: {fileID: 4300000, guid: e57dc59a46f2fe94e828b3f4210fa961, type: 2}
