@@ -23,7 +23,7 @@ public class CameraCon : MonoBehaviour
         targetOffsetY = offset.y;
 
         target.transform.position = offset;
-   }
+    }
 
     private void LateUpdate()
     {
@@ -59,7 +59,6 @@ public class CameraCon : MonoBehaviour
         float vertical = Input.GetAxisRaw("Vertical");     // W/S
 
         Vector3 moveDirection = new Vector3(horizontal, 0f, vertical).normalized;
-        Debug.Log($"moveDirection = {moveDirection}");
         if (moveDirection.magnitude > 0)
         {
             // 카메라의 로컬 방향을 기준으로 이동
