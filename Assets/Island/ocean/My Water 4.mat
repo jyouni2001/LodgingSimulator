@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: My Water 2
+  m_Name: My Water 4
   m_Shader: {fileID: -6465566751694194690, guid: 5710fa9647ac06241b65256c4ee0a374, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -29,7 +29,7 @@ Material:
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2900
+  m_CustomRenderQueue: 2950
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -62,7 +62,7 @@ Material:
     - _Smoothness: 1
     - _Water_Lerp: 0
     m_Colors:
-    - _Color: {r: 0, g: 0.6877341, b: 1, a: 1}
+    - _Color: {r: 0, g: 0.6862745, b: 1, a: 1}
     - _UV1: {r: 1, g: 3, b: 0.13, a: 0}
     - _UV2: {r: 5, g: 5, b: 0, a: 0}
     - _Water_Speed1: {r: 0, g: 1, b: 0, a: 0}

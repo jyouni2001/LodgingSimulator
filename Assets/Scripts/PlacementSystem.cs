@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class PlacementSystem : MonoBehaviour
@@ -12,19 +11,13 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private ObjectsDatabaseSO database;    // 데이터
     [SerializeField] private GameObject gridVisualization;  // 시각화 그리드 
     [SerializeField] private GameObject previewObject;      // 미리보기 객체를 저장할 변수
-    //[SerializeField] private GameObject plane;              // 그리드 반경체크 플레인
-
+    [SerializeField] private List<Bounds> planeBounds;
     [SerializeField] private List<GameObject> plane;
 
-    private Vector3 upOffset = new Vector3(-1f, 0f, -1f);
     private int              selectedObjectIndex = -1;      // 인덱스 초기화
     private GridData         floorData, furnitureData;      // 그리드 데이터
     private Renderer         previewRenderer;               // 미리보기 머티리얼 렌더러
-    //private List<GameObject> placedGameObjects   = new();   // 리스트 선언
     private Vector3Int       gridPosition;                  // 그리드 좌표
-    //private Bounds           planeBounds;                   // 플레인 반경 좌표
-    [SerializeField] private List<Bounds> planeBounds;
-
     private Quaternion       previewRotation     = Quaternion.identity; 
     
     private void Start()
@@ -151,7 +144,6 @@ public class PlacementSystem : MonoBehaviour
     }
 
     #endregion
-
 
     #region 건축 시작
     public void StartPlacement(int ID)

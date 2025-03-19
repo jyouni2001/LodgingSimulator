@@ -20,8 +20,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: My Water 2
-  m_Shader: {fileID: -6465566751694194690, guid: 5710fa9647ac06241b65256c4ee0a374, type: 3}
+  m_Name: My Water 5
+  m_Shader: {fileID: -6465566751694194690, guid: 1f430cc352ae317478d1e33ca7921f23, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -55,17 +55,18 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Normal_Strength: 0.1
+    - _Alpha: 0.6
+    - _Normal_Strength: 0.2
     - _QueueControl: 1
     - _QueueOffset: 0
-    - _Refraction: 0.5
-    - _Smoothness: 1
-    - _Water_Lerp: 0
+    - _Refraction: 0.2
+    - _Smoothness: 0.766
+    - _Water_Lerp: 0.5
     m_Colors:
-    - _Color: {r: 0, g: 0.6877341, b: 1, a: 1}
+    - _Color: {r: 0.29156286, g: 0.6792453, b: 0.67149323, a: 1}
     - _UV1: {r: 1, g: 3, b: 0.13, a: 0}
-    - _UV2: {r: 5, g: 5, b: 0, a: 0}
-    - _Water_Speed1: {r: 0, g: 1, b: 0, a: 0}
-    - _Water_Speed2: {r: 0, g: 0, b: 0, a: 0}
+    - _UV2: {r: 10, g: 10, b: 0, a: 0}
+    - _Water_Speed1: {r: 0.5, g: 0.3, b: 0, a: 0}
+    - _Water_Speed2: {r: 0.5, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
