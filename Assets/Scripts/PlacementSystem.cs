@@ -9,8 +9,10 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private ObjectPlacer objectPlacer;
     [SerializeField] private Grid         grid;             // 그리드 컴포넌트
     [SerializeField] private ObjectsDatabaseSO database;    // 데이터
-    [SerializeField] private GameObject gridVisualization;  // 시각화 그리드 
+    //[SerializeField] private GameObject gridVisualization;  // 시각화 그리드 
     [SerializeField] private GameObject previewObject;      // 미리보기 객체를 저장할 변수
+
+    [SerializeField] private List<GameObject> gridVisualization;
     [SerializeField] private List<Bounds> planeBounds;
     [SerializeField] private List<GameObject> plane;
 
@@ -33,6 +35,14 @@ public class PlacementSystem : MonoBehaviour
     {
         if (selectedObjectIndex < 0) return;
 
+        IndicatorPos();
+        PreviewObjectFunc();
+    }
+
+    #region 인디케이터 위치
+
+    private void IndicatorPos()
+    {
         // 마우스 인디케이터 위치
         Vector3 mousePosition = inputManager.GetSelectedMapPosition();
         mouseIndicator.transform.position = mousePosition;
@@ -40,9 +50,8 @@ public class PlacementSystem : MonoBehaviour
         // 셀 인디케이터 위치
         gridPosition = grid.WorldToCell(mousePosition);
         cellIndicator.transform.position = grid.GetCellCenterWorld(gridPosition) - new Vector3(0, .499f, 0);
-
-        PreviewObjectFunc();
     }
+    #endregion
 
     #region 그리드 데이터 초기화
 
@@ -115,11 +124,9 @@ public class PlacementSystem : MonoBehaviour
     #endregion
 
     #region UpdateGridBounds
-
-
     private void UpdateGridBounds()
     {
-        planeBounds.Clear();
+        //planeBounds.Clear();
 
         // 나머지 오브젝트들은 활성화된 경우에만 처리
         foreach (GameObject planeRend in plane) // 첫 번째 오브젝트 제외
@@ -127,18 +134,42 @@ public class PlacementSystem : MonoBehaviour
             if (planeRend.activeSelf) // 활성화된 객체인지 확인
             {
                 Renderer planeRenderer = planeRend.GetComponent<Renderer>();
-                Debug.Log($"{planeRenderer} 리스트에 추가");
-
+    
                 if (planeRenderer != null)
                 {
+                    if (planeBounds.Contains(planeRenderer.bounds)) return;
+                    
                     Bounds rendererBounds = planeRenderer.bounds;
                     rendererBounds.Expand(new Vector3(0, 1, 0));
+                    
+                    // 이미 존재하는 Bounds 객체인지 직접 비교
+                    bool alreadyExists = false;
+                    foreach (Bounds existingBounds in planeBounds)
+                    {
+                        // center와 size를 비교하여 동일한 bounds인지 확인
+                        if (existingBounds.center == rendererBounds.center && 
+                            existingBounds.size == rendererBounds.size)
+                        {
+                            alreadyExists = true;
+                            break;
+                        }
+                    }
+                
+                    if (alreadyExists)
+                    {
+                        Debug.Log($"{planeRenderer} 이미 리스트에 존재합니다.");
+                        continue; // 이미 존재하면 다음 항목으로 넘어감
+                    }
+                    
                     planeBounds.Add(rendererBounds);
+                    Debug.Log($"{planeRenderer} 리스트에 추가");
                 }
                 else
                 {
                     Debug.LogWarning($"Plane {planeRend.name}에 Renderer가 없습니다.");
                 }
+                
+                gridVisualization.Add(planeRend);
             }
         }
     }
@@ -157,7 +188,13 @@ public class PlacementSystem : MonoBehaviour
             return;
         }
         
-        gridVisualization.SetActive(true);
+        //gridVisualization.SetActive(true);
+
+        foreach (GameObject gridVisual in gridVisualization)
+        {
+            gridVisual.SetActive(true);
+        }
+        
         cellIndicator.SetActive(true);
 
         CreatePreview();
@@ -311,7 +348,7 @@ public class PlacementSystem : MonoBehaviour
 
             if (!isWithinBounds)
             {
-                Debug.Log($"Position {pos} is outside Plane bounds: {worldPos}");
+                Debug.Log($"그리드 반경을 벗어남");
                 return false;
             }
         }
@@ -339,7 +376,13 @@ public class PlacementSystem : MonoBehaviour
     private void StopPlacement()
     {
         selectedObjectIndex = -1;
-        gridVisualization.SetActive(false);
+        //gridVisualization.SetActive(false);
+        
+        foreach (GameObject gridVisual in gridVisualization)
+        {
+            gridVisual.SetActive(false);
+        }
+        
         cellIndicator.SetActive(false);
         inputManager.OnClicked -= PlaceStructure;
         inputManager.OnExit -= StopPlacement;

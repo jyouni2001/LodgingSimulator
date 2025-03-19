@@ -1,3 +1,4 @@
+using Unity.Cinemachine;
 using UnityEngine;
 
 public class CameraCon : MonoBehaviour
@@ -7,7 +8,7 @@ public class CameraCon : MonoBehaviour
     public float rotationSpeed = 5f;     // 회전 속도
     public Transform target;             
     public float minZoom = 2f;
-    public float maxZoom = 10f;
+    public float maxZoom = 25f;
 
     private float targetOffsetY;         // 목표 y 값
     private float smoothTime = 0.5f;     // 부드러운 이동을 위한 감속 시간
@@ -16,10 +17,11 @@ public class CameraCon : MonoBehaviour
     [SerializeField] private float yaw = -90f;              // 좌우 회전 (Y축)
     [SerializeField] private float pitch = 60f;            // 상하 회전 (X축)
 
-    [SerializeField] private Camera cam;
+    [SerializeField] private CinemachineCamera cam;
+    
     private void Start()
     {
-        offset = new Vector3(15f, 15f, 0f);
+        offset = cam.transform.position;
         targetOffsetY = offset.y;
 
         target.transform.position = offset;
@@ -64,6 +66,7 @@ public class CameraCon : MonoBehaviour
             // 카메라의 로컬 방향을 기준으로 이동
             Vector3 move = transform.TransformDirection(moveDirection) * (moveSpeed * Time.deltaTime);
             move.y = 0f; // y축 이동은 줌으로만 제어
+            Debug.Log($"현재 속도 = {target.transform.position}+{move}");
             target.transform.position += move;
         }
     }
@@ -77,7 +80,7 @@ public class CameraCon : MonoBehaviour
             pitch -= Input.GetAxis("Mouse Y") * rotationSpeed;
 
             // 상하 회전 각도 제한
-            pitch = Mathf.Clamp(pitch, 0f, 80f);
+            pitch = Mathf.Clamp(pitch, 0f, 70f);
 
             // 회전 적용
             target.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);

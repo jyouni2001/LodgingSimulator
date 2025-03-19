@@ -7,15 +7,35 @@ public class InputManager : MonoBehaviour
     [SerializeField] private Camera    cam;
     [SerializeField] private LayerMask placementLayermask;
                      private Vector3   lastPosition;
-
+                     
+                    
                      public event Action OnClicked, OnExit;
+                     public GameObject BuildUI;
                      
                      public bool IsPointerOverUI() => EventSystem.current.IsPointerOverGameObject();
 
-    private void Update()
+
+     private void Start()
+     {
+         BuildUI.SetActive(false);
+     }
+
+     private void Update()
     {
-        if (Input.GetMouseButtonDown(0)) OnClicked?.Invoke(); 
-        if (Input.GetKeyDown(KeyCode.Escape)) OnExit?.Invoke();
+        if (Input.GetKeyDown(KeyCode.B)) BuildUI.SetActive(!BuildUI.activeSelf); // 토글 로직 간소화
+
+        if (Input.GetMouseButtonDown(0)) OnClicked?.Invoke();;
+        
+        /*if (Input.GetMouseButtonDown(0))
+        {
+            OnClicked?.Invoke();
+        }*/
+        
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            OnExit?.Invoke();
+            BuildUI.SetActive(false);
+        }
     }
 
     public Vector3 GetSelectedMapPosition()
