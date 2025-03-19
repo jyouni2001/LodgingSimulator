@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
+using UnityEngine.UI;
 
 public class PlacementSystem : MonoBehaviour
 {
@@ -22,13 +24,23 @@ public class PlacementSystem : MonoBehaviour
     private Vector3Int       gridPosition;                  // 그리드 좌표
     private Quaternion       previewRotation     = Quaternion.identity; 
     
+    [SerializeField] private Button purchaseButton; // 구매 버튼 (Inspector에서 할당)
+    private int currentPurchaseLevel = 1; // 현재 구매 단계 (1번 땅이 이미 활성화됨)
+    private bool isBuildMode = false; // 건설 상태 여부 (디버깅용으로 추가)
+    
     private void Start()
     {
         StopPlacement();
         InitailizeGridDatas();
         InitializeGridBounds();
+        InitializePlane();
 
         previewRenderer = cellIndicator.GetComponentInChildren<Renderer>();
+        
+        if (purchaseButton != null)
+        {
+            purchaseButton.onClick.AddListener(PurchaseNextLand);
+        }
     }
 
     private void Update()
@@ -38,6 +50,15 @@ public class PlacementSystem : MonoBehaviour
         IndicatorPos();
         PreviewObjectFunc();
     }
+    #region 플레인 초기화
+    public void InitializePlane()
+    {
+        foreach (GameObject gridVisual in gridVisualization)
+        {
+            gridVisual.SetActive(false);
+        }
+    }
+#endregion
 
     #region 인디케이터 위치
 
@@ -66,32 +87,35 @@ public class PlacementSystem : MonoBehaviour
     #region 그리드 건설반경 초기화
     private void InitializeGridBounds()
     {
+        if (plane is null || plane.Count == 0)
+        {
+            Debug.LogWarning("plane 리스트가 null이거나 비어 있습니다.");
+            return;
+        }
+        
         // planeBounds 초기화
         planeBounds.Clear();
 
-        // Plane의 경계 계산 및 디버깅
-        if (plane is not null && plane.Count > 0)
+        // 첫 번째 오브젝트는 활성화 여부와 상관없이 처리
+        if (plane[0] is not null)
         {
-            // 첫 번째 오브젝트는 활성화 여부와 상관없이 처리
-            if (plane[0] is not null)
-            {
-                GameObject firstPlane = plane[0];
-                Renderer firstPlaneRenderer = firstPlane.GetComponent<Renderer>();
-                Debug.Log($"{firstPlaneRenderer} 리스트에 추가 (첫 번째 오브젝트)");
+            GameObject firstPlane = plane[0];
+            Renderer firstPlaneRenderer = firstPlane.GetComponent<Renderer>();
+            Debug.Log($"{firstPlaneRenderer} 리스트에 추가 (첫 번째 오브젝트)");
 
-                if (firstPlaneRenderer != null)
-                {
-                    Debug.Log($"첫 번째 오브젝트 처리됨");
-                    Bounds rendererBounds = firstPlaneRenderer.bounds;
-                    rendererBounds.Expand(new Vector3(0, 1, 0));
-                    planeBounds.Add(rendererBounds);
-                }
-                else
-                {
-                    Debug.LogWarning($"Plane {firstPlane.name}에 Renderer가 없습니다.");
-                }
+            if (firstPlaneRenderer != null)
+            {
+                Debug.Log($"첫 번째 오브젝트 처리됨");
+                Bounds rendererBounds = firstPlaneRenderer.bounds;
+                rendererBounds.Expand(new Vector3(0, 1, 0));
+                planeBounds.Add(rendererBounds);
+            }
+            else
+            {
+                Debug.LogWarning($"Plane {firstPlane.name}에 Renderer가 없습니다.");
             }
         }
+        
     }
 
     /*private void InitializeGridBounds()
@@ -126,19 +150,15 @@ public class PlacementSystem : MonoBehaviour
     #region UpdateGridBounds
     private void UpdateGridBounds()
     {
-        //planeBounds.Clear();
-
         // 나머지 오브젝트들은 활성화된 경우에만 처리
         foreach (GameObject planeRend in plane) // 첫 번째 오브젝트 제외
         {
-            if (planeRend.activeSelf) // 활성화된 객체인지 확인
+            if (planeRend is not null && planeRend.activeSelf) // 활성화된 객체인지 확인
             {
                 Renderer planeRenderer = planeRend.GetComponent<Renderer>();
     
-                if (planeRenderer != null)
+                if (planeRenderer is not null)
                 {
-                    if (planeBounds.Contains(planeRenderer.bounds)) return;
-                    
                     Bounds rendererBounds = planeRenderer.bounds;
                     rendererBounds.Expand(new Vector3(0, 1, 0));
                     
@@ -190,10 +210,10 @@ public class PlacementSystem : MonoBehaviour
         
         //gridVisualization.SetActive(true);
 
-        foreach (GameObject gridVisual in gridVisualization)
+        /*foreach (GameObject gridVisual in gridVisualization)
         {
             gridVisual.SetActive(true);
-        }
+        }*/
         
         cellIndicator.SetActive(true);
 
@@ -208,6 +228,11 @@ public class PlacementSystem : MonoBehaviour
     public void CreatePreview()
     {
         if (selectedObjectIndex < 0 || selectedObjectIndex >= database.objectsData.Count) return;
+        
+        if (previewObject != null)
+        {
+            Destroy(previewObject);
+        }
 
         // 미리보기 생성
         previewObject = Instantiate(database.objectsData[selectedObjectIndex].Prefab);
@@ -378,10 +403,10 @@ public class PlacementSystem : MonoBehaviour
         selectedObjectIndex = -1;
         //gridVisualization.SetActive(false);
         
-        foreach (GameObject gridVisual in gridVisualization)
+        /*foreach (GameObject gridVisual in gridVisualization)
         {
             gridVisual.SetActive(false);
-        }
+        }*/
         
         cellIndicator.SetActive(false);
         inputManager.OnClicked -= PlaceStructure;
@@ -432,6 +457,99 @@ public class PlacementSystem : MonoBehaviour
         scale += new Vector3(0.1f, 0.1f, 0.1f); // X, Y, Z 각각 0.5씩 증가
         planeBounds.Expand(new Vector3(1f, 0, 1f));
         gridVisualization.transform.localScale = scale;*/
+    }
+    #endregion
+    
+    #region 땅 구매
+    // 구매 버튼 클릭 시 호출되는 메서드
+    public void PurchaseNextLand()
+    {
+        // 다음 구매 단계로 이동
+        currentPurchaseLevel++;
+        Debug.Log(currentPurchaseLevel);
+
+        // 현재 단계에 해당하는 Plane 활성화
+        ActivatePlanesByLevel(currentPurchaseLevel);
+
+        // planeBounds와 gridVisualization 업데이트
+        UpdateGridBounds();
+        
+        // 더 이상 구매할 땅이 없으면 버튼 비활성화
+        if (currentPurchaseLevel >= 4)
+        {
+            Debug.Log("모든 땅이 구매되었습니다!");
+            if (purchaseButton != null)
+            {
+                purchaseButton.gameObject.SetActive(false); // 버튼 비활성화
+            }
+            return;
+        }
+        
+        // 디버깅 로그
+        Debug.Log($"현재 구매 단계: {currentPurchaseLevel}, 활성화된 Plane 수: {gridVisualization.Count}");
+    }
+
+    // 특정 레벨의 Plane을 활성화하는 메서드
+    private void ActivatePlanesByLevel(int level)
+    {
+        foreach (GameObject planeObj in plane)
+        {
+            // Plane의 이름을 통해 번호를 확인 (예: "Plane_2"라면 2번 땅)
+            string planeName = planeObj.name;
+            int planeLevel = ExtractLevelFromPlaneName(planeName);
+
+            if (planeLevel == level)
+            {
+                planeObj.SetActive(true);
+                Debug.Log($"활성화된 Plane: {planeName}");
+            }
+        }
+    }
+
+    // Plane 이름에서 번호를 추출하는 메서드 (예: "Plane_2" -> 2)
+    private int ExtractLevelFromPlaneName(string planeName)
+    {
+        // Plane 이름이 "Plane_X" 형식이라고 가정
+        string[] parts = planeName.Split('_');
+        if (parts.Length > 1 && int.TryParse(parts[1], out int level))
+        {
+            return level;
+        }
+        Debug.LogWarning($"Plane 이름에서 레벨을 추출할 수 없습니다: {planeName}");
+        return 0; // 기본값
+    }
+    #endregion
+    
+    #region 건설 상태
+    // 건설 상태 진입
+    public void EnterBuildMode()
+    {
+        isBuildMode = true;
+        inputManager.BuildUI.SetActive(true); // BuildUI 활성화
+
+        // gridVisualization 활성화
+        foreach (GameObject gridVisual in gridVisualization)
+        {
+            gridVisual.SetActive(true);
+        }
+
+        Debug.Log("건설 상태 진입: BuildUI와 Grid 활성화");
+    }
+    
+    // 건설 상태 종료
+    public void ExitBuildMode()
+    {
+        isBuildMode = false;
+        StopPlacement(); // 기존 건설 관련 상태 초기화
+        inputManager.BuildUI.SetActive(false); // BuildUI 비활성화
+
+        // gridVisualization 비활성화
+        foreach (GameObject gridVisual in gridVisualization)
+        {
+            gridVisual.SetActive(false);
+        }
+
+        Debug.Log("건설 상태 종료: BuildUI와 Grid 비활성화");
     }
     #endregion
 }
