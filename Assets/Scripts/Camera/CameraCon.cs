@@ -66,7 +66,6 @@ public class CameraCon : MonoBehaviour
             // 카메라의 로컬 방향을 기준으로 이동
             Vector3 move = transform.TransformDirection(moveDirection) * (moveSpeed * Time.deltaTime);
             move.y = 0f; // y축 이동은 줌으로만 제어
-            Debug.Log($"현재 속도 = {target.transform.position}+{move}");
             target.transform.position += move;
         }
     }
