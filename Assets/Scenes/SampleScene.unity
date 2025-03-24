@@ -3952,7 +3952,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mouseIndicator: {fileID: 846661954}
-  cellIndicator: {fileID: 1831302172}
+  cellIndicatorPrefab: {fileID: 4822721988204683880, guid: c0bb915b11fc5344991ab319aa51bd46, type: 3}
   inputManager: {fileID: 519522462}
   objectPlacer: {fileID: 36320661}
   grid: {fileID: 1923795467}
@@ -6975,11 +6975,6 @@ PrefabInstance:
 --- !u!4 &1831302171 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 896958979129487597, guid: c0bb915b11fc5344991ab319aa51bd46, type: 3}
-  m_PrefabInstance: {fileID: 1831302170}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1831302172 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4822721988204683880, guid: c0bb915b11fc5344991ab319aa51bd46, type: 3}
   m_PrefabInstance: {fileID: 1831302170}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1833149432

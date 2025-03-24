@@ -29,6 +29,54 @@ public class GridData
     {
         List<Vector3Int> positions = new List<Vector3Int>();
 
+        // 회전 각도를 0, 90, 180, 270도로 반올림
+        float angle = Mathf.Round(rotation.eulerAngles.y / 90) * 90;
+
+        // 회전된 오브젝트 크기 계산
+        Vector2Int size = objectSize;
+        if (Mathf.Approximately(angle % 180, 90)) // 90도 또는 270도일 때
+        {
+            size = new Vector2Int(objectSize.y, objectSize.x); // 너비와 높이 교환
+        }
+
+        // 회전 각도에 따른 기준점 오프셋 계산
+        Vector2Int offset;
+        if (Mathf.Approximately(angle, 0))
+        {
+            offset = new Vector2Int(0, 0); // 0도: 기준점 그대로
+        }
+        else if (Mathf.Approximately(angle, 90))
+        {
+            offset = new Vector2Int(0, size.y - 1); // 90도: Z축으로 조정
+        }
+        else if (Mathf.Approximately(angle, 180))
+        {
+            offset = new Vector2Int(size.x - 1, size.y - 1); // 180도: X와 Z 모두 조정
+        }
+        else // 270도
+        {
+            offset = new Vector2Int(size.x - 1, 0); // 270도: X축으로 조정
+        }
+
+        // 기준 위치 조정 (왼쪽 상단 코너 기준)
+        Vector3Int startPos = gridPosition - new Vector3Int(offset.x, 0, offset.y);
+
+        // 점유 셀 위치 계산
+        for (int x = 0; x < size.x; x++)
+        {
+            for (int y = 0; y < size.y; y++)
+            {
+                Vector3Int cellPos = startPos + new Vector3Int(x, 0, y);
+                positions.Add(cellPos);
+            }
+        }
+
+        return positions;
+    }
+    /*public List<Vector3Int> CalculatePosition(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid)
+    {
+        List<Vector3Int> positions = new List<Vector3Int>();
+
         // 회전 각도 (0, 90, 180, 270 중 하나로 반올림)
         float angle = Mathf.Round(rotation.eulerAngles.y / 90) * 90;
 
@@ -86,7 +134,7 @@ public class GridData
         }
 
         return positions;
-    }
+    }*/
     #endregion
 
     #region 점유 확인 여부 플래그

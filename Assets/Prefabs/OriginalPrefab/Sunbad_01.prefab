@@ -58,7 +58,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6217b96195aad6d438f81c6e13d11d7b, type: 3}
       propertyPath: m_Name
-      value: sunbad01
+      value: Sunbad_01
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
