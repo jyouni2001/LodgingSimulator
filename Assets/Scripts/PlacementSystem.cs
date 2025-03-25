@@ -26,7 +26,6 @@ public class PlacementSystem : MonoBehaviour
     
     [SerializeField] private Button purchaseButton;
     private int currentPurchaseLevel = 1;
-    private bool isBuildMode = false;
     
     private void Start()
     {
@@ -399,7 +398,7 @@ public class PlacementSystem : MonoBehaviour
     #region 건설 상태
     public void EnterBuildMode()
     {
-        isBuildMode = true;
+        inputManager.isBuildMode = true;
         inputManager.BuildUI.SetActive(true);
 
         foreach (GameObject gridVisual in gridVisualization)
@@ -412,7 +411,7 @@ public class PlacementSystem : MonoBehaviour
     
     public void ExitBuildMode()
     {
-        isBuildMode = false;
+        inputManager.isBuildMode = false;
         StopPlacement();
         inputManager.BuildUI.SetActive(false);
 
@@ -423,5 +422,6 @@ public class PlacementSystem : MonoBehaviour
 
         Debug.Log("건설 상태 종료: BuildUI와 Grid 비활성화");
     }
+    
     #endregion
 }

@@ -13,7 +13,7 @@ public class InputManager : MonoBehaviour
     public event Action OnClicked, OnExit;
     public GameObject BuildUI;
     
-    private bool isBuildMode = false;
+    public bool isBuildMode = false;
     private Vector3 uiShowPosition; // BuildUI가 보이는 위치
     private Vector3 uiHidePosition; // BuildUI가 숨겨진 위치
     private Tween uiTween; // 현재 실행 중인 트윈 저장
@@ -58,13 +58,12 @@ public class InputManager : MonoBehaviour
             isBuildMode = !isBuildMode;
             if (isBuildMode)
             {
-                placementSystem.EnterBuildMode();
                 ShowBuildUI(); // BuildUI 애니메이션 실행
             }
             else
             {
-                placementSystem.ExitBuildMode();
                 HideBuildUI(); // BuildUI 애니메이션 실행
+                
             }
         }
 
@@ -100,6 +99,7 @@ public class InputManager : MonoBehaviour
         RectTransform uiRect = BuildUI.GetComponent<RectTransform>();
         if (uiRect != null)
         {
+            placementSystem.EnterBuildMode();
             // DOTween으로 Y축 이동 애니메이션
             uiTween = uiRect.DOAnchorPosY(uiShowPosition.y, 0.5f) // 0.5초 동안 이동
                 .SetEase(Ease.OutQuad) // 부드러운 이징
@@ -124,7 +124,11 @@ public class InputManager : MonoBehaviour
             // DOTween으로 Y축 이동 애니메이션
             uiTween = uiRect.DOAnchorPosY(uiHidePosition.y, 0.5f) // 0.5초 동안 이동
                 .SetEase(Ease.InQuad) // 부드러운 이징
-                .OnComplete(() => uiTween = null); // 완료 시 트윈 변수 초기화
+                .OnComplete(() =>
+                {
+                    uiTween = null;
+                    placementSystem.ExitBuildMode();
+                }); // 완료 시 트윈 변수 초기화
         }
     }
 
