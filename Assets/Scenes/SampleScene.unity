@@ -4287,6 +4287,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: barbarian
       objectReference: {fileID: 0}
+    - target: {fileID: 6734645840121181355, guid: 1199db9163fc1024aa4ee121ef223ce4, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7779442883182137201, guid: 1199db9163fc1024aa4ee121ef223ce4, type: 3}
       propertyPath: m_LocalScale.x
       value: 2.5
