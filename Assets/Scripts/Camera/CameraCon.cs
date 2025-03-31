@@ -18,6 +18,7 @@ public class CameraCon : MonoBehaviour
     [SerializeField] private float pitch = 60f;            // 상하 회전 (X축)
 
     [SerializeField] private CinemachineCamera cam;
+    public Collider boundingVolume;
     
     private void Start()
     {
@@ -32,6 +33,7 @@ public class CameraCon : MonoBehaviour
         SmoothWheel();       // 줌 처리
         HandleMovement();    // WASD 이동
         HandleRotation();    // 마우스 우클릭 회전
+        CameraConfiner();
 
         // 카메라 위치 및 회전 적용
         Vector3 targetPosition = new Vector3(
@@ -41,7 +43,25 @@ public class CameraCon : MonoBehaviour
         );
 
         if (target is not null) target.transform.position = targetPosition;
+        
+        
     }
+
+    private void CameraConfiner()
+    {
+        CinemachineConfiner3D confiner = cam.GetComponent<CinemachineConfiner3D>();
+        if (confiner != null && boundingVolume != null)
+        {
+            Vector3 cameraPos = cam.transform.position;
+            if (!boundingVolume.bounds.Contains(cameraPos))
+            {
+                // 카메라가 경계 밖에 있을 때, 경계 안으로 강제 이동
+                Vector3 closestPoint = boundingVolume.ClosestPoint(cameraPos);
+                cam.transform.position = closestPoint;
+            }
+        }
+    }
+    
 
     private void SmoothWheel()
     {
