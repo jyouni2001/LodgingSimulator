@@ -36,7 +36,7 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private Button purchase2FButton;
     private int currentPurchaseLevel = 1;
 
-    private bool solved2f = false;
+    private bool FloorLock = false;
     private void Start()
     {
         StopPlacement();
@@ -51,7 +51,7 @@ public class PlacementSystem : MonoBehaviour
         
         if (purchase2FButton != null)
         {
-            purchase2FButton.onClick.AddListener(Floor2FTest);
+            purchase2FButton.onClick.AddListener(PurchaseOtherFloor);
         }
         
     }
@@ -63,7 +63,11 @@ public class PlacementSystem : MonoBehaviour
         IndicatorPos();
         PreviewObjectFunc();
 
-        if (Input.GetKeyDown(KeyCode.P)) solved2f = true;
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            FloorLock = true;
+            Debug.Log($"증축 시스템 해금 상태 = {FloorLock}");
+        }
     }
 
     #region 플레인 초기화
@@ -182,7 +186,7 @@ public class PlacementSystem : MonoBehaviour
             }
         }
         
-        if(solved2f)
+        if(FloorLock)
         {
             foreach (GameObject planeRend in plane2f)
             {
@@ -426,12 +430,12 @@ public class PlacementSystem : MonoBehaviour
             }
         }
 
-        if (solved2f)
+        if (FloorLock)
         {
             foreach (GameObject planeObj in plane2f)
             {
                 string planeName = planeObj.name;
-                int planeLevel = ExtractLevelFromPlaneName(planeName);
+                int planeLevel = ExtractLevelFromPlaneName2(planeName);
 
                 if (planeLevel == level)
                 {
@@ -452,13 +456,26 @@ public class PlacementSystem : MonoBehaviour
         Debug.LogWarning($"Plane 이름에서 레벨을 추출할 수 없습니다: {planeName}");
         return 0;
     }
+
+    private int ExtractLevelFromPlaneName2(string planeName)
+    {
+        string[] parts = planeName.Split('_');
+        if (parts.Length > 2 && int.TryParse(parts[2], out int level))
+        {
+            Debug.Log($"{parts[2]} and {level}");
+            return level;
+        }
+        Debug.LogWarning($"Plane 이름에서 레벨을 추출할 수 없습니다: {planeName}");
+        return 0;
+    }
     #endregion
 
     #region 2층 구매
 
-    private void Floor2FTest()
+    private void PurchaseOtherFloor()
     {
-        if (!solved2f) return; 
+        if (!FloorLock) return; 
+
         ActivatePlanesByLevel(currentPurchaseLevel);
         UpdateGridBounds();
     }
