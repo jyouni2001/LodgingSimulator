@@ -148,12 +148,12 @@ public class InputManager : MonoBehaviour
         
         Ray ray = cam.ScreenPointToRay(mousePos);
         //RaycastHit hit;
-        if (Physics.Raycast(ray, out hit, 50, placementLayermask))
+        if (Physics.Raycast(ray, out hit, 90, placementLayermask))
         {
             lastPosition = hit.point;
         }
 
-        if (Physics.Raycast(ray, out hit2, 50, batchedLayer))
+        if (Physics.Raycast(ray, out hit2, 100, batchedLayer))
         {
             Debug.Log(hit2.collider.name);
         }
