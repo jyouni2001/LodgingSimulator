@@ -8,25 +8,35 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private GameObject cellIndicatorPrefab;
     private List<GameObject> cellIndicators = new List<GameObject>();
     
+    [Header("컴포넌트")]
     [SerializeField] private InputManager inputManager;
     [SerializeField] private ObjectPlacer objectPlacer;
     [SerializeField] private Grid grid;
     [SerializeField] private ObjectsDatabaseSO database;
     [SerializeField] private GameObject previewObject;
 
+    [Header("그리드 관련")]
     [SerializeField] private List<GameObject> gridVisualization;
     [SerializeField] private List<Bounds> planeBounds;
+    
+    [Header("플레인 리스트")]
     [SerializeField] private List<GameObject> plane;
-
+    [SerializeField] private List<GameObject> plane2f;
+    [SerializeField] private List<GameObject> plane3f;
+    [SerializeField] private List<GameObject> plane4f;
+    
     private int selectedObjectIndex = -1;
     private GridData floorData, furnitureData;
     private Renderer previewRenderer;
     private Vector3Int gridPosition;
     private Quaternion previewRotation = Quaternion.identity; 
     
+    [Header("땅 구매 버튼")]
     [SerializeField] private Button purchaseButton;
+    [SerializeField] private Button purchase2FButton;
     private int currentPurchaseLevel = 1;
-    
+
+    private bool solved2f = false;
     private void Start()
     {
         StopPlacement();
@@ -38,6 +48,12 @@ public class PlacementSystem : MonoBehaviour
         {
             purchaseButton.onClick.AddListener(PurchaseNextLand);
         }
+        
+        if (purchase2FButton != null)
+        {
+            purchase2FButton.onClick.AddListener(Floor2FTest);
+        }
+        
     }
 
     private void Update()
@@ -46,6 +62,8 @@ public class PlacementSystem : MonoBehaviour
 
         IndicatorPos();
         PreviewObjectFunc();
+
+        if (Input.GetKeyDown(KeyCode.P)) solved2f = true;
     }
 
     #region 플레인 초기화
@@ -139,6 +157,9 @@ public class PlacementSystem : MonoBehaviour
     #endregion
 
     #region UpdateGridBounds
+    /// <summary>
+    /// 그리드 반경에 따라 건축 가능한 지역 바운드 설정
+    /// </summary>
     private void UpdateGridBounds()
     {
         foreach (GameObject planeRend in plane)
@@ -156,6 +177,29 @@ public class PlacementSystem : MonoBehaviour
                     {
                         planeBounds.Add(rendererBounds);
                         gridVisualization.Add(planeRend);
+                    }
+                }
+            }
+        }
+        
+        if(solved2f)
+        {
+            foreach (GameObject planeRend in plane2f)
+            {
+                if (planeRend != null && planeRend.activeSelf)
+                {
+                    Renderer planeRenderer = planeRend.GetComponent<Renderer>();
+                    if (planeRenderer != null)
+                    {
+                        Bounds rendererBounds = planeRenderer.bounds;
+                        rendererBounds.Expand(new Vector3(0, 1, 0));
+                    
+                        bool alreadyExists = planeBounds.Exists(b => b.center == rendererBounds.center && b.size == rendererBounds.size);
+                        if (!alreadyExists)
+                        {
+                            planeBounds.Add(rendererBounds);
+                            gridVisualization.Add(planeRend);
+                        }
                     }
                 }
             }
@@ -231,8 +275,8 @@ public class PlacementSystem : MonoBehaviour
 
         GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
         selectedData.AddObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, database.objectsData[selectedObjectIndex].ID, index, previewRotation, grid);
-
-        Debug.Log($"현재 설치된 오브젝트 : {index}");
+        
+        if(inputManager.hit.transform is not null) Debug.Log($"현재 설치된 오브젝트 : {index}, 선택한 오브젝트 : {inputManager.hit.transform.name}");
     }
     #endregion
 
@@ -381,6 +425,21 @@ public class PlacementSystem : MonoBehaviour
                 Debug.Log($"활성화된 Plane: {planeName}");
             }
         }
+
+        if (solved2f)
+        {
+            foreach (GameObject planeObj in plane2f)
+            {
+                string planeName = planeObj.name;
+                int planeLevel = ExtractLevelFromPlaneName(planeName);
+
+                if (planeLevel == level)
+                {
+                    planeObj.SetActive(true);
+                    Debug.Log($"활성화된 Plane: {planeName}");
+                }
+            }
+        }
     }
 
     private int ExtractLevelFromPlaneName(string planeName)
@@ -393,6 +452,17 @@ public class PlacementSystem : MonoBehaviour
         Debug.LogWarning($"Plane 이름에서 레벨을 추출할 수 없습니다: {planeName}");
         return 0;
     }
+    #endregion
+
+    #region 2층 구매
+
+    private void Floor2FTest()
+    {
+        if (!solved2f) return; 
+        ActivatePlanesByLevel(currentPurchaseLevel);
+        UpdateGridBounds();
+    }
+
     #endregion
     
     #region 건설 상태

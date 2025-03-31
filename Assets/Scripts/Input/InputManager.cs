@@ -12,6 +12,9 @@ public class InputManager : MonoBehaviour
     
     public event Action OnClicked, OnExit;
     public GameObject BuildUI;
+    public RaycastHit hit;
+    public RaycastHit hit2; 
+    [SerializeField] private LayerMask batchedLayer;
     
     public bool isBuildMode = false;
     private Vector3 uiShowPosition; // BuildUI가 보이는 위치
@@ -144,10 +147,15 @@ public class InputManager : MonoBehaviour
         mousePos.z = cam.nearClipPlane;
         
         Ray ray = cam.ScreenPointToRay(mousePos);
-        RaycastHit hit;
-        if (Physics.Raycast(ray, out hit, 100, placementLayermask))
+        //RaycastHit hit;
+        if (Physics.Raycast(ray, out hit, 50, placementLayermask))
         {
             lastPosition = hit.point;
+        }
+
+        if (Physics.Raycast(ray, out hit2, 50, batchedLayer))
+        {
+            Debug.Log(hit2.collider.name);
         }
         
         return lastPosition;
