@@ -472,11 +472,24 @@ public class PlacementSystem : MonoBehaviour
 
     #region 2층 구매
 
+    // 땅이 전부 구매된 후에 2층 해금이 풀림
+    // 해금 해제 후에는 2층의 땅을 모두 구입할 필요가 없기 때문에 전부다 비활성화 후 한꺼번에 활성화가 가능
+    // 활성화가 된 후에 그리드 바운드가 업데이트 되어야만 함
+    // 사라질 때 함께 사라지도록 테스트 필요
+    // 오브젝트 활성화 후 그리드바운드만 작동되도록 테스트 = 성공
+    // 그러면 ActivatePlanesByLevel 함수가 필요 없음
+    // 따라서 2층을 구매하면 리스트들이 전부 활성화가 되며, 업데이트 그리드 바운드 함수가 실행되도록 테스트 시작 = 성공
+    // 성공함으로서 2층 해금 시, 건축모드에서는 2층 그리드가 활성화가 됌
+    // 조건은 무조건 땅을 모두 구매한 후에 해금 되도록 설정
+
     private void PurchaseOtherFloor()
     {
         if (!FloorLock) return; 
 
-        ActivatePlanesByLevel(currentPurchaseLevel);
+        foreach (GameObject planeObj in plane2f)
+        {
+            planeObj.SetActive(true);
+        }
         UpdateGridBounds();
     }
 

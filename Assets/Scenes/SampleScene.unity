@@ -5908,11 +5908,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   zoomMultiplier: 15
+  minFOV: 20
+  maxFOV: 60
+  fovSmoothTime: 0.2
+  targetFOV: 0
+  fovVelocity: 0
   moveSpeed: 20
   rotationSpeed: 10
   target: {fileID: 1156550925}
-  minZoom: 10
-  maxZoom: 25
   yaw: -90
   pitch: 60
   cam: {fileID: 1156550924}
@@ -5932,7 +5935,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1196223826
 Transform:
   m_ObjectHideFlags: 0

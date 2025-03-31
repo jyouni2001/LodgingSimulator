@@ -2,30 +2,43 @@ using Unity.Cinemachine;
 using UnityEngine;
 
 public class CameraCon : MonoBehaviour
-{
-    public float zoomMultiplier = 10f;
-    public float moveSpeed = 10f;        // WASD 이동 속도
-    public float rotationSpeed = 5f;     // 회전 속도
-    public Transform target;             
-    public float minZoom = 2f;
-    public float maxZoom = 25f;
+{   
+    public float     zoomMultiplier = 10f;  // 줌 조절 속도
+    public float     minFOV         = 20f;  // 최소 줌
+    public float     maxFOV         = 60f;  // 최대 줌
+    public float     fovSmoothTime  = 0.2f; // 줌 부드럽게 변경되는 시간
+    public float     targetFOV;             // 목표 줌 값
+    public float     fovVelocity;           // 현재 FOV 변경 속도
+    public float     moveSpeed      = 10f;  // WASD 이동 속도
+    public float     rotationSpeed  = 5f;   // 회전 속도
 
-    private float targetOffsetY;         // 목표 y 값
-    private float smoothTime = 0.5f;     // 부드러운 이동을 위한 감속 시간
-    private float yVelocity;        // 현재 속도 (SmoothDamp에서 필요)
+    public Transform target;         // 카메라 위치
+    public Collider  boundingVolume; // 카메라 경계선
+
     private Vector3 offset;
-    [SerializeField] private float yaw = -90f;              // 좌우 회전 (Y축)
-    [SerializeField] private float pitch = 60f;            // 상하 회전 (X축)
 
-    [SerializeField] private CinemachineCamera cam;
-    public Collider boundingVolume;
+    [SerializeField] private float             yaw   = -90f;    // 좌우 회전 (Y축)
+    [SerializeField] private float             pitch = 60f;     // 상하 회전 (X축)
+    [SerializeField] private CinemachineCamera cam;             // 카메라 참조
+    
+
+
+    
+    
     
     private void Start()
     {
-        offset = cam.transform.position;
-        targetOffsetY = offset.y;
+        if (cam == null)
+        {
+            Debug.LogError("CinemachineVirtualCamera가 할당되지 않았습니다!");
+            enabled = false; // 컴포넌트 비활성화
+            return;
+        }
 
+        //카메라 값 초기화
+        offset = cam.transform.position;
         target.transform.position = offset;
+        targetFOV = cam.Lens.FieldOfView; 
     }
 
     private void LateUpdate()
@@ -33,7 +46,7 @@ public class CameraCon : MonoBehaviour
         SmoothWheel();       // 줌 처리
         HandleMovement();    // WASD 이동
         HandleRotation();    // 마우스 우클릭 회전
-        CameraConfiner();
+        CameraConfiner();    // 카메라가 경계에서 끼이는 버그 해결 
 
         // 카메라 위치 및 회전 적용
         Vector3 targetPosition = new Vector3(
@@ -47,6 +60,9 @@ public class CameraCon : MonoBehaviour
         
     }
 
+    /// <summary>
+    /// 카메라가 경계에서 멈추는 버그 해결
+    /// </summary>
     private void CameraConfiner()
     {
         CinemachineConfiner3D confiner = cam.GetComponent<CinemachineConfiner3D>();
@@ -62,18 +78,30 @@ public class CameraCon : MonoBehaviour
         }
     }
     
-
+    /// <summary>
+    /// 마우스 휠 조절로 줌인, 줌아웃 기능
+    /// </summary>
     private void SmoothWheel()
     {
         float scrollInput = Input.GetAxisRaw("Mouse ScrollWheel");
         if (scrollInput != 0)
         {
-            targetOffsetY -= scrollInput * zoomMultiplier;
-            targetOffsetY = Mathf.Clamp(targetOffsetY, minZoom, maxZoom);
-        }
-        offset.y = Mathf.SmoothDamp(offset.y, targetOffsetY, ref yVelocity, smoothTime);
+            targetFOV -= scrollInput * zoomMultiplier;
+            targetFOV = Mathf.Clamp(targetFOV, minFOV, maxFOV);
+        } 
+        // FOV를 부드럽게 업데이트
+        cam.Lens.FieldOfView = Mathf.SmoothDamp(
+            cam.Lens.FieldOfView, // 현재 값
+            targetFOV,                      // 목표 값
+            ref fovVelocity,                // 참조 속도 변수
+            fovSmoothTime                   // 부드럽게 만드는 시간
+        );
+
     }
 
+    /// <summary>
+    /// W/A/S/D 방향키로 상하좌우 이동
+    /// </summary>
     private void HandleMovement()
     {
         // WASD 입력 처리
@@ -90,6 +118,9 @@ public class CameraCon : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 우클릭 드래그로 화면 회전
+    /// </summary>
     private void HandleRotation()
     {
         // 마우스 우클릭 중일 때만 회전
