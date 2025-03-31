@@ -2,12 +2,26 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
+/// <summary>
+/// 그리드 데이터를 저장하는 클래스
+/// </summary>
 public class GridData
 {
     // 설치된 오브젝트 데이터가 담긴 딕셔너리
     private Dictionary<Vector3Int, PlacementData> placedObjects = new();
 
     #region 딕셔너리에 설치된 오브젝트 포함
+
+    /// <summary>
+    /// 설치된 오브젝트의 데이터를 딕셔너리에 추가한다.
+    /// </summary>
+    /// <param name="gridPosition"></param>
+    /// <param name="objectSize"></param>
+    /// <param name="ID"></param>
+    /// <param name="placedObjectIndex"></param>
+    /// <param name="rotation"></param>
+    /// <param name="grid"></param>
+    /// <exception cref="Exception"></exception>
     public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex, Quaternion rotation, Grid grid)
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
@@ -25,6 +39,15 @@ public class GridData
     #endregion
 
     #region 그리드 좌표 계산
+
+    /// <summary>
+    /// 설치할 오브젝트의 상하좌우 길이를 실시간으로 변경하여 딕셔너리와 비교할 수 있도록 계산한다.
+    /// </summary>
+    /// <param name="gridPosition"></param>
+    /// <param name="objectSize"></param>
+    /// <param name="rotation"></param>
+    /// <param name="grid"></param>
+    /// <returns></returns>
     public List<Vector3Int> CalculatePosition(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid)
     {
         List<Vector3Int> positions = new List<Vector3Int>();
@@ -138,6 +161,15 @@ public class GridData
     #endregion
 
     #region 점유 확인 여부 플래그
+
+    /// <summary>
+    /// 설치하려는 위치에 오브젝트가 존재 유무를 판단한다.
+    /// </summary>
+    /// <param name="gridPosition"></param>
+    /// <param name="objectSize"></param>
+    /// <param name="rotation"></param>
+    /// <param name="grid"></param>
+    /// <returns></returns>
     public bool CanPlaceObjectAt(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid)
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);

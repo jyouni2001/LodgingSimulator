@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 설치된 오브젝트의 데이터를 저장하는 클래스
+/// </summary>
 public class PlacementData
 {
     public List<Vector3Int> occupiedPositions;

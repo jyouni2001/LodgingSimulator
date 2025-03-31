@@ -58,19 +58,23 @@ public class PlacementSystem : MonoBehaviour
 
     private void Update()
     {
-        if (selectedObjectIndex < 0) return;
-
-        IndicatorPos();
-        PreviewObjectFunc();
-
-        if (Input.GetKeyDown(KeyCode.P))
+        if (Input.GetKeyDown(KeyCode.T))
         {
             FloorLock = true;
             Debug.Log($"증축 시스템 해금 상태 = {FloorLock}");
         }
+
+        if (selectedObjectIndex < 0) return;
+
+        IndicatorPos();
+        PreviewObjectFunc();        
     }
 
     #region 플레인 초기화
+
+    /// <summary>
+    /// 시작 시 그리드를 전부 비활성화시켜 보이지않도록 한다.
+    /// </summary>
     public void InitializePlane()
     {
         foreach (GameObject gridVisual in gridVisualization)
@@ -81,6 +85,10 @@ public class PlacementSystem : MonoBehaviour
     #endregion
 
     #region 인디케이터 위치
+
+    /// <summary>
+    /// 마우스와 셀 인디케이터의 좌표를 조절한다.
+    /// </summary>
     private void IndicatorPos()
     {
         Vector3 mousePosition = inputManager.GetSelectedMapPosition();
@@ -89,6 +97,9 @@ public class PlacementSystem : MonoBehaviour
         UpdateCellIndicators();
     }
 
+    /// <summary>
+    /// 마우스의 위치를 통해 인디케이터의 좌표를 실시간으로 변경하고, 미리보기 중일 때 또한 변경 되도록 한다.
+    /// </summary>
     private void UpdateCellIndicators()
     {
         if (selectedObjectIndex < 0 || selectedObjectIndex >= database.objectsData.Count) return;
@@ -129,6 +140,10 @@ public class PlacementSystem : MonoBehaviour
     #endregion
 
     #region 그리드 데이터 초기화
+
+    /// <summary>
+    /// 첫 그리드 데이터를 초기화한다.
+    /// </summary>
     private void InitailizeGridDatas()
     {
         floorData = new GridData();
@@ -137,6 +152,10 @@ public class PlacementSystem : MonoBehaviour
     #endregion
 
     #region 그리드 건설반경 초기화
+
+    /// <summary>
+    /// 그리드 건설 반경을 초기화하는 함수
+    /// </summary>
     private void InitializeGridBounds()
     {
         if (plane == null || plane.Count == 0)
@@ -387,7 +406,7 @@ public class PlacementSystem : MonoBehaviour
     }
     #endregion
 
-    #region 버튼 기능
+    #region 버튼 기능(테스트 기능, 후에 삭제)
     public void ResizeMesh()
     {
         UpdateGridBounds();
@@ -395,6 +414,11 @@ public class PlacementSystem : MonoBehaviour
     #endregion
     
     #region 땅 구매
+
+    /// <summary>
+    /// 땅을 구매하는 버튼을 통해 실행되는 함수
+    /// 버튼을 클릭하면 그리드 플레인이 활성화 + 그리드 건설 반경이 확대되며, 4번(최대 횟수) 클릭 시 버튼이 비활성화 된다.
+    /// </summary>
     public void PurchaseNextLand()
     {
         currentPurchaseLevel++;
@@ -416,6 +440,10 @@ public class PlacementSystem : MonoBehaviour
         Debug.Log($"현재 구매 단계: {currentPurchaseLevel}, 활성화된 Plane 수: {gridVisualization.Count}");
     }
 
+    /// <summary>
+    /// 플레인의 이름에서 뽑아낸 정수와 반환된 정수의 값이 같을 때, 그리드 플레인을 활성화한다. 
+    /// </summary>
+    /// <param name="level"></param>
     private void ActivatePlanesByLevel(int level)
     {
         foreach (GameObject planeObj in plane)
@@ -429,40 +457,18 @@ public class PlacementSystem : MonoBehaviour
                 Debug.Log($"활성화된 Plane: {planeName}");
             }
         }
-
-        if (FloorLock)
-        {
-            foreach (GameObject planeObj in plane2f)
-            {
-                string planeName = planeObj.name;
-                int planeLevel = ExtractLevelFromPlaneName2(planeName);
-
-                if (planeLevel == level)
-                {
-                    planeObj.SetActive(true);
-                    Debug.Log($"활성화된 Plane: {planeName}");
-                }
-            }
-        }
     }
 
+    /// <summary>
+    /// 플레인의 이름에서 _를 기준으로 숫자를 뽑아내어 반환한다.
+    /// </summary>
+    /// <param name="planeName"></param>
+    /// <returns></returns>
     private int ExtractLevelFromPlaneName(string planeName)
     {
         string[] parts = planeName.Split('_');
         if (parts.Length > 1 && int.TryParse(parts[1], out int level))
         {
-            return level;
-        }
-        Debug.LogWarning($"Plane 이름에서 레벨을 추출할 수 없습니다: {planeName}");
-        return 0;
-    }
-
-    private int ExtractLevelFromPlaneName2(string planeName)
-    {
-        string[] parts = planeName.Split('_');
-        if (parts.Length > 2 && int.TryParse(parts[2], out int level))
-        {
-            Debug.Log($"{parts[2]} and {level}");
             return level;
         }
         Debug.LogWarning($"Plane 이름에서 레벨을 추출할 수 없습니다: {planeName}");
@@ -482,6 +488,10 @@ public class PlacementSystem : MonoBehaviour
     // 성공함으로서 2층 해금 시, 건축모드에서는 2층 그리드가 활성화가 됌
     // 조건은 무조건 땅을 모두 구매한 후에 해금 되도록 설정
 
+
+    /// <summary>
+    /// 버튼의 기능으로서, 함수가 실행되면 2층 플레인이 모두 활성화가 되며, 그리드 건설 반경이 확대된다.
+    /// </summary>
     private void PurchaseOtherFloor()
     {
         if (!FloorLock) return; 
@@ -496,6 +506,9 @@ public class PlacementSystem : MonoBehaviour
     #endregion
     
     #region 건설 상태
+    /// <summary>
+    /// 건설모드가 되었을 때, 건설UI와 그리드를 활성화한다.
+    /// </summary>
     public void EnterBuildMode()
     {
         inputManager.isBuildMode = true;
@@ -508,7 +521,10 @@ public class PlacementSystem : MonoBehaviour
 
         Debug.Log("건설 상태 진입: BuildUI와 Grid 활성화");
     }
-    
+
+    /// <summary>
+    /// 건설모드에서 해제 되었을 때, 건설UI와 그리드를 비활성화한다.
+    /// </summary>
     public void ExitBuildMode()
     {
         inputManager.isBuildMode = false;

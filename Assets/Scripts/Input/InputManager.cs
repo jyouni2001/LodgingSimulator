@@ -5,22 +5,23 @@ using DG.Tweening; // DOTween 사용을 위해 추가
 
 public class InputManager : MonoBehaviour
 {
+    [Header("컴포넌트")]
     [SerializeField] private PlacementSystem placementSystem;
     [SerializeField] private Camera cam;
     [SerializeField] private LayerMask placementLayermask;
-    private Vector3 lastPosition;
     
-    public event Action OnClicked, OnExit;
-    public GameObject BuildUI;
-    public RaycastHit hit;
-    public RaycastHit hit2; 
-    [SerializeField] private LayerMask batchedLayer;
-    
-    public bool isBuildMode = false;
+    private Vector3 lastPosition;   // 마지막 좌표 변수
     private Vector3 uiShowPosition; // BuildUI가 보이는 위치
     private Vector3 uiHidePosition; // BuildUI가 숨겨진 위치
-    private Tween uiTween; // 현재 실행 중인 트윈 저장
+    private Tween   uiTween; // 현재 실행 중인 트윈 저장
 
+    [Header("변수")]
+    [SerializeField] private LayerMask batchedLayer;
+    public event Action OnClicked, OnExit;
+    public GameObject   BuildUI;
+    public RaycastHit   hit;
+    public RaycastHit   hit2; 
+    public bool         isBuildMode = false;
     public bool IsPointerOverUI() => EventSystem.current.IsPointerOverGameObject();
 
     private void Start()
@@ -88,7 +89,9 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    // BuildUI를 위로 올리는 애니메이션
+    /// <summary>
+    /// BuildUI를 위로 올리는 Dotween 애니메이션 코드
+    /// </summary>
     private void ShowBuildUI()
     {
         if (BuildUI == null) return;
@@ -110,7 +113,9 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    // BuildUI를 아래로 내리는 애니메이션
+    /// <summary>
+    /// BuildUI를 아래로 내리는 Dotween 애니메이션 코드
+    /// </summary>
     private void HideBuildUI()
     {
         if (BuildUI == null) return;
@@ -135,6 +140,10 @@ public class InputManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 마우스를 통해 실시간으로 좌표를 반환한다.
+    /// </summary>
+    /// <returns></returns>
     public Vector3 GetSelectedMapPosition()
     {
         if (cam is null)
@@ -153,9 +162,14 @@ public class InputManager : MonoBehaviour
             lastPosition = hit.point;
         }
 
+        // 위 코드는 그리드에 맞게 건설할 수 있도록 그대로 둔다.
+        // 아래 코드를 통해, 총 5층의 레이캐스트가 작동하도록 하고, 1~5층 각각의 레이어를 가진 오브젝트를 둔다.
+        // 층수가 올라가는 버튼을 누를 때 마다 그 층외의 나머지 층 레이어는 전부 비활성화 시킨다.
+
         if (Physics.Raycast(ray, out hit2, 100, batchedLayer))
         {
             Debug.Log(hit2.collider.name);
+            Debug.Log(hit2.transform.gameObject.layer);
         }
         
         return lastPosition;
