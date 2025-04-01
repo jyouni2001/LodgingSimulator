@@ -59,7 +59,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 6217b96195aad6d438f81c6e13d11d7b, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: bf30319c1826cc64eb2ac1e72c8c0823, type: 2}
+      objectReference: {fileID: 2100000, guid: 6a7c5276122d3f14dbb67595652590e3, type: 2}
     - target: {fileID: 919132149155446097, guid: 6217b96195aad6d438f81c6e13d11d7b, type: 3}
       propertyPath: m_Name
       value: Sunbad_03

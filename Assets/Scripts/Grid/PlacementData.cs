@@ -10,10 +10,18 @@ public class PlacementData
     public int ID { get; private set; }
     public int PlacedObjectIndex { get; private set; }
 
-    public PlacementData(List<Vector3Int> occupiedPositions, int id, int placedObjectIndex)
+
+    // KindIndex
+    // 0 = 바닥 오브젝트
+    // 1 = 건축 오브젝트
+    
+    public int kindIndex { get; private set; }
+
+    public PlacementData(List<Vector3Int> occupiedPositions, int id, int placedObjectIndex, int kindOfIndex)
     {
         this.occupiedPositions = occupiedPositions;
         ID = id;
         PlacedObjectIndex = placedObjectIndex;
+        kindIndex = kindOfIndex;
     }
 }

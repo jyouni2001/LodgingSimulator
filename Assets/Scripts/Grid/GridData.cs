@@ -22,10 +22,10 @@ public class GridData
     /// <param name="rotation"></param>
     /// <param name="grid"></param>
     /// <exception cref="Exception"></exception>
-    public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex, Quaternion rotation, Grid grid)
+    public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex, int kindOfIndex, Quaternion rotation, Grid grid)
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
-        PlacementData data = new PlacementData(positions, ID, placedObjectIndex);
+        PlacementData data = new PlacementData(positions, ID, placedObjectIndex, kindOfIndex);
 
         foreach (var pos in positions)
         {
