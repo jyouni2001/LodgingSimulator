@@ -22,14 +22,14 @@ public class GridData
     /// <param name="rotation"></param>
     /// <param name="grid"></param>
     /// <exception cref="Exception"></exception>
-    public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex, int kindOfIndex, Quaternion rotation, Grid grid)
+    public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex, int kindOfIndex, Quaternion rotation, Grid grid, bool isWall)
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
         PlacementData data = new PlacementData(positions, ID, placedObjectIndex, kindOfIndex);
 
         foreach (var pos in positions)
         {
-            if (placedObjects.ContainsKey(pos))
+            if (!isWall && placedObjects.ContainsKey(pos))
             {
                 throw new Exception($"이 셀({pos})은 이미 딕셔너리에 포함되어있다");
             }
@@ -170,9 +170,11 @@ public class GridData
     /// <param name="rotation"></param>
     /// <param name="grid"></param>
     /// <returns></returns>
-    public bool CanPlaceObjectAt(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid)
+    public bool CanPlaceObjectAt(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid, bool isWall)
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
+
+        if (isWall) return true;
 
         foreach (var pos in positions)
         {

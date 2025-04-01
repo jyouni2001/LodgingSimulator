@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// ¼³Ä¡µÈ ¿ÀºêÁ§Æ®ÀÇ µ¥ÀÌÅÍ¸¦ ÀúÀåÇÏ´Â Å¬·¡½º
+/// ì„¤ì¹˜ëœ ì˜¤ë¸Œì íŠ¸ì˜ ë°ì´í„°ë¥¼ ì €ì¥í•˜ëŠ” í´ë˜ìŠ¤
 /// </summary>
-public class PlacementData
+public class PlacementData 
 {
     public List<Vector3Int> occupiedPositions;
     public int ID { get; private set; }
@@ -12,8 +12,9 @@ public class PlacementData
 
 
     // KindIndex
-    // 0 = ¹Ù´Ú ¿ÀºêÁ§Æ®
-    // 1 = °ÇÃà ¿ÀºêÁ§Æ®
+    // 0 = ë°”ë‹¥ ì˜¤ë¸Œì íŠ¸
+    // 1 = ê°€êµ¬ ì˜¤ë¸Œì íŠ¸
+    // 2 = ë²½ ì˜¤ë¸Œì íŠ¸
     
     public int kindIndex { get; private set; }
 

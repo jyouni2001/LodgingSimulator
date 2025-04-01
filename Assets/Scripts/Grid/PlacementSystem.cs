@@ -7,7 +7,7 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private GameObject mouseIndicator;
     [SerializeField] private GameObject cellIndicatorPrefab;
     private List<GameObject> cellIndicators = new List<GameObject>();
-    
+
     [Header("컴포넌트")]
     [SerializeField] private InputManager inputManager;
     [SerializeField] private ObjectPlacer objectPlacer;
@@ -18,19 +18,19 @@ public class PlacementSystem : MonoBehaviour
     [Header("그리드 관련")]
     [SerializeField] private List<GameObject> gridVisualization;
     [SerializeField] private List<Bounds> planeBounds;
-    
+
     [Header("플레인 리스트")]
     [SerializeField] private List<GameObject> plane;
     [SerializeField] private List<GameObject> plane2f;
     [SerializeField] private List<GameObject> plane3f;
     [SerializeField] private List<GameObject> plane4f;
-    
+
     private int selectedObjectIndex = -1;
-    private GridData floorData, furnitureData;
+    private GridData floorData, furnitureData, wallData;
     private Renderer previewRenderer;
     private Vector3Int gridPosition;
-    private Quaternion previewRotation = Quaternion.identity; 
-    
+    private Quaternion previewRotation = Quaternion.identity;
+
     [Header("땅 구매 버튼")]
     [SerializeField] private Button purchaseButton;
     [SerializeField] private Button purchase2FButton;
@@ -48,12 +48,12 @@ public class PlacementSystem : MonoBehaviour
         {
             purchaseButton.onClick.AddListener(PurchaseNextLand);
         }
-        
+
         if (purchase2FButton != null)
         {
             purchase2FButton.onClick.AddListener(PurchaseOtherFloor);
         }
-        
+
     }
 
     private void Update()
@@ -67,7 +67,7 @@ public class PlacementSystem : MonoBehaviour
         if (selectedObjectIndex < 0) return;
 
         IndicatorPos();
-        PreviewObjectFunc();        
+        PreviewObjectFunc();
     }
 
     #region 플레인 초기화
@@ -148,6 +148,7 @@ public class PlacementSystem : MonoBehaviour
     {
         floorData = new GridData();
         furnitureData = new GridData();
+        wallData = new GridData();
     }
     #endregion
 
@@ -163,7 +164,7 @@ public class PlacementSystem : MonoBehaviour
             Debug.LogWarning("plane 리스트가 null이거나 비어 있습니다.");
             return;
         }
-        
+
         planeBounds.Clear();
 
         if (plane[0] != null)
@@ -194,7 +195,7 @@ public class PlacementSystem : MonoBehaviour
                 {
                     Bounds rendererBounds = planeRenderer.bounds;
                     rendererBounds.Expand(new Vector3(0, 1, 0));
-                    
+
                     bool alreadyExists = planeBounds.Exists(b => b.center == rendererBounds.center && b.size == rendererBounds.size);
                     if (!alreadyExists)
                     {
@@ -204,8 +205,8 @@ public class PlacementSystem : MonoBehaviour
                 }
             }
         }
-        
-        if(FloorLock)
+
+        if (FloorLock)
         {
             foreach (GameObject planeRend in plane2f)
             {
@@ -216,7 +217,7 @@ public class PlacementSystem : MonoBehaviour
                     {
                         Bounds rendererBounds = planeRenderer.bounds;
                         rendererBounds.Expand(new Vector3(0, 1, 0));
-                    
+
                         bool alreadyExists = planeBounds.Exists(b => b.center == rendererBounds.center && b.size == rendererBounds.size);
                         if (!alreadyExists)
                         {
@@ -234,14 +235,14 @@ public class PlacementSystem : MonoBehaviour
     public void StartPlacement(int ID)
     {
         StopPlacement();
-        
+
         selectedObjectIndex = database.objectsData.FindIndex(data => data.ID == ID);
         if (selectedObjectIndex < 0)
         {
             Debug.LogError($"No Id Found{ID}");
             return;
         }
-        
+
         CreatePreview();
         inputManager.OnClicked += PlaceStructure;
         inputManager.OnExit += StopPlacement;
@@ -253,7 +254,7 @@ public class PlacementSystem : MonoBehaviour
     public void CreatePreview()
     {
         if (selectedObjectIndex < 0 || selectedObjectIndex >= database.objectsData.Count) return;
-        
+
         if (previewObject != null)
         {
             Destroy(previewObject);
@@ -266,15 +267,13 @@ public class PlacementSystem : MonoBehaviour
     private void ApplyPreviewMaterial(GameObject obj)
     {
         Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+        MaterialPropertyBlock propBlock = new MaterialPropertyBlock();
+
         foreach (Renderer renderer in renderers)
         {
-            Material material = renderer.material;
-            material.color = new Color(1f, 1f, 1f, 0.5f);
-            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            material.SetInt("_ZWrite", 0);
-            material.EnableKeyword("_ALPHABLEND_ON");
-            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            renderer.GetPropertyBlock(propBlock);
+            propBlock.SetColor("_Color", new Color(1f, 1f, 1f, 0.5f));
+            renderer.SetPropertyBlock(propBlock);
         }
     }
     #endregion
@@ -294,10 +293,41 @@ public class PlacementSystem : MonoBehaviour
         if (!placementValidity) return;
 
         Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition);
+
         int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
 
-        GridData selectedData = database.objectsData[selectedObjectIndex].kindIndex == 0 ? floorData : furnitureData;
-        selectedData.AddObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, database.objectsData[selectedObjectIndex].ID, index, database.objectsData[selectedObjectIndex].kindIndex, previewRotation, grid);
+        //GridData selectedData = database.objectsData[selectedObjectIndex].kindIndex == 0 ? floorData : furnitureData;
+
+        GridData selectedData;
+
+        switch (database.objectsData[selectedObjectIndex].kindIndex)
+        {
+            case 0:
+                selectedData = floorData;
+                break;
+            case 1:
+                selectedData = furnitureData;
+                break;
+            case 2:
+                selectedData = wallData;
+                break;
+            default:
+                selectedData = furnitureData; // 또는 기본값 설정
+                break;
+        }
+
+
+        bool isWall = database.objectsData[selectedObjectIndex].IsWall;
+        selectedData.AddObjectAt(
+            gridPosition, 
+            database.objectsData[selectedObjectIndex].Size, 
+            database.objectsData[selectedObjectIndex].ID, 
+            index, 
+            database.objectsData[selectedObjectIndex].kindIndex, 
+            previewRotation, 
+            grid,
+            isWall
+            );
         /*GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
         selectedData.AddObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, database.objectsData[selectedObjectIndex].ID, index, previewRotation, grid);*/
 
@@ -309,8 +339,9 @@ public class PlacementSystem : MonoBehaviour
     private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
     {
         GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
+        bool isWall = database.objectsData[selectedObjectIndex].IsWall;
 
-        if (!selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid))
+        if (!selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid, isWall))
         {
             return false;
         }
@@ -345,12 +376,12 @@ public class PlacementSystem : MonoBehaviour
     private void StopPlacement()
     {
         selectedObjectIndex = -1;
-        
+
         foreach (GameObject indicator in cellIndicators)
         {
             indicator.SetActive(false);
         }
-        
+
         inputManager.OnClicked -= PlaceStructure;
         inputManager.OnExit -= StopPlacement;
 
@@ -367,7 +398,7 @@ public class PlacementSystem : MonoBehaviour
     {
         bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex, previewRotation);
 
-        if (previewRenderer != null)
+        if (previewRenderer is not null)
         {
             previewRenderer.material.color = placementValidity ? Color.white : Color.red;
         }
@@ -376,7 +407,7 @@ public class PlacementSystem : MonoBehaviour
             Debug.LogWarning("previewRenderer가 null입니다.");
         }
 
-        if (previewObject != null)
+        if (previewObject is not null)
         {
             previewObject.transform.position = grid.GetCellCenterWorld(gridPosition);
             previewObject.transform.rotation = previewRotation;
@@ -393,7 +424,7 @@ public class PlacementSystem : MonoBehaviour
                 UpdateCellIndicators();
             }
         }
-        
+
         foreach (GameObject indicator in cellIndicators)
         {
             if (indicator.activeSelf)
@@ -414,7 +445,7 @@ public class PlacementSystem : MonoBehaviour
         UpdateGridBounds();
     }
     #endregion
-    
+
     #region 땅 구매
 
     /// <summary>
@@ -428,7 +459,7 @@ public class PlacementSystem : MonoBehaviour
 
         ActivatePlanesByLevel(currentPurchaseLevel);
         UpdateGridBounds();
-        
+
         if (currentPurchaseLevel >= 4)
         {
             Debug.Log("모든 땅이 구매되었습니다!");
@@ -438,7 +469,7 @@ public class PlacementSystem : MonoBehaviour
             }
             return;
         }
-        
+
         Debug.Log($"현재 구매 단계: {currentPurchaseLevel}, 활성화된 Plane 수: {gridVisualization.Count}");
     }
 
@@ -496,7 +527,13 @@ public class PlacementSystem : MonoBehaviour
     /// </summary>
     private void PurchaseOtherFloor()
     {
-        if (!FloorLock) return; 
+        if (!FloorLock) return;
+
+        if (currentPurchaseLevel < 4)
+        {
+            Debug.LogWarning("모든 땅을 구매한 후에만 2층을 구매할 수 있습니다.");
+            return;
+        }
 
         foreach (GameObject planeObj in plane2f)
         {
@@ -506,7 +543,7 @@ public class PlacementSystem : MonoBehaviour
     }
 
     #endregion
-    
+
     #region 건설 상태
     /// <summary>
     /// 건설모드가 되었을 때, 건설UI와 그리드를 활성화한다.
@@ -540,6 +577,6 @@ public class PlacementSystem : MonoBehaviour
 
         Debug.Log("건설 상태 종료: BuildUI와 Grid 비활성화");
     }
-    
+
     #endregion
 }

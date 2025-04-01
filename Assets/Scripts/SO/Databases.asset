@@ -16,40 +16,48 @@ MonoBehaviour:
   - <Name>k__BackingField: Lv1Floor
     <ID>k__BackingField: 0
     <kindIndex>k__BackingField: 0
+    IsWall: 0
     <Size>k__BackingField: {x: 1, y: 1}
     <Prefab>k__BackingField: {fileID: 4222678383280253326, guid: 61f9493f02cbac1468190342e6bfa3cc, type: 3}
   - <Name>k__BackingField: Parasol_Blue
     <ID>k__BackingField: 1
     <kindIndex>k__BackingField: 1
+    IsWall: 0
     <Size>k__BackingField: {x: 1, y: 1}
     <Prefab>k__BackingField: {fileID: 4952451260224711998, guid: f571231ec60b2d441900cf0e394103f8, type: 3}
   - <Name>k__BackingField: Parasol_Green
     <ID>k__BackingField: 2
     <kindIndex>k__BackingField: 1
+    IsWall: 0
     <Size>k__BackingField: {x: 1, y: 1}
     <Prefab>k__BackingField: {fileID: 8546872736702389067, guid: 559b6a6cac4b00e4a815b02a92551dd2, type: 3}
   - <Name>k__BackingField: Parasol_Red
     <ID>k__BackingField: 3
     <kindIndex>k__BackingField: 1
+    IsWall: 0
     <Size>k__BackingField: {x: 1, y: 1}
     <Prefab>k__BackingField: {fileID: 492126605181440544, guid: 83a9ec598851ff44693032cd849f09f7, type: 3}
   - <Name>k__BackingField: Sunbad_01
     <ID>k__BackingField: 4
     <kindIndex>k__BackingField: 1
+    IsWall: 0
     <Size>k__BackingField: {x: 1, y: 2}
     <Prefab>k__BackingField: {fileID: 5339254077502016075, guid: 9345cfe222ffa7c40897c380abfee2df, type: 3}
   - <Name>k__BackingField: Sunbad_02
     <ID>k__BackingField: 5
     <kindIndex>k__BackingField: 1
+    IsWall: 0
     <Size>k__BackingField: {x: 1, y: 2}
     <Prefab>k__BackingField: {fileID: 4332167019870937627, guid: 329a20f02f9676c489effd8edd7c238d, type: 3}
   - <Name>k__BackingField: Sunbad_03
     <ID>k__BackingField: 6
     <kindIndex>k__BackingField: 1
+    IsWall: 0
     <Size>k__BackingField: {x: 1, y: 2}
     <Prefab>k__BackingField: {fileID: 1897029453333840634, guid: 661088bc2ce11de488929adb1ef2038e, type: 3}
   - <Name>k__BackingField: Wall
     <ID>k__BackingField: 7
-    <kindIndex>k__BackingField: 1
+    <kindIndex>k__BackingField: 2
+    IsWall: 1
     <Size>k__BackingField: {x: 1, y: 1}
     <Prefab>k__BackingField: {fileID: 1131916258191136379, guid: 1ae2e3d8674d4be4c82a724dc5028ab7, type: 3}

@@ -8,8 +8,8 @@ public class ObjectPlacer : MonoBehaviour
     [SerializeField] private InputManager inputManager;
 
     /// <summary>
-    /// ¸Å°³ º¯¼öÀÇ ¿ÀºêÁ§Æ®µéÀ» ¹èÄ¡ÇÑ´Ù.
-    /// </summary>
+    /// ë§¤ê°œ ë³€ìˆ˜ì˜ ì˜¤ë¸Œì íŠ¸ë“¤ì„ ë°°ì¹˜í•œë‹¤.
+    /// </summary> 
     /// <param name="prefab"></param>
     /// <param name="position"></param>
     /// <param name="rotation"></param>

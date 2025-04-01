@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// °ÇÃà¹°µéÀÇ µ¥ÀÌÅÍ¸¦ ÀúÀåÇÏ´Â ½ºÅ©¸³ÅÍºí¿ÀºêÁ§Æ® 
+/// ê±´ì¶•ë¬¼ë“¤ì˜ ë°ì´í„°ë¥¼ ì €ì¥í•˜ëŠ” ìŠ¤í¬ë¦½í„°ë¸”ì˜¤ë¸Œì íŠ¸ 
 /// </summary>
 [CreateAssetMenu]
 public class ObjectsDatabaseSO : ScriptableObject
@@ -22,6 +22,9 @@ public class ObjectData
 
     [field : SerializeField]
     public int kindIndex { get; private set; }
+
+    [field: SerializeField]
+    public bool IsWall; 
 
     [field: SerializeField] 
     public Vector2Int Size { get; private set; } = Vector2Int.one;
