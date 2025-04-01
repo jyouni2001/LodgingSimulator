@@ -4,6 +4,25 @@ using UnityEngine.UI;
 
 public class PlacementSystem : MonoBehaviour
 {
+    // 싱글톤 인스턴스
+    private static PlacementSystem _instance;
+
+    public static PlacementSystem Instance
+    {
+        get
+        {
+            if (_instance is null)
+            {
+                _instance = FindFirstObjectByType<PlacementSystem>();
+                if (_instance is null)
+                {
+                    Debug.LogError("PlacementSystem 인스턴스가 씬에 존재하지 않습니다. PlacementSystem 오브젝트를 추가해주세요.");
+                }
+            }
+            return _instance;
+        }
+    }
+
     [SerializeField] private GameObject mouseIndicator;
     [SerializeField] private GameObject cellIndicatorPrefab;
     private List<GameObject> cellIndicators = new List<GameObject>();
@@ -12,7 +31,7 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private InputManager inputManager;
     [SerializeField] private ObjectPlacer objectPlacer;
     [SerializeField] private Grid grid;
-    [SerializeField] private ObjectsDatabaseSO database;
+    public ObjectsDatabaseSO database;
     [SerializeField] private GameObject previewObject;
 
     [Header("그리드 관련")]
@@ -37,6 +56,21 @@ public class PlacementSystem : MonoBehaviour
     private int currentPurchaseLevel = 1;
 
     private bool FloorLock = false;
+    private void Awake()
+    {
+        // 싱글톤 인스턴스 설정
+        if (_instance is not null && _instance != this)
+        {
+            Debug.LogWarning("이미 PlacementSystem 인스턴스가 존재합니다. 이 인스턴스를 파괴합니다.");
+            Destroy(gameObject);
+            return;
+        }
+        _instance = this;
+
+        // 씬 전환 시 파괴되지 않도록 설정 (선택 사항)
+        // DontDestroyOnLoad(gameObject);
+    }
+
     private void Start()
     {
         StopPlacement();
@@ -132,7 +166,7 @@ public class PlacementSystem : MonoBehaviour
         for (int i = 0; i < requiredIndicators && i < positions.Count; i++)
         {
             cellIndicators[i].SetActive(true);
-            cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]) - new Vector3(0, .499f, 0);
+            cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]) - new Vector3(0, .498f, 0);
             // 셀 인디케이터를 X축 90도로 고정 (평면에 맞게)
             cellIndicators[i].transform.rotation = Quaternion.Euler(90, 0, 0);
         }
@@ -432,7 +466,8 @@ public class PlacementSystem : MonoBehaviour
                 Renderer renderer = indicator.GetComponentInChildren<Renderer>();
                 if (renderer != null)
                 {
-                    renderer.material.color = placementValidity ? Color.white : Color.red;
+                    renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.2f) : new Color(1f, 0f, 0f, 0.5f);
+
                 }
             }
         }

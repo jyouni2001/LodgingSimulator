@@ -29,12 +29,36 @@ public class GridData
 
         foreach (var pos in positions)
         {
-            if (!isWall && placedObjects.ContainsKey(pos))
+            if (placedObjects.ContainsKey(pos))
+            {
+                PlacementData existingObject = placedObjects[pos];
+                // 설치하려는 오브젝트가 벽인 경우
+                if (isWall)
+                {
+                    // 해당 위치에 이미 벽이 아닌 오브젝트가 있으면 예외 발생
+                    if (!PlacementSystem.Instance.database.objectsData
+                        .Find(data => data.ID == existingObject.ID).IsWall)
+                    {
+                        throw new Exception($"이 셀({pos})은 벽이 아닌 오브젝트로 이미 점유되어 있습니다.");
+                    }
+                }
+                // 설치하려는 오브젝트가 벽이 아닌 경우
+                else
+                {
+                    throw new Exception($"이 셀({pos})은 이미 딕셔너리에 포함되어있다");
+                }
+            }
+            placedObjects[pos] = data; // 벽이면 기존 데이터를 덮어씀
+        }
+
+        /*foreach (var pos in positions)
+        {
+            if (placedObjects.ContainsKey(pos))
             {
                 throw new Exception($"이 셀({pos})은 이미 딕셔너리에 포함되어있다");
             }
             placedObjects[pos] = data;
-        }
+        }*/
     }
     #endregion
 
@@ -174,7 +198,29 @@ public class GridData
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
 
-        if (isWall) return true;
+        foreach (var pos in positions)
+        {
+            if (placedObjects.ContainsKey(pos))
+            {
+                PlacementData existingObject = placedObjects[pos];
+                // 설치하려는 오브젝트가 벽인 경우
+                if (isWall)
+                {
+                    // 해당 위치에 이미 벽이 아닌 오브젝트가 있으면 설치 불가
+                    if (!PlacementSystem.Instance.database.objectsData
+                        .Find(data => data.ID == existingObject.ID).IsWall)
+                    {
+                        return false; // 벽이 아닌 오브젝트와 겹치므로 설치 불가
+                    }
+                }
+                // 설치하려는 오브젝트가 벽이 아닌 경우
+                else
+                {
+                    return false; // 이미 점유된 위치이므로 설치 불가
+                }
+            }
+        }
+        /*if (isWall) return true;
 
         foreach (var pos in positions)
         {
@@ -182,7 +228,7 @@ public class GridData
             {
                 return false;
             }
-        }
+        }*/
 
         return true;
     }
