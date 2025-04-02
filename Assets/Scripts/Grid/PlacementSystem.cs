@@ -56,6 +56,8 @@ public class PlacementSystem : MonoBehaviour
     private int currentPurchaseLevel = 1;
 
     private bool FloorLock = false;
+    
+    [SerializeField] private GridData selectedData;
     private void Awake()
     {
         // 싱글톤 인스턴스 설정
@@ -78,6 +80,8 @@ public class PlacementSystem : MonoBehaviour
         InitializeGridBounds();
         InitializePlane();
 
+        database.InitializeDictionary();
+        
         if (purchaseButton != null)
         {
             purchaseButton.onClick.AddListener(PurchaseNextLand);
@@ -141,7 +145,22 @@ public class PlacementSystem : MonoBehaviour
         Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
         int requiredIndicators = objectSize.x * objectSize.y;
 
-        while (cellIndicators.Count < requiredIndicators)
+        // 최대 인디케이터 수 제한
+        const int maxIndicators = 50; // 적절한 값으로 설정
+        while (cellIndicators.Count < requiredIndicators && cellIndicators.Count < maxIndicators)
+        {
+            GameObject newIndicator = Instantiate(cellIndicatorPrefab, transform);
+            cellIndicators.Add(newIndicator);
+            if (previewRenderer == null)
+            {
+                previewRenderer = newIndicator.GetComponentInChildren<Renderer>();
+                if (previewRenderer == null)
+                {
+                    Debug.LogError("cellIndicatorPrefab에 Renderer가 없습니다!");
+                }
+            }
+        }
+        /*while (cellIndicators.Count < requiredIndicators)
         {
             GameObject newIndicator = Instantiate(cellIndicatorPrefab, transform);
             cellIndicators.Add(newIndicator);
@@ -154,9 +173,27 @@ public class PlacementSystem : MonoBehaviour
                     Debug.LogError("cellIndicatorPrefab에 Renderer가 없습니다!");
                 }
             }
+        }*/
+        
+        for (int i = 0; i < cellIndicators.Count; i++)
+        {
+            if (i < requiredIndicators)
+            {
+                cellIndicators[i].SetActive(true);
+                List<Vector3Int> positions = floorData.CalculatePosition(gridPosition, objectSize, previewRotation, grid);
+                if (i < positions.Count)
+                {
+                    cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]) - new Vector3(0, .499f, 0);
+                    cellIndicators[i].transform.rotation = Quaternion.Euler(90, 0, 0);
+                }
+            }
+            else
+            {
+                cellIndicators[i].SetActive(false);
+            }
         }
 
-        for (int i = requiredIndicators; i < cellIndicators.Count; i++)
+        /*for (int i = requiredIndicators; i < cellIndicators.Count; i++)
         {
             cellIndicators[i].SetActive(false);
         }
@@ -169,7 +206,7 @@ public class PlacementSystem : MonoBehaviour
             cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]) - new Vector3(0, .498f, 0);
             // 셀 인디케이터를 X축 90도로 고정 (평면에 맞게)
             cellIndicators[i].transform.rotation = Quaternion.Euler(90, 0, 0);
-        }
+        }*/
     }
     #endregion
 
@@ -332,24 +369,25 @@ public class PlacementSystem : MonoBehaviour
 
         //GridData selectedData = database.objectsData[selectedObjectIndex].kindIndex == 0 ? floorData : furnitureData;
 
-        GridData selectedData;
-
         switch (database.objectsData[selectedObjectIndex].kindIndex)
         {
             case 0:
                 selectedData = floorData;
+                Debug.Log("현재 상태: floorData");
                 break;
             case 1:
                 selectedData = furnitureData;
+                Debug.Log("현재 상태: furnitureData");
                 break;
             case 2:
                 selectedData = wallData;
+                Debug.Log("현재 상태: wallData");
                 break;
             default:
-                selectedData = furnitureData; // 또는 기본값 설정
+                selectedData = furnitureData;
+                Debug.Log("현재 상태: furnitureData (기본값)");
                 break;
         }
-
 
         bool isWall = database.objectsData[selectedObjectIndex].IsWall;
         selectedData.AddObjectAt(
@@ -372,7 +410,25 @@ public class PlacementSystem : MonoBehaviour
     #region 점유상태 확인
     private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
     {
-        GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
+        selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
+        
+        /*switch (database.objectsData[selectedObjectIndex].kindIndex)
+        {
+            case 0:
+                selectedData = floorData;
+                break;
+            case 1:
+                selectedData = furnitureData;
+                break;
+            case 2:
+                selectedData = wallData;
+                break;
+            default:
+                selectedData = furnitureData;
+                break;
+        }
+        */
+        
         bool isWall = database.objectsData[selectedObjectIndex].IsWall;
 
         if (!selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid, isWall))

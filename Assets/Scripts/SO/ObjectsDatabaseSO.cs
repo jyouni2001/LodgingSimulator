@@ -9,6 +9,22 @@ using UnityEngine;
 public class ObjectsDatabaseSO : ScriptableObject
 {
     public List<ObjectData> objectsData;
+    //최적화 시도
+    private Dictionary<int, ObjectData> objectDataDict;
+    
+    public void InitializeDictionary()
+    {
+        objectDataDict = new Dictionary<int, ObjectData>();
+        foreach (var data in objectsData)
+        {
+            objectDataDict[data.ID] = data;
+        }
+    }
+    
+    public ObjectData GetObjectData(int id)
+    {
+        return objectDataDict.TryGetValue(id, out var data) ? data : null;
+    }
 }
 
 [Serializable]

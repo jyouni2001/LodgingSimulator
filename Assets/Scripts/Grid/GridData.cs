@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// 그리드 데이터를 저장하는 클래스
@@ -8,7 +9,10 @@ using System.Collections.Generic;
 public class GridData
 {
     // 설치된 오브젝트 데이터가 담긴 딕셔너리
-    private Dictionary<Vector3Int, PlacementData> placedObjects = new();
+    //private Dictionary<Vector3Int, PlacementData> placedObjects = new();
+    
+    //최적화 시도
+    private Dictionary<Vector3Int, List<PlacementData>> placedObjects = new();
 
     #region 딕셔너리에 설치된 오브젝트 포함
 
@@ -27,7 +31,7 @@ public class GridData
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
         PlacementData data = new PlacementData(positions, ID, placedObjectIndex, kindOfIndex);
 
-        foreach (var pos in positions)
+        /*foreach (var pos in positions)
         {
             if (placedObjects.ContainsKey(pos))
             {
@@ -49,6 +53,21 @@ public class GridData
                 }
             }
             placedObjects[pos] = data; // 벽이면 기존 데이터를 덮어씀
+        }*/
+        
+        foreach (var pos in positions)
+        {
+            if (!placedObjects.ContainsKey(pos))
+            {
+                placedObjects[pos] = new List<PlacementData>();
+            }
+
+            var existingObjects = placedObjects[pos];
+            if (!isWall && existingObjects.Count > 0)
+            {
+                throw new Exception($"이 셀({pos})은 이미 딕셔너리에 포함되어있다");
+            }
+            placedObjects[pos].Add(data);
         }
 
         /*foreach (var pos in positions)
@@ -198,7 +217,7 @@ public class GridData
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
 
-        foreach (var pos in positions)
+        /*foreach (var pos in positions)
         {
             if (placedObjects.ContainsKey(pos))
             {
@@ -219,7 +238,28 @@ public class GridData
                     return false; // 이미 점유된 위치이므로 설치 불가
                 }
             }
+        }*/
+        
+        //최적화 시도
+        foreach (var pos in positions)
+        {
+            if (placedObjects.ContainsKey(pos) && placedObjects[pos].Count > 0)
+            {
+                var existingObjects = placedObjects[pos];
+                if (isWall)
+                {
+                    if (existingObjects.Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
         }
+        
         /*if (isWall) return true;
 
         foreach (var pos in positions)
