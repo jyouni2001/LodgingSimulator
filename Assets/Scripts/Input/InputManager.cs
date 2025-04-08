@@ -27,11 +27,11 @@ public class InputManager : MonoBehaviour
     private void Start()
     {
         // BuildUI의 초기 위치 설정
-        if (BuildUI != null)
+        if (BuildUI is not null)
         {
             // BuildUI의 RectTransform 사용
             RectTransform uiRect = BuildUI.GetComponent<RectTransform>();
-            if (uiRect != null)
+            if (uiRect is not null)
             {
                 // 현재 위치를 보이는 위치로 설정
                 uiShowPosition = uiRect.anchoredPosition;
@@ -94,16 +94,16 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void ShowBuildUI()
     {
-        if (BuildUI == null) return;
+        if (BuildUI is null) return;
 
         // 기존 트윈이 있으면 종료
-        if (uiTween != null)
+        if (uiTween is not null)
         {
             uiTween.Kill();
         }
 
         RectTransform uiRect = BuildUI.GetComponent<RectTransform>();
-        if (uiRect != null)
+        if (uiRect is not null)
         {
             placementSystem.EnterBuildMode();
             // DOTween으로 Y축 이동 애니메이션
@@ -118,16 +118,16 @@ public class InputManager : MonoBehaviour
     /// </summary>
     private void HideBuildUI()
     {
-        if (BuildUI == null) return;
+        if (BuildUI is null) return;
 
         // 기존 트윈이 있으면 종료
-        if (uiTween != null)
+        if (uiTween is not null)
         {
             uiTween.Kill();
         }
 
         RectTransform uiRect = BuildUI.GetComponent<RectTransform>();
-        if (uiRect != null)
+        if (uiRect is not null)
         {
             // DOTween으로 Y축 이동 애니메이션
             uiTween = uiRect.DOAnchorPosY(uiHidePosition.y, 0.5f) // 0.5초 동안 이동

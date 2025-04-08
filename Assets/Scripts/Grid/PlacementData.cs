@@ -15,6 +15,7 @@ public class PlacementData
     // 0 = 바닥 오브젝트
     // 1 = 가구 오브젝트
     // 2 = 벽 오브젝트
+    // 3 = 장식품 오브젝트
     
     public int kindIndex { get; private set; }
 

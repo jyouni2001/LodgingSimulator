@@ -12,7 +12,7 @@ public class GridData
     //private Dictionary<Vector3Int, PlacementData> placedObjects = new();
     
     //최적화 시도
-    private Dictionary<Vector3Int, List<PlacementData>> placedObjects = new();
+    public Dictionary<Vector3Int, List<PlacementData>> placedObjects = new();
 
     #region 딕셔너리에 설치된 오브젝트 포함
 
@@ -63,9 +63,25 @@ public class GridData
             }
 
             var existingObjects = placedObjects[pos];
-            if (!isWall && existingObjects.Count > 0)
+            if (!isWall) // 가구인 경우
             {
-                throw new Exception($"이 셀({pos})은 이미 딕셔너리에 포함되어있다");
+                // 같은 위치에 가구가 이미 있으면 예외 발생
+                if (existingObjects.Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                {
+                    throw new Exception($"이 셀({pos})은 이미 가구로 점유되어 있습니다.");
+                }
+                
+                // 같은 위치에 벽이 있고, 그 위치에 다른 가구가 이미 있으면 예외 발생
+                if (existingObjects.Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                {
+                    // 다른 GridData(furnitureData)에서 해당 위치에 가구가 있는지 확인
+                    var furnitureData = PlacementSystem.Instance.furnitureData; // furnitureData에 접근 (public으로 변경 필요)
+                    if (furnitureData != this && furnitureData.placedObjects.ContainsKey(pos) &&
+                        furnitureData.placedObjects[pos].Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                    {
+                        throw new Exception($"이 셀({pos})은 벽과 가구가 이미 존재하여 추가 가구를 배치할 수 없습니다.");
+                    }
+                }
             }
             placedObjects[pos].Add(data);
         }
@@ -240,7 +256,6 @@ public class GridData
             }
         }*/
         
-        //최적화 시도
         foreach (var pos in positions)
         {
             if (placedObjects.ContainsKey(pos) && placedObjects[pos].Count > 0)
@@ -248,28 +263,31 @@ public class GridData
                 var existingObjects = placedObjects[pos];
                 if (isWall)
                 {
+                    // 벽 배치 시, 가구가 이미 있으면 이후 가구 배치를 제한할 수 있음
+                    // 현재는 벽과 가구 공존을 허용하되, 가구-벽-가구 패턴은 아래에서 체크
+                    continue;
+                }
+                else // 가구인 경우
+                {
+                    // 같은 위치에 가구가 있으면 배치 불가
                     if (existingObjects.Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
                     {
                         return false;
                     }
-                }
-                else
-                {
-                    return false;
+
+                    // 같은 위치에 벽이 있고, furnitureData에 이미 가구가 있으면 배치 불가
+                    if (existingObjects.Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                    {
+                        var furnitureData = PlacementSystem.Instance.furnitureData; // furnitureData에 접근
+                        if (furnitureData != this && furnitureData.placedObjects.ContainsKey(pos) &&
+                            furnitureData.placedObjects[pos].Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                        {
+                            return false;
+                        }
+                    }
                 }
             }
         }
-        
-        /*if (isWall) return true;
-
-        foreach (var pos in positions)
-        {
-            if (placedObjects.ContainsKey(pos))
-            {
-                return false;
-            }
-        }*/
-
         return true;
     }
     #endregion

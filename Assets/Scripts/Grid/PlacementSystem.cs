@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -45,7 +46,7 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private List<GameObject> plane4f;
 
     private int selectedObjectIndex = -1;
-    private GridData floorData, furnitureData, wallData;
+    public GridData floorData, furnitureData, wallData;
     private Renderer previewRenderer;
     private Vector3Int gridPosition;
     private Quaternion previewRotation = Quaternion.identity;
@@ -56,7 +57,6 @@ public class PlacementSystem : MonoBehaviour
     private int currentPurchaseLevel = 1;
 
     private bool FloorLock = false;
-    
     [SerializeField] private GridData selectedData;
     private void Awake()
     {
@@ -106,6 +106,7 @@ public class PlacementSystem : MonoBehaviour
 
         IndicatorPos();
         PreviewObjectFunc();
+        DragPlacement();
     }
 
     #region 플레인 초기화
@@ -410,32 +411,58 @@ public class PlacementSystem : MonoBehaviour
     #region 점유상태 확인
     private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
     {
-        selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
-        
-        /*switch (database.objectsData[selectedObjectIndex].kindIndex)
-        {
-            case 0:
-                selectedData = floorData;
-                break;
-            case 1:
-                selectedData = furnitureData;
-                break;
-            case 2:
-                selectedData = wallData;
-                break;
-            default:
-                selectedData = furnitureData;
-                break;
-        }
-        */
-        
+        selectedData = GetSelectedGridData();
         bool isWall = database.objectsData[selectedObjectIndex].IsWall;
 
         if (!selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid, isWall))
         {
             return false;
         }
+        
+        // positionsToCheck를 if 블록 밖에서 정의
+        List<Vector3Int> positionsToCheck = selectedData.CalculatePosition(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
 
+        // 가구 배치 시, wallData와 furnitureData를 확인하여 가구-벽-가구 패턴 체크
+        if (!isWall) // 가구인 경우
+        {
+            foreach (var pos in positionsToCheck)
+            {
+                // wallData에 벽이 있는지 확인
+                if (wallData.placedObjects.ContainsKey(pos) &&
+                    wallData.placedObjects[pos].Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                {
+                    // furnitureData에 이미 가구가 있는지 확인
+                    if (furnitureData.placedObjects.ContainsKey(pos) &&
+                        furnitureData.placedObjects[pos].Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                    {
+                        Debug.Log($"가구-벽-가구 패턴 감지: {pos}");
+                        return false;
+                    }
+                }
+            }
+        }
+
+        foreach (Vector3Int pos in positionsToCheck)
+        {
+            Vector3 worldPos = grid.GetCellCenterWorld(pos);
+            bool isWithinBounds = planeBounds.Any(bound => bound.Contains(worldPos));
+            if (!isWithinBounds)
+            {
+                Debug.Log($"그리드 반경을 벗어남: {pos}");
+                return false;
+            }
+        }
+        
+        // 다른 GridData와의 충돌 체크 (필요 시)
+        foreach (var data in new[] { floorData, furnitureData, wallData })
+        {
+            if (data != selectedData && !data.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid, isWall))
+            {
+                return false;
+            }
+        }
+        
+        /*
         List<Vector3Int> positionsToCheck = selectedData.CalculatePosition(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
         foreach (Vector3Int pos in positionsToCheck)
         {
@@ -456,7 +483,7 @@ public class PlacementSystem : MonoBehaviour
                 Debug.Log($"그리드 반경을 벗어남: {pos}");
                 return false;
             }
-        }
+        }*/
 
         return true;
     }
@@ -496,8 +523,13 @@ public class PlacementSystem : MonoBehaviour
         {
             Debug.LogWarning("previewRenderer가 null입니다.");
         }
-
-        if (previewObject is not null)
+        
+        if (isDragging)
+        {
+            Vector3Int dragEndPosition = grid.WorldToCell(inputManager.GetSelectedMapPosition());
+            UpdateDragPreview(dragStartPosition, dragEndPosition);
+        }
+        else if (previewObject is not null)
         {
             previewObject.transform.position = grid.GetCellCenterWorld(gridPosition);
             previewObject.transform.rotation = previewRotation;
@@ -506,14 +538,26 @@ public class PlacementSystem : MonoBehaviour
             {
                 renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0f, 0f, 0.5f);
             }
-
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                previewRotation = Quaternion.Euler(0, previewRotation.eulerAngles.y + 90, 0);
-                previewObject.transform.rotation = previewRotation;
-                UpdateCellIndicators();
-            }
         }
+        
+        if (previewRenderer is not null)
+        {
+            previewRenderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0f, 0f, 0.5f);
+        }
+        
+        if (Input.GetKeyDown(KeyCode.R) && !isDragging)
+        {
+            previewRotation = Quaternion.Euler(0, previewRotation.eulerAngles.y + 90, 0);
+            if (previewObject != null) previewObject.transform.rotation = previewRotation;
+            UpdateCellIndicators();
+        }
+        
+        /*if (Input.GetKeyDown(KeyCode.R))
+        {
+            previewRotation = Quaternion.Euler(0, previewRotation.eulerAngles.y + 90, 0);
+            previewObject.transform.rotation = previewRotation;
+            UpdateCellIndicators();
+        }*/
 
         foreach (GameObject indicator in cellIndicators)
         {
@@ -669,5 +713,113 @@ public class PlacementSystem : MonoBehaviour
         Debug.Log("건설 상태 종료: BuildUI와 Grid 비활성화");
     }
 
+    #endregion
+    
+    #region 드래그 건축 
+    
+    private bool isDragging = false;
+    private Vector3Int dragStartPosition;
+
+    void DragPlacement()
+    {
+        // 드래그 시작
+        if (Input.GetMouseButtonDown(0) && !inputManager.IsPointerOverUI())
+        {
+            isDragging = true;
+            dragStartPosition = grid.WorldToCell(inputManager.GetSelectedMapPosition());
+        }
+
+        // 드래그 종료 및 배치
+        if (Input.GetMouseButtonUp(0) && isDragging)
+        {
+            isDragging = false;
+            Vector3Int dragEndPosition = grid.WorldToCell(inputManager.GetSelectedMapPosition());
+            PlaceLineStructure(dragStartPosition, dragEndPosition);
+        }
+    }
+    
+    private void PlaceLineStructure(Vector3Int startPos, Vector3Int endPos)
+    {
+        if (selectedObjectIndex < 0) return;
+
+        Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
+        bool isWall = database.objectsData[selectedObjectIndex].IsWall;
+        selectedData = GetSelectedGridData();
+
+        // X축 또는 Z축 중 더 긴 방향으로만 배치 (간단한 직선 드래그)
+        int dx = Mathf.Abs(endPos.x - startPos.x);
+        int dz = Mathf.Abs(endPos.z - startPos.z);
+        bool alongX = dx >= dz;
+
+        int stepCount = alongX ? dx + 1 : dz + 1;
+        Vector3Int stepDirection = alongX ? new Vector3Int((int)Mathf.Sign(endPos.x - startPos.x), 0, 0) 
+            : new Vector3Int(0, 0, (int)Mathf.Sign(endPos.z - startPos.z));
+
+        Vector3Int currentPos = startPos;
+        for (int i = 0; i < stepCount; i++)
+        {
+            if (CheckPlacementValidity(currentPos, selectedObjectIndex, previewRotation))
+            {
+                Vector3 worldPosition = grid.GetCellCenterWorld(currentPos);
+                int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
+                selectedData.AddObjectAt(currentPos, objectSize, database.objectsData[selectedObjectIndex].ID, index, 
+                    database.objectsData[selectedObjectIndex].kindIndex, previewRotation, grid, isWall);
+            }
+            currentPos += stepDirection;
+        }
+    }
+    
+    private GridData GetSelectedGridData()
+    {
+        switch (database.objectsData[selectedObjectIndex].kindIndex)
+        {
+            case 0: return floorData;
+            case 1: return furnitureData;
+            case 2: return wallData;
+            default: return furnitureData;
+        }
+    }
+    
+    private void UpdateDragPreview(Vector3Int startPos, Vector3Int endPos)
+    {
+        Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
+        int dx = Mathf.Abs(endPos.x - startPos.x);
+        int dz = Mathf.Abs(endPos.z - startPos.z);
+        bool alongX = dx >= dz;
+        int stepCount = alongX ? dx + 1 : dz + 1;
+        Vector3Int stepDirection = alongX ? new Vector3Int((int)Mathf.Sign(endPos.x - startPos.x), 0, 0) 
+            : new Vector3Int(0, 0, (int)Mathf.Sign(endPos.z - startPos.z));
+
+        int requiredIndicators = stepCount * objectSize.x * objectSize.y;
+        while (cellIndicators.Count < requiredIndicators)
+        {
+            GameObject newIndicator = Instantiate(cellIndicatorPrefab, transform);
+            cellIndicators.Add(newIndicator);
+        }
+
+        Vector3Int currentPos = startPos;
+        int indicatorIndex = 0;
+        for (int i = 0; i < stepCount; i++)
+        {
+            List<Vector3Int> positions = floorData.CalculatePosition(currentPos, objectSize, previewRotation, grid);
+            foreach (Vector3Int pos in positions)
+            {
+                if (indicatorIndex < cellIndicators.Count)
+                {
+                    cellIndicators[indicatorIndex].SetActive(true);
+                    cellIndicators[indicatorIndex].transform.position = grid.GetCellCenterWorld(pos) - new Vector3(0, 0.499f, 0);
+                    cellIndicators[indicatorIndex].transform.rotation = Quaternion.Euler(90, 0, 0);
+                    indicatorIndex++;
+                }
+            }
+            currentPos += stepDirection;
+        }
+
+        for (int i = indicatorIndex; i < cellIndicators.Count; i++)
+        {
+            cellIndicators[i].SetActive(false);
+        }
+    }
+    
     #endregion
 }

@@ -28,7 +28,7 @@ public class CameraCon : MonoBehaviour
     
     private void Start()
     {
-        if (cam == null)
+        if (cam is null)
         {
             Debug.LogError("CinemachineVirtualCamera가 할당되지 않았습니다!");
             enabled = false; // 컴포넌트 비활성화
@@ -66,7 +66,7 @@ public class CameraCon : MonoBehaviour
     private void CameraConfiner()
     {
         CinemachineConfiner3D confiner = cam.GetComponent<CinemachineConfiner3D>();
-        if (confiner != null && boundingVolume != null)
+        if (confiner is not null && boundingVolume is not null)
         {
             Vector3 cameraPos = cam.transform.position;
             if (!boundingVolume.bounds.Contains(cameraPos))
@@ -84,7 +84,7 @@ public class CameraCon : MonoBehaviour
     private void SmoothWheel()
     {
         float scrollInput = Input.GetAxisRaw("Mouse ScrollWheel");
-        if (scrollInput != 0)
+        if (scrollInput is not 0)
         {
             targetFOV -= scrollInput * zoomMultiplier;
             targetFOV = Mathf.Clamp(targetFOV, minFOV, maxFOV);
