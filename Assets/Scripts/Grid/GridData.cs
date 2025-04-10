@@ -313,12 +313,7 @@ public class GridData
                 }
                 else // 가구인 경우 (기존 로직과 동일)
                 {
-                    var furnitureData = PlacementSystem.Instance.furnitureData; // furnitureData에 접근
-                    if (furnitureData != this && furnitureData.placedObjects.ContainsKey(pos) &&
-                        furnitureData.placedObjects[pos].Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-                    {
                         return false;
-                    }
                 }
             }
         }
@@ -326,4 +321,5 @@ public class GridData
         return true;
     }
     #endregion
+    
 }

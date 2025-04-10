@@ -368,27 +368,7 @@ public class PlacementSystem : MonoBehaviour
 
         int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
 
-        //GridData selectedData = database.objectsData[selectedObjectIndex].kindIndex == 0 ? floorData : furnitureData;
-
-        switch (database.objectsData[selectedObjectIndex].kindIndex)
-        {
-            case 0:
-                selectedData = floorData;
-                Debug.Log("현재 상태: floorData");
-                break;
-            case 1:
-                selectedData = furnitureData;
-                Debug.Log("현재 상태: furnitureData");
-                break;
-            case 2:
-                selectedData = wallData;
-                Debug.Log("현재 상태: wallData");
-                break;
-            default:
-                selectedData = furnitureData;
-                Debug.Log("현재 상태: furnitureData (기본값)");
-                break;
-        }
+        selectedData = GetSelectedGridData();
 
         bool isWall = database.objectsData[selectedObjectIndex].IsWall;
         selectedData.AddObjectAt(
@@ -401,8 +381,6 @@ public class PlacementSystem : MonoBehaviour
             grid,
             isWall
             );
-        /*GridData selectedData = database.objectsData[selectedObjectIndex].ID == 0 ? floorData : furnitureData;
-        selectedData.AddObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, database.objectsData[selectedObjectIndex].ID, index, previewRotation, grid);*/
 
         if (inputManager.hit.transform is not null) Debug.Log($"현재 설치된 오브젝트 : {index}, 선택한 오브젝트 : {inputManager.hit.transform.name}");
     }
