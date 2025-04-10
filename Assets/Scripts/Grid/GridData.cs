@@ -313,7 +313,10 @@ public class GridData
                 }
                 else // 가구인 경우 (기존 로직과 동일)
                 {
-                        return false;
+                    if (existingObjects.Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                    {
+                        return false; // 이미 가구가 있으면 배치 불가
+                    }
                 }
             }
         }

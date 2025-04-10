@@ -161,20 +161,6 @@ public class PlacementSystem : MonoBehaviour
                 }
             }
         }
-        /*while (cellIndicators.Count < requiredIndicators)
-        {
-            GameObject newIndicator = Instantiate(cellIndicatorPrefab, transform);
-            cellIndicators.Add(newIndicator);
-            // previewRenderer가 null이면 첫 번째 셀 인디케이터에서 초기화
-            if (previewRenderer == null)
-            {
-                previewRenderer = newIndicator.GetComponentInChildren<Renderer>();
-                if (previewRenderer == null)
-                {
-                    Debug.LogError("cellIndicatorPrefab에 Renderer가 없습니다!");
-                }
-            }
-        }*/
         
         for (int i = 0; i < cellIndicators.Count; i++)
         {
@@ -193,21 +179,6 @@ public class PlacementSystem : MonoBehaviour
                 cellIndicators[i].SetActive(false);
             }
         }
-
-        /*for (int i = requiredIndicators; i < cellIndicators.Count; i++)
-        {
-            cellIndicators[i].SetActive(false);
-        }
-
-        // GridData의 CalculatePosition과 동일한 로직 사용
-        List<Vector3Int> positions = floorData.CalculatePosition(gridPosition, objectSize, previewRotation, grid);
-        for (int i = 0; i < requiredIndicators && i < positions.Count; i++)
-        {
-            cellIndicators[i].SetActive(true);
-            cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]) - new Vector3(0, .498f, 0);
-            // 셀 인디케이터를 X축 90도로 고정 (평면에 맞게)
-            cellIndicators[i].transform.rotation = Quaternion.Euler(90, 0, 0);
-        }*/
     }
     #endregion
 
