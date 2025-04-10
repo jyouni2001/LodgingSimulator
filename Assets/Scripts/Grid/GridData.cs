@@ -232,7 +232,8 @@ public class GridData
     public bool CanPlaceObjectAt(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid, bool isWall)
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
-
+        
+        //04-02 이전 사용 
         /*foreach (var pos in positions)
         {
             if (placedObjects.ContainsKey(pos))
@@ -256,7 +257,8 @@ public class GridData
             }
         }*/
         
-        foreach (var pos in positions)
+        //04-10 이전 사용
+        /*foreach (var pos in positions)
         {
             if (placedObjects.ContainsKey(pos) && placedObjects[pos].Count > 0)
             {
@@ -287,7 +289,40 @@ public class GridData
                     }
                 }
             }
+        }*/
+        
+        //04-10 이후 사용
+        foreach (var pos in positions)
+        {
+            if (placedObjects.ContainsKey(pos) && placedObjects[pos].Count > 0)
+            {
+                var existingObjects = placedObjects[pos];
+            
+                // 벽 배치 시, 해당 위치에 이미 벽이 있으면 중복 배치 방지
+                if (isWall)
+                {
+                    if (existingObjects.Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                    {
+                        return false; // 이미 벽이 있는 경우 배치 불가
+                    }
+                    // 가구 있는 경우는 기존 로직 유지
+                    if (existingObjects.Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                    {
+                        return false;
+                    }
+                }
+                else // 가구인 경우 (기존 로직과 동일)
+                {
+                    var furnitureData = PlacementSystem.Instance.furnitureData; // furnitureData에 접근
+                    if (furnitureData != this && furnitureData.placedObjects.ContainsKey(pos) &&
+                        furnitureData.placedObjects[pos].Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                    {
+                        return false;
+                    }
+                }
+            }
         }
+        
         return true;
     }
     #endregion
