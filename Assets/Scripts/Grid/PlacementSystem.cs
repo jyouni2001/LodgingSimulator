@@ -152,30 +152,15 @@ public class PlacementSystem : MonoBehaviour
         {
             GameObject newIndicator = Instantiate(cellIndicatorPrefab, transform);
             cellIndicators.Add(newIndicator);
-            if (previewRenderer == null)
+            if (previewRenderer is null)
             {
                 previewRenderer = newIndicator.GetComponentInChildren<Renderer>();
-                if (previewRenderer == null)
+                if (previewRenderer is null)
                 {
                     Debug.LogError("cellIndicatorPrefab에 Renderer가 없습니다!");
                 }
             }
         }
-        /*while (cellIndicators.Count < requiredIndicators)
-        {
-            GameObject newIndicator = Instantiate(cellIndicatorPrefab, transform);
-            cellIndicators.Add(newIndicator);
-            // previewRenderer가 null이면 첫 번째 셀 인디케이터에서 초기화
-            if (previewRenderer == null)
-            {
-                previewRenderer = newIndicator.GetComponentInChildren<Renderer>();
-                if (previewRenderer == null)
-                {
-                    Debug.LogError("cellIndicatorPrefab에 Renderer가 없습니다!");
-                }
-            }
-        }*/
-        
         for (int i = 0; i < cellIndicators.Count; i++)
         {
             if (i < requiredIndicators)
@@ -184,7 +169,7 @@ public class PlacementSystem : MonoBehaviour
                 List<Vector3Int> positions = floorData.CalculatePosition(gridPosition, objectSize, previewRotation, grid);
                 if (i < positions.Count)
                 {
-                    cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]) - new Vector3(0, .499f, 0);
+                    cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]) - new Vector3(0, .46f, 0);
                     cellIndicators[i].transform.rotation = Quaternion.Euler(90, 0, 0);
                 }
             }
@@ -193,21 +178,6 @@ public class PlacementSystem : MonoBehaviour
                 cellIndicators[i].SetActive(false);
             }
         }
-
-        /*for (int i = requiredIndicators; i < cellIndicators.Count; i++)
-        {
-            cellIndicators[i].SetActive(false);
-        }
-
-        // GridData의 CalculatePosition과 동일한 로직 사용
-        List<Vector3Int> positions = floorData.CalculatePosition(gridPosition, objectSize, previewRotation, grid);
-        for (int i = 0; i < requiredIndicators && i < positions.Count; i++)
-        {
-            cellIndicators[i].SetActive(true);
-            cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]) - new Vector3(0, .498f, 0);
-            // 셀 인디케이터를 X축 90도로 고정 (평면에 맞게)
-            cellIndicators[i].transform.rotation = Quaternion.Euler(90, 0, 0);
-        }*/
     }
     #endregion
 
@@ -386,10 +356,11 @@ public class PlacementSystem : MonoBehaviour
     #endregion
 
     #region 점유상태 확인
-   private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
+    private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
 {
     ObjectData objectToPlace = database.objectsData[selectedObjectIndex];
     bool placingWall = objectToPlace.IsWall;
+    GameObject prefab = database.objectsData[selectedObjectIndex].Prefab;
 
     // 1. 배치 영역 확인 (planeBounds) - 기존 로직 유지
     List<Vector3Int> positionsToCheck = floorData.CalculatePosition(gridPosition, objectToPlace.Size, rotation, grid);
@@ -404,76 +375,238 @@ public class PlacementSystem : MonoBehaviour
         }
     }
 
-    // 2. 벽 데이터와의 충돌 확인 (wallData)
-    if (!placingWall) // 가구를 설치하려는 경우
+    if (objectToPlace.kindIndex == 0)
     {
-        foreach (Vector3Int pos in positionsToCheck)
+        // 바닥 플로어를 배치하려는 경우, 해당 위치에 이미 다른 바닥 플로어가 있는지 확인
+        if (!floorData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
         {
-            // 해당 위치에 벽이 있는지 확인 (가구와 벽이 직접 겹치는 경우)
-            if (wallData.placedObjects.ContainsKey(pos) &&
-                wallData.placedObjects[pos].Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-            {
-                Debug.Log($"배치 불가: 해당 위치에 벽이 이미 존재합니다. at {pos}");
-                return false;
-            }
+            Debug.Log($"배치 불가: 해당 위치에 이미 바닥 플로어가 존재합니다. 위치: {gridPosition}");
+            return false;
         }
-
-        // 벽 사이에 끼어드는지 확인
-        foreach (Vector3Int pos in positionsToCheck)
-        {
-            // 상하좌우 방향 확인
-            Vector3Int[] adjacentPositions = new Vector3Int[]
-            {
-                pos + new Vector3Int(1, 0, 0),  // 오른쪽
-                pos + new Vector3Int(-1, 0, 0), // 왼쪽
-                pos + new Vector3Int(0, 0, 1),  // 위
-                pos + new Vector3Int(0, 0, -1)  // 아래
-            };
-
-            // 벽이 존재하는 방향의 개수 계산
-            int wallDirections = 0;
-            bool[] hasWallInDirection = new bool[4]; // 각 방향별 벽 존재 여부 (오른쪽, 왼쪽, 위, 아래)
-
-            for (int i = 0; i < adjacentPositions.Length; i++)
-            {
-                Vector3Int adjPos = adjacentPositions[i];
-                if (wallData.placedObjects.ContainsKey(adjPos) &&
-                    wallData.placedObjects[adjPos].Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-                {
-                    wallDirections++;
-                    hasWallInDirection[i] = true;
-                }
-            }
-
-            // 벽이 2개 이상의 방향에 존재하는 경우
-            if (wallDirections >= 2)
-            {
-                // 대각선 방향이 아닌 경우(예: 오른쪽과 왼쪽, 위와 아래)만 차단
-                if ((hasWallInDirection[0] && hasWallInDirection[1]) || // 오른쪽과 왼쪽
-                    (hasWallInDirection[2] && hasWallInDirection[3]))   // 위와 아래
-                {
-                    Debug.Log($"배치 불가: 가구가 벽 사이에 끼어듭니다. at {pos}");
-                    return false;
-                }
-            }
-        }
+        return true;
     }
-    else // 벽을 설치하려는 경우
+
+     if (!placingWall) // 가구를 설치하려는 경우
+     {
+         // 가구의 실제 월드 좌표 기준 크기와 중심을 계산
+         
+         GameObject tempObject = Instantiate(prefab, grid.GetCellCenterWorld(gridPosition), rotation);
+    
+         // 콜라이더를 가져옴
+         Collider objCollider = tempObject.GetComponent<Collider>();
+         if (objCollider is null)
+         {
+             objCollider = tempObject.GetComponentInChildren<Collider>();
+         }
+    
+         if (objCollider is null)
+         {
+             Debug.LogWarning($"오브젝트 {prefab.name}에 콜라이더가 없습니다. 충돌 검사를 건너뜁니다.");
+             Destroy(tempObject);
+             return furnitureData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall);
+         }
+    
+         // 충돌 검사를 위해 콜라이더는 유지하고 렌더러는 비활성화
+         Renderer[] renderers = tempObject.GetComponentsInChildren<Renderer>();
+         foreach (Renderer renderer in renderers)
+         {
+             renderer.enabled = false;
+         }
+    
+         // 마진 값 조정 (더 작은 값으로 검사 영역 축소)
+         float collisionMargin = 0.05f; // 5cm 마진
+    
+         Vector3 colliderCenter = objCollider.bounds.center;
+         Vector3 colliderSize = objCollider.bounds.size - new Vector3(collisionMargin, collisionMargin, collisionMargin);
+    
+         // 디버그 시각화 - 실제 검사 영역 확인용
+         Debug.DrawLine(colliderCenter - colliderSize/2, colliderCenter + colliderSize/2, Color.red, 2f);
+    
+         // 벽 레이어만 검사
+         int wallLayerMask = LayerMask.GetMask("Wall");
+    
+         // 더 정확한 충돌 검사 방법 - 다중 Raycast 사용
+         bool collision = false;
+    
+         // 콜라이더 경계 상자의 8개 코너에서 레이캐스트
+         Vector3[] corners = new Vector3[8];
+         corners[0] = new Vector3(-1, -1, -1);
+         corners[1] = new Vector3(1, -1, -1);
+         corners[2] = new Vector3(-1, 1, -1);
+         corners[3] = new Vector3(1, 1, -1);
+         corners[4] = new Vector3(-1, -1, 1);
+         corners[5] = new Vector3(1, -1, 1);
+         corners[6] = new Vector3(-1, 1, 1);
+         corners[7] = new Vector3(1, 1, 1);
+    
+         // 콜라이더 경계에서 중심으로 레이캐스트
+         foreach (Vector3 cornerDir in corners)
+         {
+             Vector3 startPos = colliderCenter + Vector3.Scale(cornerDir, colliderSize / 2f);
+             Vector3 direction = -cornerDir.normalized;
+             float distance = colliderSize.magnitude / 2f;
+        
+             Debug.DrawRay(startPos, direction * distance, Color.yellow, 2f);
+        
+             if (Physics.Raycast(startPos, direction, distance, wallLayerMask))
+             {
+                 collision = true;
+                 Debug.DrawRay(startPos, direction * distance, Color.red, 2f);
+                 break;
+             }
+         }
+    
+         // 중심에서 6방향으로 추가 레이캐스트
+         if (!collision)
+         {
+             Vector3[] directions = new Vector3[] 
+             {
+                 Vector3.right, Vector3.left, Vector3.up, 
+                 Vector3.down, Vector3.forward, Vector3.back
+             };
+        
+             foreach (Vector3 dir in directions)
+             {
+                 float distance = Vector3.Scale(colliderSize / 2f, new Vector3(
+                     Mathf.Abs(dir.x) > 0.01f ? 1 : 0,
+                     Mathf.Abs(dir.y) > 0.01f ? 1 : 0,
+                     Mathf.Abs(dir.z) > 0.01f ? 1 : 0
+                 )).magnitude;
+            
+                 Debug.DrawRay(colliderCenter, dir * distance, Color.yellow, 2f);
+            
+                 if (Physics.Raycast(colliderCenter, dir, distance, wallLayerMask))
+                 {
+                     collision = true;
+                     Debug.DrawRay(colliderCenter, dir * distance, Color.red, 2f);
+                     break;
+                 }
+             }
+         }
+    
+         // 충돌이 감지되면 배치 불가
+         if (collision)
+         {
+             Debug.Log($"배치 불가: 가구가 벽과 충돌했습니다. 위치: {gridPosition}");
+             Destroy(tempObject);
+             return false;
+         }
+    
+         // 오버랩박스로 마지막 확인 (더 작은 크기로)
+         Collider[] hitColliders = Physics.OverlapBox(
+             colliderCenter,         
+             colliderSize / 2.1f,     // 더 작은 영역으로 검사
+             rotation,               
+             wallLayerMask          
+         );
+    
+         // 충돌 감지 시 로그 출력 및 배치 금지
+         if (hitColliders.Length > 0)
+         {
+             Debug.Log($"배치 불가: 가구가 벽과 충돌했습니다. 벽 개수: {hitColliders.Length}");
+             foreach (Collider hit in hitColliders)
+             {
+                 Debug.Log($"- 충돌한 벽 오브젝트: {hit.gameObject.name}");
+             }
+             Destroy(tempObject);
+             return false;
+         }
+    
+         // 임시 오브젝트 제거
+         Destroy(tempObject);
+    
+         // GridData 기반 충돌 체크 - 다른 가구와의 충돌 확인
+         if (!furnitureData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
+         {
+             Debug.Log($"배치 불가: 해당 위치에 가구가 이미 존재합니다. 위치: {gridPosition}");
+             return false;
+         }
+     }
+     
+    if (placingWall)
+{
+    // 1. 기존 다른 벽과의 충돌 검사
+    if (!wallData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
     {
-        if (!wallData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
+        Debug.Log($"벽 배치 불가: 같은 각도의 벽 충돌 at {gridPosition}");
+        return false;
+    }
+
+    // 2. 벽과 가구 간 충돌 검사 (Raycast 기반)
+    GameObject tempObject = Instantiate(prefab, grid.GetCellCenterWorld(gridPosition), rotation);
+
+    Collider wallCollider = tempObject.GetComponent<Collider>();
+    if (wallCollider == null)
+    {
+        wallCollider = tempObject.GetComponentInChildren<Collider>();
+    }
+
+    if (wallCollider != null)
+    {
+        // 충돌 검사를 위해 렌더러 비활성화
+        Renderer[] renderers = tempObject.GetComponentsInChildren<Renderer>();
+        foreach (Renderer renderer in renderers)
         {
-            Debug.Log($"벽 배치 불가: 같은 각도의 벽 충돌 at {gridPosition}");
+            renderer.enabled = false;
+        }
+
+        // 가구 레이어 마스크 설정
+        int furnitureLayerMask = LayerMask.GetMask("Furniture");
+
+        // 벽 콜라이더의 중심과 크기
+        Vector3 colliderCenter = wallCollider.bounds.center;
+        Vector3 colliderSize = wallCollider.bounds.size;
+
+        // 벽의 바닥 위치 계산 (Raycast 발사 위치)
+        Vector3 wallBottomCenter = colliderCenter - tempObject.transform.up * (colliderSize.y / 5f);
+
+        // 디버그 시각화: 콜라이더 범위 및 발사 위치 표시
+        Debug.DrawLine(colliderCenter - colliderSize/2, colliderCenter + colliderSize/2, Color.blue, 2f); // 콜라이더 범위
+        Debug.DrawLine(wallBottomCenter - new Vector3(0.1f, 0, 0.1f), wallBottomCenter + new Vector3(0.1f, 0, 0.1f), Color.green, 2f); // 발사 위치
+
+
+        Vector3 leftRaycastOrigin1 = wallBottomCenter - tempObject.transform.forward * 1; // 왼쪽 첫 번째 위치
+        Vector3 rightRaycastOrigin2 = wallBottomCenter + tempObject.transform.forward * 1; // 오른쪽 두 번째 위치
+        
+        Debug.Log($"leftRaycastOrigin1 : {leftRaycastOrigin1}, rightRaycastOrigin2 : {rightRaycastOrigin2}");
+        
+        // Raycast 방향 설정 (벽의 로컬 아래 방향)
+        Vector3 raycastDirection = -tempObject.transform.up;
+
+        // Raycast 거리 계산: 벽 바닥에서 그리드 바닥까지의 거리
+        float distance = Mathf.Abs(wallBottomCenter.y - grid.GetCellCenterWorld(gridPosition).y) + 1f; // 바닥까지 거리 + 여유분
+
+        // 각 위치에서 Raycast 발사
+        Vector3[] raycastOrigins = new Vector3[]
+        {
+            leftRaycastOrigin1, rightRaycastOrigin2
+        };
+
+        bool collision = false;
+        foreach (Vector3 origin in raycastOrigins)
+        {
+            Debug.DrawRay(origin, raycastDirection * distance, Color.yellow, 2f); // 디버그: 노란색으로 Raycast 경로 표시
+
+            if (Physics.Raycast(origin, raycastDirection, distance, furnitureLayerMask))
+            {
+                collision = true;
+                Debug.DrawRay(origin, raycastDirection * distance, Color.red, 2f); // 디버그: 충돌 시 빨간색으로 표시
+                Debug.Log($"벽 배치 불가: Raycast로 가구와 충돌 감지됨 at {gridPosition}, 방향: {raycastDirection}, 발사 위치: {origin}");
+                break;
+            }
+        }
+
+        // 충돌이 감지되면 벽 설치 차단
+        if (collision)
+        {
+            Destroy(tempObject);
             return false;
         }
     }
 
-    // 3. 가구 데이터와의 충돌 확인 (furnitureData)
-    if (!furnitureData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
-    {
-        Debug.Log($"배치 불가: 해당 위치에 가구가 이미 존재합니다. at {gridPosition}");
-        return false;
-    }
-
+    Destroy(tempObject);
+}
+    
     // 모든 검사를 통과하면 배치 가능
     return true;
 }
@@ -556,7 +689,7 @@ public class PlacementSystem : MonoBehaviour
                 Renderer renderer = indicator.GetComponentInChildren<Renderer>();
                 if (renderer != null)
                 {
-                    renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.2f) : new Color(1f, 0f, 0f, 0.5f);
+                    renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.35f) : new Color(1f, 0f, 0f, 0.5f);
 
                 }
             }
@@ -801,7 +934,7 @@ public class PlacementSystem : MonoBehaviour
                 if (indicatorIndex < cellIndicators.Count)
                 {
                     cellIndicators[indicatorIndex].SetActive(true);
-                    cellIndicators[indicatorIndex].transform.position = grid.GetCellCenterWorld(pos) - new Vector3(0, 0.499f, 0);
+                    cellIndicators[indicatorIndex].transform.position = grid.GetCellCenterWorld(pos) - new Vector3(0, 0.46f, 0);
                     cellIndicators[indicatorIndex].transform.rotation = Quaternion.Euler(90, 0, 0);
                     indicatorIndex++;
                 }
