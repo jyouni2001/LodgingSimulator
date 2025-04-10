@@ -26,74 +26,75 @@ public class GridData
     /// <param name="rotation"></param>
     /// <param name="grid"></param>
     /// <exception cref="Exception"></exception>
-    public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex, int kindOfIndex, Quaternion rotation, Grid grid, bool isWall)
+     public void AddObjectAt(Vector3Int gridPosition, Vector2Int objectSize, int ID, int placedObjectIndex, int kindOfIndex, Quaternion rotation, Grid grid, bool isWall)
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
-        PlacementData data = new PlacementData(positions, ID, placedObjectIndex, kindOfIndex);
+        // PlacementData 생성 시 rotation 전달
+        PlacementData data = new PlacementData(positions, ID, placedObjectIndex, kindOfIndex, rotation);
 
-        /*foreach (var pos in positions)
-        {
-            if (placedObjects.ContainsKey(pos))
-            {
-                PlacementData existingObject = placedObjects[pos];
-                // 설치하려는 오브젝트가 벽인 경우
-                if (isWall)
-                {
-                    // 해당 위치에 이미 벽이 아닌 오브젝트가 있으면 예외 발생
-                    if (!PlacementSystem.Instance.database.objectsData
-                        .Find(data => data.ID == existingObject.ID).IsWall)
-                    {
-                        throw new Exception($"이 셀({pos})은 벽이 아닌 오브젝트로 이미 점유되어 있습니다.");
-                    }
-                }
-                // 설치하려는 오브젝트가 벽이 아닌 경우
-                else
-                {
-                    throw new Exception($"이 셀({pos})은 이미 딕셔너리에 포함되어있다");
-                }
-            }
-            placedObjects[pos] = data; // 벽이면 기존 데이터를 덮어씀
-        }*/
-        
         foreach (var pos in positions)
         {
             if (!placedObjects.ContainsKey(pos))
             {
                 placedObjects[pos] = new List<PlacementData>();
-            }
-
+            }   
+            
+            var sameTypeExistingObjects = placedObjects[pos]
+                .Where(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall == isWall);
             var existingObjects = placedObjects[pos];
-            if (!isWall) // 가구인 경우
+
+            if (isWall) // 벽 추가 시, 같은 각도의 벽 중복 방지 (이전 답변 내용 유지)
+            {
+                if (sameTypeExistingObjects.Any(obj => Mathf.Approximately(Quaternion.Angle(obj.Rotation, rotation), 0)))
+                {
+                    // 필요 시 예외 발생
+                    // throw new Exception($"이 셀({pos})에는 이미 같은 각도의 벽이 존재합니다.");
+                    // 여기서는 예외를 발생시키지 않고 Add를 진행 (CanPlaceObjectAt에서 이미 걸렀어야 함)
+                }
+            }
+            else // 가구 추가 시, 같은 위치에 가구 중복 방지
+            {
+                if (sameTypeExistingObjects.Any()) // 같은 타입(가구)이 이미 있다면
+                {
+                    // 필요 시 예외 발생
+                    // throw new Exception($"이 셀({pos})은 이미 가구로 점유되어 있습니다.");
+                    // 여기서는 예외를 발생시키지 않고 Add를 진행 (CanPlaceObjectAt에서 이미 걸렀어야 함)
+                }
+            }
+            
+            // --- 벽/가구 추가 시 예외 처리 수정 ---
+            /*if (isWall) // 벽을 추가하는 경우
+            {
+                // 같은 위치에 같은 회전값을 가진 벽이 이미 있는지 확인
+                if (existingObjects.Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall && Mathf.Approximately(Quaternion.Angle(obj.Rotation, rotation), 0)))
+                {
+                    // 설치 불가 사운드 추가
+                    // 주석 처리: 같은 회전값의 벽이 이미 있다면 예외 발생 (필요 시 활성화)
+                    // throw new Exception($"이 셀({pos})에는 이미 같은 각도의 벽이 존재합니다.");
+                    // 현재 요구사항: 각도만 다르면 추가 가능하므로, 같은 각도 벽 검사 후 예외 발생 로직 제거
+                }
+                // 해당 위치에 가구가 이미 있으면 예외 발생 (벽과 가구 겹침 방지)
+                if (existingObjects.Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                {
+                    throw new Exception($"이 셀({pos})은 가구로 점유되어 있어 벽을 설치할 수 없습니다.");
+                }
+            }
+            else // 가구를 추가하는 경우
             {
                 // 같은 위치에 가구가 이미 있으면 예외 발생
                 if (existingObjects.Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
                 {
                     throw new Exception($"이 셀({pos})은 이미 가구로 점유되어 있습니다.");
                 }
-                
-                // 같은 위치에 벽이 있고, 그 위치에 다른 가구가 이미 있으면 예외 발생
+                // 같은 위치에 벽이 있으면 예외 발생 (가구와 벽 겹침 방지)
                 if (existingObjects.Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
                 {
-                    // 다른 GridData(furnitureData)에서 해당 위치에 가구가 있는지 확인
-                    var furnitureData = PlacementSystem.Instance.furnitureData; // furnitureData에 접근 (public으로 변경 필요)
-                    if (furnitureData != this && furnitureData.placedObjects.ContainsKey(pos) &&
-                        furnitureData.placedObjects[pos].Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-                    {
-                        throw new Exception($"이 셀({pos})은 벽과 가구가 이미 존재하여 추가 가구를 배치할 수 없습니다.");
-                    }
+                    throw new Exception($"이 셀({pos})은 벽으로 점유되어 있어 가구를 설치할 수 없습니다.");
                 }
-            }
-            placedObjects[pos].Add(data);
-        }
+            }*/
 
-        /*foreach (var pos in positions)
-        {
-            if (placedObjects.ContainsKey(pos))
-            {
-                throw new Exception($"이 셀({pos})은 이미 딕셔너리에 포함되어있다");
-            }
-            placedObjects[pos] = data;
-        }*/
+            placedObjects[pos].Add(data); // 예외가 발생하지 않으면 데이터 추가
+        }
     }
     #endregion
 
@@ -232,92 +233,34 @@ public class GridData
     public bool CanPlaceObjectAt(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid, bool isWall)
     {
         List<Vector3Int> positions = CalculatePosition(gridPosition, objectSize, rotation, grid);
-        
-        //04-02 이전 사용 
-        /*foreach (var pos in positions)
-        {
-            if (placedObjects.ContainsKey(pos))
-            {
-                PlacementData existingObject = placedObjects[pos];
-                // 설치하려는 오브젝트가 벽인 경우
-                if (isWall)
-                {
-                    // 해당 위치에 이미 벽이 아닌 오브젝트가 있으면 설치 불가
-                    if (!PlacementSystem.Instance.database.objectsData
-                        .Find(data => data.ID == existingObject.ID).IsWall)
-                    {
-                        return false; // 벽이 아닌 오브젝트와 겹치므로 설치 불가
-                    }
-                }
-                // 설치하려는 오브젝트가 벽이 아닌 경우
-                else
-                {
-                    return false; // 이미 점유된 위치이므로 설치 불가
-                }
-            }
-        }*/
-        
-        //04-10 이전 사용
-        /*foreach (var pos in positions)
-        {
-            if (placedObjects.ContainsKey(pos) && placedObjects[pos].Count > 0)
-            {
-                var existingObjects = placedObjects[pos];
-                if (isWall)
-                {
-                    // 벽 배치 시, 가구가 이미 있으면 이후 가구 배치를 제한할 수 있음
-                    // 현재는 벽과 가구 공존을 허용하되, 가구-벽-가구 패턴은 아래에서 체크
-                    continue;
-                }
-                else // 가구인 경우
-                {
-                    // 같은 위치에 가구가 있으면 배치 불가
-                    if (existingObjects.Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-                    {
-                        return false;
-                    }
 
-                    // 같은 위치에 벽이 있고, furnitureData에 이미 가구가 있으면 배치 불가
-                    if (existingObjects.Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-                    {
-                        var furnitureData = PlacementSystem.Instance.furnitureData; // furnitureData에 접근
-                        if (furnitureData != this && furnitureData.placedObjects.ContainsKey(pos) &&
-                            furnitureData.placedObjects[pos].Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-                        {
-                            return false;
-                        }
-                    }
-                }
-            }
-        }*/
-        
-        //04-10 이후 사용
         foreach (var pos in positions)
         {
             if (placedObjects.ContainsKey(pos) && placedObjects[pos].Count > 0)
             {
-                var existingObjects = placedObjects[pos];
-            
-                // 벽 배치 시, 해당 위치에 이미 벽이 있으면 중복 배치 방지
-                if (isWall)
+                // 이 GridData가 관리하는 타입과 같은 타입의 오브젝트만 고려
+                var sameTypeExistingObjects = placedObjects[pos]
+                    .Where(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall == isWall);
+
+                if (isWall) // 벽 배치 가능 여부 확인 (같은 각도 벽 충돌 체크)
                 {
-                    if (existingObjects.Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                    if (sameTypeExistingObjects.Any(obj => Mathf.Approximately(Quaternion.Angle(obj.Rotation, rotation), 0)))
                     {
-                        return false; // 이미 벽이 있는 경우 배치 불가
-                    }
-                    // 가구 있는 경우는 기존 로직 유지
-                    if (existingObjects.Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-                    {
-                        return false;
+                        return false; // 같은 각도의 벽이 이미 있음
                     }
                 }
-                else // 가구인 경우 (기존 로직과 동일)
+                else // 가구 배치 가능 여부 확인 (다른 가구 충돌 체크)
                 {
-                        return false;
+                    if (sameTypeExistingObjects.Any()) // 이미 같은 타입(가구) 오브젝트가 있다면
+                    {
+                        return false; // 배치 불가
+                    }
                 }
+                // --- 다른 타입과의 충돌 검사는 여기서 제거 ---
             }
         }
-        
+
+        // 모든 위치 검사를 통과하면 배치 가능
         return true;
     }
     #endregion

@@ -365,106 +365,118 @@ public class PlacementSystem : MonoBehaviour
         if (!placementValidity) return;
 
         Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition);
-
         int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
 
         selectedData = GetSelectedGridData();
 
         bool isWall = database.objectsData[selectedObjectIndex].IsWall;
-        selectedData.AddObjectAt(
-            gridPosition, 
-            database.objectsData[selectedObjectIndex].Size, 
-            database.objectsData[selectedObjectIndex].ID, 
-            index, 
-            database.objectsData[selectedObjectIndex].kindIndex, 
-            previewRotation, 
+        selectedData.AddObjectAt( // <<< previewRotation이 전달되는지 확인
+            gridPosition,
+            database.objectsData[selectedObjectIndex].Size,
+            database.objectsData[selectedObjectIndex].ID,
+            index,
+            database.objectsData[selectedObjectIndex].kindIndex,
+            previewRotation, // <<< 여기!
             grid,
             isWall
-            );
+        );
 
         if (inputManager.hit.transform is not null) Debug.Log($"현재 설치된 오브젝트 : {index}, 선택한 오브젝트 : {inputManager.hit.transform.name}");
     }
     #endregion
 
     #region 점유상태 확인
-    private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
-    {
-        selectedData = GetSelectedGridData();
-        bool isWall = database.objectsData[selectedObjectIndex].IsWall;
+   private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
+{
+    ObjectData objectToPlace = database.objectsData[selectedObjectIndex];
+    bool placingWall = objectToPlace.IsWall;
 
-        if (!selectedData.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid, isWall))
+    // 1. 배치 영역 확인 (planeBounds) - 기존 로직 유지
+    List<Vector3Int> positionsToCheck = floorData.CalculatePosition(gridPosition, objectToPlace.Size, rotation, grid);
+    foreach (Vector3Int pos in positionsToCheck)
+    {
+        Vector3 worldPos = grid.GetCellCenterWorld(pos);
+        bool isWithinBounds = planeBounds.Any(bound => bound.Contains(worldPos));
+        if (!isWithinBounds)
         {
+            Debug.Log($"그리드 반경을 벗어남: {pos}");
             return false;
         }
-        
-        // positionsToCheck를 if 블록 밖에서 정의
-        List<Vector3Int> positionsToCheck = selectedData.CalculatePosition(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
-
-        // 가구 배치 시, wallData와 furnitureData를 확인하여 가구-벽-가구 패턴 체크
-        if (!isWall) // 가구인 경우
-        {
-            foreach (var pos in positionsToCheck)
-            {
-                // wallData에 벽이 있는지 확인
-                if (wallData.placedObjects.ContainsKey(pos) &&
-                    wallData.placedObjects[pos].Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-                {
-                    // furnitureData에 이미 가구가 있는지 확인
-                    if (furnitureData.placedObjects.ContainsKey(pos) &&
-                        furnitureData.placedObjects[pos].Any(obj => !PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
-                    {
-                        Debug.Log($"가구-벽-가구 패턴 감지: {pos}");
-                        return false;
-                    }
-                }
-            }
-        }
-
-        foreach (Vector3Int pos in positionsToCheck)
-        {
-            Vector3 worldPos = grid.GetCellCenterWorld(pos);
-            bool isWithinBounds = planeBounds.Any(bound => bound.Contains(worldPos));
-            if (!isWithinBounds)
-            {
-                Debug.Log($"그리드 반경을 벗어남: {pos}");
-                return false;
-            }
-        }
-        
-        // 다른 GridData와의 충돌 체크 (필요 시)
-        foreach (var data in new[] { floorData, furnitureData, wallData })
-        {
-            if (data != selectedData && !data.CanPlaceObjectAt(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid, isWall))
-            {
-                return false;
-            }
-        }
-        
-        /*
-        List<Vector3Int> positionsToCheck = selectedData.CalculatePosition(gridPosition, database.objectsData[selectedObjectIndex].Size, rotation, grid);
-        foreach (Vector3Int pos in positionsToCheck)
-        {
-            Vector3 worldPos = grid.GetCellCenterWorld(pos);
-            bool isWithinBounds = false;
-
-            foreach (Bounds bound in planeBounds)
-            {
-                if (bound.Contains(worldPos))
-                {
-                    isWithinBounds = true;
-                    break;
-                }
-            }
-
-            if (!isWithinBounds)
-            {
-                Debug.Log($"그리드 반경을 벗어남: {pos}");
-                return false;
-            }
-        }*/
-
-        return true;
     }
+
+    // 2. 벽 데이터와의 충돌 확인 (wallData)
+    if (!placingWall) // 가구를 설치하려는 경우
+    {
+        foreach (Vector3Int pos in positionsToCheck)
+        {
+            // 해당 위치에 벽이 있는지 확인 (가구와 벽이 직접 겹치는 경우)
+            if (wallData.placedObjects.ContainsKey(pos) &&
+                wallData.placedObjects[pos].Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+            {
+                Debug.Log($"배치 불가: 해당 위치에 벽이 이미 존재합니다. at {pos}");
+                return false;
+            }
+        }
+
+        // 벽 사이에 끼어드는지 확인
+        foreach (Vector3Int pos in positionsToCheck)
+        {
+            // 상하좌우 방향 확인
+            Vector3Int[] adjacentPositions = new Vector3Int[]
+            {
+                pos + new Vector3Int(1, 0, 0),  // 오른쪽
+                pos + new Vector3Int(-1, 0, 0), // 왼쪽
+                pos + new Vector3Int(0, 0, 1),  // 위
+                pos + new Vector3Int(0, 0, -1)  // 아래
+            };
+
+            // 벽이 존재하는 방향의 개수 계산
+            int wallDirections = 0;
+            bool[] hasWallInDirection = new bool[4]; // 각 방향별 벽 존재 여부 (오른쪽, 왼쪽, 위, 아래)
+
+            for (int i = 0; i < adjacentPositions.Length; i++)
+            {
+                Vector3Int adjPos = adjacentPositions[i];
+                if (wallData.placedObjects.ContainsKey(adjPos) &&
+                    wallData.placedObjects[adjPos].Any(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall))
+                {
+                    wallDirections++;
+                    hasWallInDirection[i] = true;
+                }
+            }
+
+            // 벽이 2개 이상의 방향에 존재하는 경우
+            if (wallDirections >= 2)
+            {
+                // 대각선 방향이 아닌 경우(예: 오른쪽과 왼쪽, 위와 아래)만 차단
+                if ((hasWallInDirection[0] && hasWallInDirection[1]) || // 오른쪽과 왼쪽
+                    (hasWallInDirection[2] && hasWallInDirection[3]))   // 위와 아래
+                {
+                    Debug.Log($"배치 불가: 가구가 벽 사이에 끼어듭니다. at {pos}");
+                    return false;
+                }
+            }
+        }
+    }
+    else // 벽을 설치하려는 경우
+    {
+        if (!wallData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
+        {
+            Debug.Log($"벽 배치 불가: 같은 각도의 벽 충돌 at {gridPosition}");
+            return false;
+        }
+    }
+
+    // 3. 가구 데이터와의 충돌 확인 (furnitureData)
+    if (!furnitureData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
+    {
+        Debug.Log($"배치 불가: 해당 위치에 가구가 이미 존재합니다. at {gridPosition}");
+        return false;
+    }
+
+    // 모든 검사를 통과하면 배치 가능
+    return true;
+}
     #endregion
 
     #region 건축 종료
@@ -749,12 +761,16 @@ public class PlacementSystem : MonoBehaviour
     
     private GridData GetSelectedGridData()
     {
+        if (selectedObjectIndex < 0 || selectedObjectIndex >= database.objectsData.Count) return null; // 예외 처리 추가
+
         switch (database.objectsData[selectedObjectIndex].kindIndex)
         {
             case 0: return floorData;
             case 1: return furnitureData;
             case 2: return wallData;
-            default: return furnitureData;
+            default:
+                Debug.LogWarning($"Unknown kindIndex: {database.objectsData[selectedObjectIndex].kindIndex}");
+                return furnitureData; // 기본값 또는 null 반환 등 결정 필요
         }
     }
     
