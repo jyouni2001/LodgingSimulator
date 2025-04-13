@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ObjectPlacer : MonoBehaviour
 {
-    private List<GameObject> placedGameObjects = new();
+    [SerializeField] private List<GameObject> placedGameObjects = new();
     [SerializeField] private InputManager inputManager;
 
     /// <summary>
@@ -23,5 +23,23 @@ public class ObjectPlacer : MonoBehaviour
     
         placedGameObjects.Add(newObject);
         return placedGameObjects.Count - 1;
+    }
+
+    public void RemoveObject(int index)
+    {
+        if (index >= 0 && index < placedGameObjects.Count)
+        {
+            GameObject obj = placedGameObjects[index];
+            if (obj != null)
+            {
+                Destroy(obj);
+            }
+            placedGameObjects[index] = null; // 참조 제거 (선택적으로 리스트에서 완전히 제거 가능)
+        }
+    }
+
+    public int GetObjectIndex(GameObject obj)
+    {
+        return placedGameObjects.IndexOf(obj);
     }
 }

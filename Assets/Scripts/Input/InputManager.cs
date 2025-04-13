@@ -8,7 +8,7 @@ public class InputManager : MonoBehaviour
     [Header("컴포넌트")]
     [SerializeField] private PlacementSystem placementSystem;
     [SerializeField] private Camera cam;
-    [SerializeField] private LayerMask placementLayermask;
+    
     
     private Vector3 lastPosition;   // 마지막 좌표 변수
     private Vector3 uiShowPosition; // BuildUI가 보이는 위치
@@ -16,7 +16,9 @@ public class InputManager : MonoBehaviour
     private Tween   uiTween; // 현재 실행 중인 트윈 저장
 
     [Header("변수")]
+    [SerializeField] private LayerMask placementLayermask;
     [SerializeField] private LayerMask batchedLayer;
+    [SerializeField] private LayerMask objectLayer;
     public event Action OnClicked, OnExit;
     public GameObject   BuildUI;
     public RaycastHit   hit;
@@ -86,6 +88,15 @@ public class InputManager : MonoBehaviour
                 HideBuildUI();
             }
             OnExit?.Invoke();
+        }
+
+        // 기존 코드 유지
+        if (Input.GetKeyDown(KeyCode.L) && isBuildMode)
+        {
+            if (placementSystem.isDeleteMode)
+                placementSystem.StopDeleteMode();
+            else
+                placementSystem.StartDeleteMode();
         }
     }
 
@@ -173,5 +184,24 @@ public class InputManager : MonoBehaviour
         }
         
         return lastPosition;
+    }
+
+    public GameObject GetClickedObject()
+    {
+        if (cam is null)
+        {
+            Debug.LogError("Camera가 할당되지 않았습니다!");
+            return null;
+        }
+
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, objectLayer))
+        {
+            // 클릭한 오브젝트의 루트 오브젝트 반환
+            GameObject clickedObject = hit.collider.gameObject;
+            Debug.Log($"선택된 오브젝트 : {clickedObject}");
+            return clickedObject.transform.root.gameObject;
+        }
+        return null;
     }
 }

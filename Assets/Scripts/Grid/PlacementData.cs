@@ -18,12 +18,14 @@ public class PlacementData
     // 3 = 장식품 오브젝트
     
     public int kindIndex { get; private set; }
+    public Quaternion Rotation { get; private set; } // <<< 회전 정보 추가
 
-    public PlacementData(List<Vector3Int> occupiedPositions, int id, int placedObjectIndex, int kindOfIndex)
+    public PlacementData(List<Vector3Int> occupiedPositions, int id, int placedObjectIndex, int kindOfIndex, Quaternion rotation)
     {
         this.occupiedPositions = occupiedPositions;
         ID = id;
         PlacedObjectIndex = placedObjectIndex;
         kindIndex = kindOfIndex;
+        Rotation = rotation;
     }
 }

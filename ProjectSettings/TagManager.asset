@@ -15,9 +15,9 @@ TagManager:
   - CameraWall
   - Walk
   - Batched
-  - 
-  - 
-  - 
+  - Wall
+  - Furniture
+  - Floor
   - 
   - 
   - 

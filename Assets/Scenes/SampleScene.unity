@@ -184,6 +184,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 573fb47f1fb3ff148855b56349e315eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  placedGameObjects: []
   inputManager: {fileID: 519522462}
 --- !u!1 &52600009
 GameObject:
@@ -3916,6 +3917,9 @@ MonoBehaviour:
   batchedLayer:
     serializedVersion: 2
     m_Bits: 512
+  objectLayer:
+    serializedVersion: 2
+    m_Bits: 7168
   BuildUI: {fileID: 52600009}
   isBuildMode: 0
 --- !u!1 &533859733
@@ -5960,6 +5964,7 @@ MonoBehaviour:
   plane4f: []
   purchaseButton: {fileID: 1742988590}
   purchase2FButton: {fileID: 1610486310}
+  isDeleteMode: 0
 --- !u!1 &1032360398
 GameObject:
   m_ObjectHideFlags: 0
