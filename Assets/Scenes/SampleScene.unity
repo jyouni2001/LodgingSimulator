@@ -3919,7 +3919,7 @@ MonoBehaviour:
     m_Bits: 512
   objectLayer:
     serializedVersion: 2
-    m_Bits: 3072
+    m_Bits: 7168
   BuildUI: {fileID: 52600009}
   isBuildMode: 0
 --- !u!1 &533859733
