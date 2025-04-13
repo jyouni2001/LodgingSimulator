@@ -9,7 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2809552133564699114}
-  m_Layer: 0
+  - component: {fileID: 5951896924186842235}
+  m_Layer: 12
   m_Name: Lv1FloorPv
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -32,6 +33,27 @@ Transform:
   - {fileID: 3341908695352393325}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &5951896924186842235
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4222678383280253326}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.8, y: 0.001, z: 1.8}
+  m_Center: {x: 0, y: -0.48, z: 0}
 --- !u!1001 &5811420277804176997
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -43,6 +65,10 @@ PrefabInstance:
     - target: {fileID: 8470504676313395890, guid: 88133012680abcc458d03b31eb1dcec3, type: 3}
       propertyPath: m_Name
       value: Floor
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470504676313395890, guid: 88133012680abcc458d03b31eb1dcec3, type: 3}
+      propertyPath: m_Layer
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 9135155690317391880, guid: 88133012680abcc458d03b31eb1dcec3, type: 3}
       propertyPath: m_LocalPosition.x

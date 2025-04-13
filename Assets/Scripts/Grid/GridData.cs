@@ -264,5 +264,44 @@ public class GridData
         return true;
     }
     #endregion
-    
+
+    #region 오브젝트 제거
+
+    public bool RemoveObjectByIndex(int placedObjectIndex)
+    {
+        bool removed = false;
+        List<Vector3Int> keysToRemove = new List<Vector3Int>();
+
+        foreach (var kvp in placedObjects)
+        {
+            Vector3Int pos = kvp.Key;
+            List<PlacementData> objectsAtPos = kvp.Value;
+
+            // 해당 인덱스의 PlacementData 찾기
+            for (int i = objectsAtPos.Count - 1; i >= 0; i--)
+            {
+                if (objectsAtPos[i].PlacedObjectIndex == placedObjectIndex)
+                {
+                    objectsAtPos.RemoveAt(i);
+                    removed = true;
+                }
+            }
+
+            // 해당 위치에 더 이상 오브젝트가 없으면 키 제거 준비
+            if (objectsAtPos.Count == 0)
+            {
+                keysToRemove.Add(pos);
+            }
+        }
+
+        // 빈 키 제거
+        foreach (var key in keysToRemove)
+        {
+            placedObjects.Remove(key);
+        }
+
+        return removed;
+    }
+
+    #endregion
 }

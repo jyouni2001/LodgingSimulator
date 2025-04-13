@@ -277,6 +277,7 @@ public class PlacementSystem : MonoBehaviour
     public void StartPlacement(int ID)
     {
         StopPlacement();
+        StopDeleteMode();
 
         selectedObjectIndex = database.objectsData.FindIndex(data => data.ID == ID);
         if (selectedObjectIndex < 0)
@@ -947,6 +948,92 @@ public class PlacementSystem : MonoBehaviour
             cellIndicators[i].SetActive(false);
         }
     }
-    
+
+    #endregion
+
+    #region 삭제 모드
+
+    public bool isDeleteMode = false;
+
+    public void StartDeleteMode()
+    {
+        StopPlacement(); // 기존 배치 모드 종료
+        isDeleteMode = true;
+        inputManager.OnClicked += DeleteStructure; // 클릭 시 삭제 함수 호출
+        inputManager.OnExit += StopDeleteMode;
+        Debug.Log("삭제 모드 시작");
+    }
+
+    public void StopDeleteMode()
+    {
+        isDeleteMode = false;
+        inputManager.OnClicked -= DeleteStructure;
+        inputManager.OnExit -= StopDeleteMode;
+        Debug.Log("삭제 모드 종료");
+    }
+
+    private void DeleteStructure()
+    {
+        if (inputManager.IsPointerOverUI())
+            return;
+
+        GameObject clickedObject = inputManager.GetClickedObject();
+
+        Debug.Log($"삭제하려는 오브젝트 : {clickedObject}");
+
+        if (clickedObject is null)
+        {
+            Debug.Log("삭제할 오브젝트가 없습니다.");
+            return;
+        }
+
+        // ObjectPlacer에서 오브젝트 인덱스 찾기
+        int objectIndex = objectPlacer.GetObjectIndex(clickedObject);
+        Debug.Log($"삭제하려는 오브젝트의 인덱스 : {objectIndex}");
+        if (objectIndex < 0)
+        {
+            Debug.LogWarning("클릭한 오브젝트가 ObjectPlacer에 등록되지 않음.");
+            return;
+        }
+
+        // 적절한 GridData 선택
+        GridData selectedData = FindGridDataByObjectIndex(objectIndex);
+        Debug.Log($"삭제하려는 오브젝트 그리드 데이터 : {selectedData}");
+        if (selectedData is null)
+        {
+            Debug.LogWarning("해당 오브젝트의 GridData를 찾을 수 없음.");
+            return;
+        }
+
+        // GridData에서 데이터 제거
+        if (selectedData.RemoveObjectByIndex(objectIndex))
+        {
+            // ObjectPlacer에서 오브젝트 제거
+            objectPlacer.RemoveObject(objectIndex);
+            Debug.Log($"오브젝트 삭제 완료: 인덱스 {objectIndex}");
+        }
+        else
+        {
+            Debug.LogWarning("GridData에서 오브젝트 데이터를 제거하지 못함.");
+        }
+    }
+
+    private GridData FindGridDataByObjectIndex(int objectIndex)
+    {
+        // floorData 확인
+        if (floorData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
+            return floorData;
+
+        // furnitureData 확인
+        if (furnitureData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
+            return furnitureData;
+
+        // wallData 확인
+        if (wallData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
+            return wallData;
+
+        return null;
+    }
+
     #endregion
 }
