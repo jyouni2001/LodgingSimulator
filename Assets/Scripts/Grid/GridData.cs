@@ -10,8 +10,8 @@ public class GridData
 {
     // 설치된 오브젝트 데이터가 담긴 딕셔너리
     //private Dictionary<Vector3Int, PlacementData> placedObjects = new();
-    
-    //최적화 시도
+
+    // 설치된 오브젝트 데이터가 담긴 딕셔너리
     public Dictionary<Vector3Int, List<PlacementData>> placedObjects = new();
 
     #region 딕셔너리에 설치된 오브젝트 포함
@@ -267,6 +267,11 @@ public class GridData
 
     #region 오브젝트 제거
 
+    /// <summary>
+    /// 설치된 오브젝트 제거
+    /// </summary>
+    /// <param name="placedObjectIndex">설치된 오브젝트의 인덱스</param>
+    /// <returns></returns>
     public bool RemoveObjectByIndex(int placedObjectIndex)
     {
         bool removed = false;

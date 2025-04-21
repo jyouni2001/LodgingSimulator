@@ -34,6 +34,7 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private Grid grid;
     public ObjectsDatabaseSO database;
     [SerializeField] private GameObject previewObject;
+    [SerializeField] private SpawnEffect spawnEffect;
 
     [Header("그리드 관련")]
     [SerializeField] private List<GameObject> gridVisualization;
@@ -337,6 +338,8 @@ public class PlacementSystem : MonoBehaviour
 
         Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition);
         int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
+        spawnEffect.OnBuildingPlaced(worldPosition);
+
 
         selectedData = GetSelectedGridData();
 
@@ -631,6 +634,10 @@ public class PlacementSystem : MonoBehaviour
             Destroy(previewObject);
             previewObject = null;
         }
+
+        // 드래그 상태 초기화
+        isDragging = false;
+        dragStartPosition = Vector3Int.zero;
     }
     #endregion    
 
@@ -844,8 +851,23 @@ public class PlacementSystem : MonoBehaviour
     private bool isDragging = false;
     private Vector3Int dragStartPosition;
 
+    /// <summary>
+    /// 드래그 건축이 가능하게 하는 인풋과 로직 함수
+    /// </summary>
     void DragPlacement()
     {
+        // 건축 모드가 아니면 드래그 중지
+        if (!inputManager.isBuildMode)
+        {
+            if (isDragging)
+            {
+                isDragging = false;
+                dragStartPosition = Vector3Int.zero;
+                UpdateDragPreview(gridPosition, gridPosition); // 프리뷰 초기화
+            }
+            return;
+        }
+
         // 드래그 시작
         if (Input.GetMouseButtonDown(0) && !inputManager.IsPointerOverUI())
         {
@@ -858,13 +880,31 @@ public class PlacementSystem : MonoBehaviour
         {
             isDragging = false;
             Vector3Int dragEndPosition = grid.WorldToCell(inputManager.GetSelectedMapPosition());
-            PlaceLineStructure(dragStartPosition, dragEndPosition);
+
+            if (inputManager.isBuildMode) // 건축 모드일 때만 배치 실행
+            {
+                PlaceLineStructure(dragStartPosition, dragEndPosition);
+            }
+            else
+            {
+                // 건축 모드가 종료된 경우 드래그 취소
+                dragStartPosition = Vector3Int.zero;
+                UpdateDragPreview(gridPosition, gridPosition); // 프리뷰 초기화
+            }
         }
+
     }
     
+    /// <summary>
+    /// 드래그로 인한 배치 시 직선 배치 로직 함수
+    /// </summary>
+    /// <param name="startPos">시작 시점</param>
+    /// <param name="endPos">끝 시점</param>
     private void PlaceLineStructure(Vector3Int startPos, Vector3Int endPos)
     {
         if (selectedObjectIndex < 0) return;
+
+        if (!inputManager.isBuildMode) return;
 
         Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
         bool isWall = database.objectsData[selectedObjectIndex].IsWall;
@@ -887,7 +927,10 @@ public class PlacementSystem : MonoBehaviour
                 Vector3 worldPosition = grid.GetCellCenterWorld(currentPos);
                 int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
                 selectedData.AddObjectAt(currentPos, objectSize, database.objectsData[selectedObjectIndex].ID, index, 
-                    database.objectsData[selectedObjectIndex].kindIndex, previewRotation, grid, isWall);
+                database.objectsData[selectedObjectIndex].kindIndex, previewRotation, grid, isWall);
+
+                // 연기 이펙트 생성
+                spawnEffect.OnBuildingPlaced(worldPosition);
             }
             currentPos += stepDirection;
         }

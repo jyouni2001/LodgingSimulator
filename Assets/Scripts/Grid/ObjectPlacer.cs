@@ -25,6 +25,10 @@ public class ObjectPlacer : MonoBehaviour
         return placedGameObjects.Count - 1;
     }
 
+    /// <summary>
+    /// 오브젝트들을 삭제한다.
+    /// </summary>
+    /// <param name="index"></param>
     public void RemoveObject(int index)
     {
         if (index >= 0 && index < placedGameObjects.Count)
@@ -38,6 +42,11 @@ public class ObjectPlacer : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 오브젝트의 인덱스를 추출한다.
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <returns></returns>
     public int GetObjectIndex(GameObject obj)
     {
         return placedGameObjects.IndexOf(obj);

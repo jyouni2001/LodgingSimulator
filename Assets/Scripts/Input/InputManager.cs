@@ -59,7 +59,7 @@ public class InputManager : MonoBehaviour
     private void Update()
     {
         // B키로 건설 상태 토글
-        if (Input.GetKeyDown(KeyCode.B))
+        if (Input.GetKeyDown(KeyCode.B) && !IsPointerOverUI())
         {
             isBuildMode = !isBuildMode;
             if (isBuildMode)
@@ -69,7 +69,8 @@ public class InputManager : MonoBehaviour
             else
             {
                 HideBuildUI(); // BuildUI 애니메이션 실행
-                
+                placementSystem.ExitBuildMode();
+                OnExit?.Invoke();
             }
         }
 
@@ -146,7 +147,7 @@ public class InputManager : MonoBehaviour
                 .OnComplete(() =>
                 {
                     uiTween = null;
-                    placementSystem.ExitBuildMode();
+                    //placementSystem.ExitBuildMode();
                 }); // 완료 시 트윈 변수 초기화
         }
     }
