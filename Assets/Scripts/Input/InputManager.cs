@@ -8,7 +8,8 @@ public class InputManager : MonoBehaviour
     [Header("컴포넌트")]
     [SerializeField] private PlacementSystem placementSystem;
     [SerializeField] private Camera cam;
-    
+    [SerializeField] private Grid grid;
+    [SerializeField] private ChangeFloorSystem changeFloorSystem;
     
     private Vector3 lastPosition;   // 마지막 좌표 변수
     private Vector3 uiShowPosition; // BuildUI가 보이는 위치
@@ -16,6 +17,7 @@ public class InputManager : MonoBehaviour
     private Tween   uiTween; // 현재 실행 중인 트윈 저장
 
     [Header("변수")]
+    
     [SerializeField] private LayerMask placementLayermask;
     [SerializeField] private LayerMask batchedLayer;
     [SerializeField] private LayerMask objectLayer;
@@ -25,7 +27,7 @@ public class InputManager : MonoBehaviour
     public RaycastHit   hit2; 
     public bool         isBuildMode = false;
     public bool IsPointerOverUI() => EventSystem.current.IsPointerOverGameObject();
-
+    
     private void Start()
     {
         // BuildUI의 초기 위치 설정
@@ -72,6 +74,8 @@ public class InputManager : MonoBehaviour
                 placementSystem.ExitBuildMode();
                 OnExit?.Invoke();
             }
+
+            ChangeFloorForBuildMode();
         }
 
         if (Input.GetMouseButtonDown(0))
@@ -100,6 +104,7 @@ public class InputManager : MonoBehaviour
                 placementSystem.StartDeleteMode();
         }
     }
+    
 
     /// <summary>
     /// BuildUI를 위로 올리는 Dotween 애니메이션 코드
@@ -178,11 +183,10 @@ public class InputManager : MonoBehaviour
         // 아래 코드를 통해, 총 5층의 레이캐스트가 작동하도록 하고, 1~5층 각각의 레이어를 가진 오브젝트를 둔다.
         // 층수가 올라가는 버튼을 누를 때 마다 그 층외의 나머지 층 레이어는 전부 비활성화 시킨다.
 
-        if (Physics.Raycast(ray, out hit2, 100, batchedLayer))
+        /*if (Physics.Raycast(ray, out hit2, 100, batchedLayer))
         {
-            Debug.Log(hit2.collider.name);
-            Debug.Log(hit2.transform.gameObject.layer);
-        }
+            
+        }*/
         
         return lastPosition;
     }
@@ -204,5 +208,10 @@ public class InputManager : MonoBehaviour
             return clickedObject.transform.root.gameObject;
         }
         return null;
+    }
+
+    private void ChangeFloorForBuildMode()
+    {
+        if(placementSystem.GetFloorLock()) changeFloorSystem.OnBuildModeChanged();
     }
 }

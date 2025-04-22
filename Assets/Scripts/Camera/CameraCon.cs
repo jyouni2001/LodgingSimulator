@@ -1,5 +1,6 @@
 using Unity.Cinemachine;
 using UnityEngine;
+using DG.Tweening;
 
 public class CameraCon : MonoBehaviour
 {   
@@ -11,11 +12,14 @@ public class CameraCon : MonoBehaviour
     public float     fovVelocity;           // 현재 FOV 변경 속도
     public float     moveSpeed      = 10f;  // WASD 이동 속도
     public float     rotationSpeed  = 5f;   // 회전 속도
-
+    public float startHeight = 25f;
+    
     public Transform target;         // 카메라 위치
     public Collider  boundingVolume; // 카메라 경계선
 
     private Vector3 offset;
+    private Tween smoothTweener;
+    private float duration = 1f;
 
     [SerializeField] private float             yaw   = -90f;    // 좌우 회전 (Y축)
     [SerializeField] private float             pitch = 60f;     // 상하 회전 (X축)
@@ -28,6 +32,7 @@ public class CameraCon : MonoBehaviour
     
     private void Start()
     {
+        Debug.Log($"{target.transform.position}부터 시작");
         if (cam is null)
         {
             Debug.LogError("CinemachineVirtualCamera가 할당되지 않았습니다!");
@@ -37,7 +42,10 @@ public class CameraCon : MonoBehaviour
 
         //카메라 값 초기화
         offset = cam.transform.position;
-        target.transform.position = offset;
+        Debug.Log($"{offset} 여기");
+        offset.y = startHeight;
+        
+        //target.transform.position = offset;
         targetFOV = cam.Lens.FieldOfView; 
     }
 
@@ -56,8 +64,6 @@ public class CameraCon : MonoBehaviour
         );
 
         if (target is not null) target.transform.position = targetPosition;
-        
-        
     }
 
     /// <summary>
@@ -135,5 +141,24 @@ public class CameraCon : MonoBehaviour
             // 회전 적용
             target.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
         }
+    }
+
+    
+    public void SetOffset(int offsetY)
+    {
+        // 기존 Tween이 있으면 종료
+        if (smoothTweener != null)
+        {
+            smoothTweener.Kill();
+        }
+
+        // DOTween으로 offset.y를 부드럽게 변경
+        smoothTweener = DOVirtual.Float(offset.y, offsetY, duration, value =>
+        {
+            offset.y = value;
+        }).SetEase(Ease.InOutQuad).OnComplete(() =>
+        {
+            smoothTweener = null; // 완료 시 Tween 정리
+        });
     }
 }
