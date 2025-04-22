@@ -48,16 +48,46 @@ MonoBehaviour:
     <kindIndex>k__BackingField: 2
     IsWall: 1
     <Size>k__BackingField: {x: 1, y: 2}
-    <Prefab>k__BackingField: {fileID: 6264304094005032022, guid: c94766d82b95fe34985945100873f860, type: 3}
+    <Prefab>k__BackingField: {fileID: 5723797442934855889, guid: 1fd01608461d1bb41ad0248e6d0d37e5, type: 3}
   - <Name>k__BackingField: Wall_Door
     <ID>k__BackingField: 6
     <kindIndex>k__BackingField: 2
     IsWall: 1
     <Size>k__BackingField: {x: 1, y: 2}
-    <Prefab>k__BackingField: {fileID: 5557851236235590639, guid: 45c5a01e17f2bea4883a27ca205f526f, type: 3}
+    <Prefab>k__BackingField: {fileID: 5475902260803981806, guid: 7f137754d89bebf4f810bf3870326932, type: 3}
   - <Name>k__BackingField: Counter
     <ID>k__BackingField: 7
     <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 3, y: 1}
+    <Prefab>k__BackingField: {fileID: 611180667597065664, guid: 2e68333af6b5618489531abbdd8d5ab2, type: 3}
+  - <Name>k__BackingField: Rug_1
+    <ID>k__BackingField: 8
+    <kindIndex>k__BackingField: 3
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 2}
+    <Prefab>k__BackingField: {fileID: 7389119360703711501, guid: c2ae78a4b577371409b2d198f3b4337f, type: 3}
+  - <Name>k__BackingField: Rug_2
+    <ID>k__BackingField: 9
+    <kindIndex>k__BackingField: 3
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 1}
+    <Prefab>k__BackingField: {fileID: 6015227496556208911, guid: 17d6b7b61b66dea42b1617d718a6d828, type: 3}
+  - <Name>k__BackingField: WindowWall
+    <ID>k__BackingField: 10
+    <kindIndex>k__BackingField: 2
     IsWall: 1
     <Size>k__BackingField: {x: 1, y: 2}
-    <Prefab>k__BackingField: {fileID: 611180667597065664, guid: 2e68333af6b5618489531abbdd8d5ab2, type: 3}
+    <Prefab>k__BackingField: {fileID: 6716479437099036806, guid: 44a9fc76c103a4f4ba52ec6564ff5d24, type: 3}
+  - <Name>k__BackingField: Bed
+    <ID>k__BackingField: 11
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 1, y: 2}
+    <Prefab>k__BackingField: {fileID: 3836919220109945498, guid: 195bda83c33a43245b48a9ac91894229, type: 3}
+  - <Name>k__BackingField: TableTop
+    <ID>k__BackingField: 12
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 1, y: 1}
+    <Prefab>k__BackingField: {fileID: 1698733504407223504, guid: 2af296d4a4476114baedf7b8a609772e, type: 3}

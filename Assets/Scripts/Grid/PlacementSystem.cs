@@ -48,7 +48,7 @@ public class PlacementSystem : MonoBehaviour
     public List<GameObject> plane4f;
 
     private int selectedObjectIndex = -1;
-    public GridData floorData, furnitureData, wallData;
+    public GridData floorData, furnitureData, wallData, decoData;
     private Renderer previewRenderer;
     private Vector3Int gridPosition;
     private Quaternion previewRotation = Quaternion.identity;
@@ -194,6 +194,7 @@ public class PlacementSystem : MonoBehaviour
         floorData = new GridData();
         furnitureData = new GridData();
         wallData = new GridData();
+        decoData = new GridData();
     }
     #endregion
 
@@ -310,16 +311,28 @@ public class PlacementSystem : MonoBehaviour
         ApplyPreviewMaterial(previewObject);
     }
 
+    public Renderer[] renderers2;
     private void ApplyPreviewMaterial(GameObject obj)
     {
-        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
-        MaterialPropertyBlock propBlock = new MaterialPropertyBlock();
+        Debug.Log("현재 머티리얼 변경중");
+        renderers2 = obj.GetComponentsInChildren<Renderer>();
+        Debug.Log($"{obj.name}의 자손 머티리얼");
 
-        foreach (Renderer renderer in renderers)
+        foreach (Renderer renderer in renderers2)
         {
-            renderer.GetPropertyBlock(propBlock);
-            propBlock.SetColor("_Color", new Color(1f, 1f, 1f, 0.5f));
-            renderer.SetPropertyBlock(propBlock);
+            Material[] originalMat = renderer.materials;
+            Material[] newMaterial = new Material[originalMat.Length];
+
+            for (int i = 0; i < originalMat.Length; i++)
+            {
+                originalMat[i].SetFloat("_Surface", 1);
+                originalMat[i].SetFloat("_Alphta", 0.3f);
+                originalMat[i].SetFloat("_Blend", 1);                
+
+                newMaterial[i] = originalMat[i];
+            }
+
+            renderer.materials = newMaterial;
         }
     }
     #endregion
@@ -378,7 +391,7 @@ public class PlacementSystem : MonoBehaviour
             bool isWithinBounds = planeBounds.Any(bound => bound.Contains(worldPos));
             if (!isWithinBounds)
             {
-                Debug.Log($"그리드 반경을 벗어남: {pos}");
+                //Debug.Log($"그리드 반경을 벗어남: {pos}");
                 return false;
             }
         }
@@ -388,7 +401,7 @@ public class PlacementSystem : MonoBehaviour
             // 바닥 플로어를 배치하려는 경우, 해당 위치에 이미 다른 바닥 플로어가 있는지 확인
             if (!floorData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
             {
-                Debug.Log($"배치 불가: 해당 위치에 이미 바닥 플로어가 존재합니다. 위치: {gridPosition}");
+                //Debug.Log($"배치 불가: 해당 위치에 이미 바닥 플로어가 존재합니다. 위치: {gridPosition}");
                 return false;
             }
             return true;
@@ -409,7 +422,7 @@ public class PlacementSystem : MonoBehaviour
     
              if (objCollider is null)
              {
-                 Debug.LogWarning($"오브젝트 {prefab.name}에 콜라이더가 없습니다. 충돌 검사를 건너뜁니다.");
+                 //Debug.LogWarning($"오브젝트 {prefab.name}에 콜라이더가 없습니다. 충돌 검사를 건너뜁니다.");
                  Destroy(tempObject);
                  return furnitureData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall);
              }
@@ -511,7 +524,7 @@ public class PlacementSystem : MonoBehaviour
              // 충돌 감지 시 로그 출력 및 배치 금지
              if (hitColliders.Length > 0)
              {
-                 Debug.Log($"배치 불가: 가구가 벽과 충돌했습니다. 벽 개수: {hitColliders.Length}");
+                 //Debug.Log($"배치 불가: 가구가 벽과 충돌했습니다. 벽 개수: {hitColliders.Length}");
                  foreach (Collider hit in hitColliders)
                  {
                      Debug.Log($"- 충돌한 벽 오브젝트: {hit.gameObject.name}");
@@ -526,7 +539,7 @@ public class PlacementSystem : MonoBehaviour
              // GridData 기반 충돌 체크 - 다른 가구와의 충돌 확인
              if (!furnitureData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
              {
-                 Debug.Log($"배치 불가: 해당 위치에 가구가 이미 존재합니다. 위치: {gridPosition}");
+                 //Debug.Log($"배치 불가: 해당 위치에 가구가 이미 존재합니다. 위치: {gridPosition}");
                  return false;
              }
         }
@@ -930,6 +943,7 @@ public class PlacementSystem : MonoBehaviour
             case 0: return floorData;
             case 1: return furnitureData;
             case 2: return wallData;
+            case 3: return decoData;
             default:
                 Debug.LogWarning($"Unknown kindIndex: {database.objectsData[selectedObjectIndex].kindIndex}");
                 return furnitureData; // 기본값 또는 null 반환 등 결정 필요
@@ -1059,6 +1073,10 @@ public class PlacementSystem : MonoBehaviour
         // wallData 확인
         if (wallData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
             return wallData;
+
+        // decoData 확인
+        if (decoData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
+            return decoData;
 
         return null;
     }
