@@ -1,5 +1,6 @@
 using System.Collections.Generic;
-using System.Linq;
+//using System.Linq;
+using ZLinq;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -388,7 +389,8 @@ public class PlacementSystem : MonoBehaviour
         foreach (Vector3Int pos in positionsToCheck)
         {
             Vector3 worldPos = grid.GetCellCenterWorld(pos);
-            bool isWithinBounds = planeBounds.Any(bound => bound.Contains(worldPos));
+            //bool isWithinBounds = planeBounds.Any(bound => bound.Contains(worldPos));
+            bool isWithinBounds = planeBounds.AsValueEnumerable().Any(bound => bound.Contains(worldPos));
             if (!isWithinBounds)
             {
                 //Debug.Log($"그리드 반경을 벗어남: {pos}");
@@ -1063,6 +1065,22 @@ public class PlacementSystem : MonoBehaviour
     private GridData FindGridDataByObjectIndex(int objectIndex)
     {
         // floorData 확인
+        if (floorData.placedObjects.AsValueEnumerable().Any(kvp => kvp.Value.AsValueEnumerable().Any(data => data.PlacedObjectIndex == objectIndex)))
+            return floorData;
+
+        // furnitureData 확인
+        if (furnitureData.placedObjects.AsValueEnumerable().Any(kvp => kvp.Value.AsValueEnumerable().Any(data => data.PlacedObjectIndex == objectIndex)))
+            return furnitureData;
+
+        // wallData 확인
+        if (wallData.placedObjects.AsValueEnumerable().Any(kvp => kvp.Value.AsValueEnumerable().Any(data => data.PlacedObjectIndex == objectIndex)))
+            return wallData;
+
+        // decoData 확인
+        if (decoData.placedObjects.AsValueEnumerable().Any(kvp => kvp.Value.AsValueEnumerable().Any(data => data.PlacedObjectIndex == objectIndex)))
+            return decoData;
+
+        /*// floorData 확인
         if (floorData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
             return floorData;
 
@@ -1076,7 +1094,7 @@ public class PlacementSystem : MonoBehaviour
 
         // decoData 확인
         if (decoData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
-            return decoData;
+            return decoData;*/
 
         return null;
     }

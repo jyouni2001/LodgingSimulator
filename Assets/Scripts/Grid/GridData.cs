@@ -1,7 +1,8 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
+//using System.Linq;
+using ZLinq;
 
 /// <summary>
 /// 그리드 데이터를 저장하는 클래스
@@ -40,7 +41,8 @@ public class GridData
             }   
             
             var sameTypeExistingObjects = placedObjects[pos]
-                .Where(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall == isWall);
+                .AsValueEnumerable().Where(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall == isWall);
+            //.Where(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall == isWall);
             var existingObjects = placedObjects[pos];
 
             if (isWall) // 벽 추가 시, 같은 각도의 벽 중복 방지 (이전 답변 내용 유지)
@@ -240,7 +242,8 @@ public class GridData
             {
                 // 이 GridData가 관리하는 타입과 같은 타입의 오브젝트만 고려
                 var sameTypeExistingObjects = placedObjects[pos]
-                    .Where(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall == isWall);
+                    .AsValueEnumerable().Where(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall == isWall);
+                //.Where(obj => PlacementSystem.Instance.database.GetObjectData(obj.ID).IsWall == isWall);
 
                 if (isWall) // 벽 배치 가능 여부 확인 (같은 각도 벽 충돌 체크)
                 {
