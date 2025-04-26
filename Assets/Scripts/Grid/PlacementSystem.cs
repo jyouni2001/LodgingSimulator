@@ -424,6 +424,17 @@ public class PlacementSystem : MonoBehaviour
             return true;
         }
 
+        if (objectToPlace.kindIndex == 3)
+        {
+            // 바닥 플로어를 배치하려는 경우, 해당 위치에 이미 다른 바닥 플로어가 있는지 확인
+            if (!decoData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
+            {
+                //Debug.Log($"배치 불가: 해당 위치에 이미 바닥 플로어가 존재합니다. 위치: {gridPosition}");
+                return false;
+            }
+            return true;
+        }
+
         if (!placingWall) // 가구를 설치하려는 경우
         {
              // 가구의 실제 월드 좌표 기준 크기와 중심을 계산
@@ -883,6 +894,8 @@ public class PlacementSystem : MonoBehaviour
             return;
         }
 
+        
+
         // 드래그 시작
         if (Input.GetMouseButtonDown(0) && !inputManager.IsPointerOverUI())
         {
@@ -890,6 +903,7 @@ public class PlacementSystem : MonoBehaviour
             dragStartPosition = grid.WorldToCell(inputManager.GetSelectedMapPosition());
             inputManager.OnClicked -= PlaceStructure;
         }
+
 
         // 드래그 종료 및 배치
         if (Input.GetMouseButtonUp(0) && isDragging)
