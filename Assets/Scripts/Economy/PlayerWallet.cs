@@ -4,7 +4,7 @@ public class PlayerWallet : MonoBehaviour
 {
     public static PlayerWallet Instance { get; private set; }
     
-    [SerializeField] private int money = 0;
+    [SerializeField] private int money = 1000;
 
     public int Money => money;
 
@@ -38,5 +38,10 @@ public class PlayerWallet : MonoBehaviour
         {
             Debug.LogWarning($"소지금 부족: 필요 {amount}원, 현재 {money}원");
         }
+    }
+
+    public int GetMoney()
+    {
+        return Money;
     }
 }

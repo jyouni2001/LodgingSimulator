@@ -4,6 +4,7 @@ using ZLinq;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using System;
 
 public class PlacementSystem : MonoBehaviour
 {
@@ -105,6 +106,14 @@ public class PlacementSystem : MonoBehaviour
             FloorLock = true;
             Debug.Log($"증축 시스템 해금 상태 = {FloorLock}");
         }
+
+        // 삭제 모드일 때 마우스 인디케이터 업데이트
+        if (isDeleteMode)
+        {
+            Vector3 mousePosition = inputManager.GetSelectedMapPosition();
+            mouseIndicator.transform.position = mousePosition;
+        }
+
 
         if (selectedObjectIndex < 0) return;
 
@@ -341,6 +350,9 @@ public class PlacementSystem : MonoBehaviour
     #region 오브젝트 배치
     private void PlaceStructure()
     {
+        if (isDragging) // 드래그 중에는 단일 배치 실행하지 않음
+            return;
+
         if (inputManager.IsPointerOverUI())
         {
             return;
@@ -354,6 +366,9 @@ public class PlacementSystem : MonoBehaviour
 
         Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition);
         int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
+
+        PlayerWallet.Instance.SpendMoney(database.objectsData[selectedObjectIndex].BuildPrice);
+
         Debug.Log($"오브젝트 배치 좌표 : {worldPosition}");
         
         spawnEffect.OnBuildingPlaced(worldPosition);
@@ -873,6 +888,7 @@ public class PlacementSystem : MonoBehaviour
         {
             isDragging = true;
             dragStartPosition = grid.WorldToCell(inputManager.GetSelectedMapPosition());
+            inputManager.OnClicked -= PlaceStructure;
         }
 
         // 드래그 종료 및 배치
@@ -890,6 +906,7 @@ public class PlacementSystem : MonoBehaviour
                 // 건축 모드가 종료된 경우 드래그 취소
                 dragStartPosition = Vector3Int.zero;
                 UpdateDragPreview(gridPosition, gridPosition); // 프리뷰 초기화
+                inputManager.OnClicked += PlaceStructure;
             }
         }
 
@@ -902,9 +919,7 @@ public class PlacementSystem : MonoBehaviour
     /// <param name="endPos">끝 시점</param>
     private void PlaceLineStructure(Vector3Int startPos, Vector3Int endPos)
     {
-        if (selectedObjectIndex < 0) return;
-
-        if (!inputManager.isBuildMode) return;
+        if (selectedObjectIndex < 0 || !inputManager.isBuildMode) return;
 
         Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
         bool isWall = database.objectsData[selectedObjectIndex].IsWall;
@@ -915,9 +930,13 @@ public class PlacementSystem : MonoBehaviour
         int dz = Mathf.Abs(endPos.z - startPos.z);
         bool alongX = dx >= dz;
 
-        int stepCount = alongX ? dx + 1 : dz + 1;
-        Vector3Int stepDirection = alongX ? new Vector3Int((int)Mathf.Sign(endPos.x - startPos.x), 0, 0) 
-            : new Vector3Int(0, 0, (int)Mathf.Sign(endPos.z - startPos.z));
+        //int stepCount = alongX ? dx + 1 : dz + 1;
+        int stepCount = (dx == 0 && dz == 0) ? 1 : (alongX ? dx + 1 : dz + 1);
+        /*Vector3Int stepDirection = alongX ? new Vector3Int((int)Mathf.Sign(endPos.x - startPos.x), 0, 0) 
+            : new Vector3Int(0, 0, (int)Mathf.Sign(endPos.z - startPos.z));*/
+        Vector3Int stepDirection = (dx == 0 && dz == 0) ? Vector3Int.zero :
+                               alongX ? new Vector3Int((int)Mathf.Sign(endPos.x - startPos.x), 0, 0) :
+                               new Vector3Int(0, 0, (int)Mathf.Sign(endPos.z - startPos.z));
 
         Vector3Int currentPos = startPos;
         for (int i = 0; i < stepCount; i++)
@@ -926,6 +945,7 @@ public class PlacementSystem : MonoBehaviour
             {
                 Vector3 worldPosition = grid.GetCellCenterWorld(currentPos);
                 int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
+                PlayerWallet.Instance.SpendMoney(database.objectsData[selectedObjectIndex].BuildPrice);
                 selectedData.AddObjectAt(currentPos, objectSize, database.objectsData[selectedObjectIndex].ID, index, 
                 database.objectsData[selectedObjectIndex].kindIndex, previewRotation, grid, isWall);
 
@@ -1005,6 +1025,7 @@ public class PlacementSystem : MonoBehaviour
         isDeleteMode = true;
         inputManager.OnClicked += DeleteStructure; // 클릭 시 삭제 함수 호출
         inputManager.OnExit += StopDeleteMode;
+        mouseIndicator.SetActive(true); // 인디케이터 활성화
         Debug.Log("삭제 모드 시작");
     }
 
@@ -1013,6 +1034,7 @@ public class PlacementSystem : MonoBehaviour
         isDeleteMode = false;
         inputManager.OnClicked -= DeleteStructure;
         inputManager.OnExit -= StopDeleteMode;
+        mouseIndicator.SetActive(false); // 인디케이터 비활성화
         Debug.Log("삭제 모드 종료");
     }
 
@@ -1049,11 +1071,42 @@ public class PlacementSystem : MonoBehaviour
             return;
         }
 
+        // GridData에서 오브젝트의 ID 가져오기
+        int objectID = -1;
+        foreach (var kvp in selectedData.placedObjects)
+        {
+            foreach (var data in kvp.Value)
+            {
+                if (data.PlacedObjectIndex == objectIndex)
+                {
+                    objectID = data.ID;
+                    break;
+                }
+            }
+            if (objectID != -1) break;
+        }
+
+        if (objectID == -1)
+        {
+            Debug.LogWarning("GridData에서 오브젝트의 ID를 찾을 수 없음.");
+            return;
+        }
+
+        // ObjectsDatabaseSO에서 ObjectData 조회
+        ObjectData objectData = database.GetObjectData(objectID);
+        if (objectData is null)
+        {
+            Debug.LogWarning($"ID {objectID}에 해당하는 ObjectData를 찾을 수 없음.");
+            return;
+        }
+
         // GridData에서 데이터 제거
         if (selectedData.RemoveObjectByIndex(objectIndex))
         {
             // ObjectPlacer에서 오브젝트 제거
             objectPlacer.RemoveObject(objectIndex);
+            PlayerWallet.Instance.AddMoney(objectData.BuildPrice);
+            spawnEffect.OnBuildingPlaced(mouseIndicator.transform.position);
             Debug.Log($"오브젝트 삭제 완료: 인덱스 {objectIndex}");
         }
         else

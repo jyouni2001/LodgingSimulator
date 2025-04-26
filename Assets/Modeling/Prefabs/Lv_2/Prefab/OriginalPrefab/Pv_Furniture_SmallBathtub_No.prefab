@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7543280236222086632}
   m_Layer: 0
-  m_Name: Pv_Furniture_SmallBathtub
+  m_Name: Pv_Furniture_SmallBathtub_No
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -67,6 +67,14 @@ PrefabInstance:
       value: rug2
       objectReference: {fileID: 0}
     - target: {fileID: 716150449268152365, guid: bf3da847cf8f1f34ebe59a8cca180834, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 716150449268152365, guid: bf3da847cf8f1f34ebe59a8cca180834, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 716150449268152365, guid: bf3da847cf8f1f34ebe59a8cca180834, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1
       objectReference: {fileID: 0}

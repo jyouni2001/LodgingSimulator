@@ -67,6 +67,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sunbad_03
       objectReference: {fileID: 0}
+    - target: {fileID: 4969364181144687540, guid: c9e6d2c2be2771a47910b093a74d439f, type: 3}
+      propertyPath: m_TagString
+      value: Bed
+      objectReference: {fileID: 0}
     - target: {fileID: 5745866107929856270, guid: c9e6d2c2be2771a47910b093a74d439f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 4
