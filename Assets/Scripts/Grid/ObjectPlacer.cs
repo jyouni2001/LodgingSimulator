@@ -6,7 +6,7 @@ public class ObjectPlacer : MonoBehaviour
 {
     [SerializeField] private List<GameObject> placedGameObjects = new();
     [SerializeField] private InputManager inputManager;
-
+    [SerializeField] private GameObject BatchedObj;
     /// <summary>
     /// 매개 변수의 오브젝트들을 배치한다.
     /// </summary> 
@@ -16,10 +16,11 @@ public class ObjectPlacer : MonoBehaviour
     /// <returns></returns>
     public int PlaceObject(GameObject prefab, Vector3 position, Quaternion rotation)
     {
-        GameObject newObject = Instantiate(prefab);
+        GameObject newObject = Instantiate(prefab, BatchedObj.transform, true);
         newObject.transform.position = position;
         newObject.transform.rotation = rotation;
         newObject.isStatic = true;
+        
     
         placedGameObjects.Add(newObject);
         return placedGameObjects.Count - 1;

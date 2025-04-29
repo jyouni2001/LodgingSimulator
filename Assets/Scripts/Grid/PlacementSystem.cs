@@ -182,7 +182,7 @@ public class PlacementSystem : MonoBehaviour
                 List<Vector3Int> positions = floorData.CalculatePosition(gridPosition, objectSize, previewRotation, grid);
                 if (i < positions.Count)
                 {
-                    cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]);
+                    cellIndicators[i].transform.position = grid.GetCellCenterWorld(positions[i]) + new Vector3(0, 0.002f,0);
                     cellIndicators[i].transform.rotation = Quaternion.Euler(90, 0, 0);
                 }
             }
@@ -336,7 +336,7 @@ public class PlacementSystem : MonoBehaviour
             for (int i = 0; i < originalMat.Length; i++)
             {
                 originalMat[i].SetFloat("_Surface", 1);
-                originalMat[i].SetFloat("_Alphta", 0.3f);
+                //originalMat[i].SetFloat("_Alphta", 0.3f);
                 originalMat[i].SetFloat("_Blend", 1);                
 
                 newMaterial[i] = originalMat[i];
@@ -494,6 +494,7 @@ public class PlacementSystem : MonoBehaviour
                  Vector3 startPos = colliderCenter + Vector3.Scale(cornerDir, colliderSize / 2f);
                  Vector3 direction = -cornerDir.normalized;
                  float distance = colliderSize.magnitude / 2f;
+                 Debug.Log($"{distance} 레이 거리");
             
                  Debug.DrawRay(startPos, direction * distance, Color.yellow, 2f);
             
@@ -517,9 +518,9 @@ public class PlacementSystem : MonoBehaviour
                  foreach (Vector3 dir in directions)
                  {
                      float distance = Vector3.Scale(colliderSize / 2f, new Vector3(
-                         Mathf.Abs(dir.x) > 0.01f ? 1 : 0,
-                         Mathf.Abs(dir.y) > 0.01f ? 1 : 0,
-                         Mathf.Abs(dir.z) > 0.01f ? 1 : 0
+                         Mathf.Abs(dir.x) > 0.01f ? .7f : 0,
+                         Mathf.Abs(dir.y) > 0.01f ? .7f : 0,
+                         Mathf.Abs(dir.z) > 0.01f ? .7f : 0
                      )).magnitude;
                 
                      Debug.DrawRay(colliderCenter, dir * distance, Color.yellow, 2f);
@@ -544,7 +545,7 @@ public class PlacementSystem : MonoBehaviour
              // 오버랩박스로 마지막 확인 (더 작은 크기로)
              Collider[] hitColliders = Physics.OverlapBox(
                  colliderCenter,         
-                 colliderSize / 2.1f,     // 더 작은 영역으로 검사
+                 colliderSize / 4f,     // 더 작은 영역으로 검사
                  rotation,               
                  wallLayerMask          
              );
@@ -1013,7 +1014,7 @@ public class PlacementSystem : MonoBehaviour
                 if (indicatorIndex < cellIndicators.Count)
                 {
                     cellIndicators[indicatorIndex].SetActive(true);
-                    cellIndicators[indicatorIndex].transform.position = grid.GetCellCenterWorld(pos);
+                    cellIndicators[indicatorIndex].transform.position = grid.GetCellCenterWorld(pos) + new Vector3(0, 0.002f,0);
                     cellIndicators[indicatorIndex].transform.rotation = Quaternion.Euler(90, 0, 0);
                     indicatorIndex++;
                 }

@@ -8,6 +8,9 @@ TagManager:
   - Spawn
   - Room
   - Bed
+  - Floor
+  - Door
+  - Wall
   layers:
   - Default
   - TransparentFX

@@ -52,8 +52,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.3, y: 3, z: 4}
-  m_Center: {x: 1, y: 2, z: 1}
+  m_Size: {x: 0.05, y: 4.65, z: 4}
+  m_Center: {x: 1, y: 2.34, z: 1}
 --- !u!1001 &7249106469956452534
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -62,13 +62,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8295118303227249031}
     m_Modifications:
+    - target: {fileID: 1109533011205715048, guid: c94766d82b95fe34985945100873f860, type: 3}
+      propertyPath: m_TagString
+      value: Door
+      objectReference: {fileID: 0}
+    - target: {fileID: 1554315973146911711, guid: c94766d82b95fe34985945100873f860, type: 3}
+      propertyPath: m_TagString
+      value: Wall
+      objectReference: {fileID: 0}
     - target: {fileID: 6264304094005032022, guid: c94766d82b95fe34985945100873f860, type: 3}
       propertyPath: m_Name
       value: cabin-door
-      objectReference: {fileID: 0}
-    - target: {fileID: 6747685056392834796, guid: c94766d82b95fe34985945100873f860, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1.4
       objectReference: {fileID: 0}
     - target: {fileID: 6747685056392834796, guid: c94766d82b95fe34985945100873f860, type: 3}
       propertyPath: m_LocalPosition.x
