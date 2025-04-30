@@ -136,7 +136,7 @@ public class CameraCon : MonoBehaviour
             pitch -= Input.GetAxis("Mouse Y") * rotationSpeed;
 
             // 상하 회전 각도 제한
-            pitch = Mathf.Clamp(pitch, 0f, 70f);
+            pitch = Mathf.Clamp(pitch, -40f, 70f);
 
             // 회전 적용
             target.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
