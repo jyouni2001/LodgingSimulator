@@ -63,6 +63,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 467214781185070771}
     m_Modifications:
+    - target: {fileID: 7790047624956773270, guid: 77539d0f2497acf4b90ce9ec4cc0a633, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 1e03a1699b6dd474795dc3d98e505f0b, type: 2}
+    - target: {fileID: 7790047624956773270, guid: 77539d0f2497acf4b90ce9ec4cc0a633, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 919e047a7e8f49a489841f6a0df6ffb7, type: 2}
     - target: {fileID: 8582510116820165187, guid: 77539d0f2497acf4b90ce9ec4cc0a633, type: 3}
       propertyPath: m_Name
       value: Parasol_Red

@@ -129,6 +129,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8397104689872102201}
     m_Modifications:
+    - target: {fileID: 5629210451942626466, guid: b2784a5bd8dc3814787c07a65c907f56, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 1e03a1699b6dd474795dc3d98e505f0b, type: 2}
+    - target: {fileID: 5629210451942626466, guid: b2784a5bd8dc3814787c07a65c907f56, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 4bfd6cd23399755458913cd42a62abe4, type: 2}
     - target: {fileID: 6133345673864246647, guid: b2784a5bd8dc3814787c07a65c907f56, type: 3}
       propertyPath: m_Name
       value: Parasol_Blue
