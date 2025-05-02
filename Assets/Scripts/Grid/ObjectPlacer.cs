@@ -16,7 +16,7 @@ public class ObjectPlacer : MonoBehaviour
     /// <returns></returns>
     public int PlaceObject(GameObject prefab, Vector3 position, Quaternion rotation)
     {
-        GameObject newObject = Instantiate(prefab, BatchedObj.transform, true);
+        GameObject newObject = Instantiate(prefab); //, BatchedObj.transform, true);
         newObject.transform.position = position;
         newObject.transform.rotation = rotation;
         newObject.isStatic = true;
