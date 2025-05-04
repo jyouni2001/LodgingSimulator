@@ -19,7 +19,7 @@ public class ObjectPlacer : MonoBehaviour
         GameObject newObject = Instantiate(prefab); //, BatchedObj.transform, true);
         newObject.transform.position = position;
         newObject.transform.rotation = rotation;
-        newObject.isStatic = true;
+        //newObject.isStatic = true;
         
     
         placedGameObjects.Add(newObject);

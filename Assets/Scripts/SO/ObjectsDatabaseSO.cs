@@ -53,20 +53,4 @@ public class ObjectData
 
     [field: SerializeField]
     public int BasePrice { get; private set; }
-
-    // kindIndex에 따라 종류 이름을 반환하는 메서드 추가
-    public string GetKindName()
-    {
-        return kindIndex switch
-        {
-            0 => "타일",
-            1 => "가구",
-            2 => "벽",
-            3 => "장식품",
-            _ => "알 수 없음"
-        };
-    }
-
-    // 에디터에서 표시될 이름 (이름 + 종류)
-    public string DisplayName => $"{Name} ({GetKindName()})";
 }
