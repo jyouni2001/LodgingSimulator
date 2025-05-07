@@ -32,7 +32,7 @@ public class SoundManager : MonoBehaviour
 
     private void Start()
     {
-        TryGetComponent<AudioSource>(out audioSource);
+        TryGetComponent(out audioSource);
     }
     
 

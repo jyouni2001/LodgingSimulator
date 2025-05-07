@@ -176,6 +176,7 @@ public class InputManager : MonoBehaviour
         //RaycastHit hit;
         if (Physics.Raycast(ray, out hit, 90, placementLayermask))
         {
+            Debug.Log($"{hit.transform.name}");
             lastPosition = hit.point;
         }
 
