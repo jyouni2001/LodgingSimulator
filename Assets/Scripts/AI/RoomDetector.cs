@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
+//using System.Linq;
+using ZLinq;
 using JY;
 
 public class RoomDetector : MonoBehaviour
@@ -13,7 +14,7 @@ public class RoomDetector : MonoBehaviour
     [SerializeField] private int minBeds = 1;
     [SerializeField] private float scanInterval = 2f;
     [SerializeField] private LayerMask roomElementsLayer;
-
+ 
     private Dictionary<Vector3Int, RoomCell> roomGrid = new Dictionary<Vector3Int, RoomCell>();
     private List<RoomInfo> detectedRooms = new List<RoomInfo>();
     private HashSet<string> existingRoomIds = new HashSet<string>();
@@ -95,15 +96,15 @@ public class RoomDetector : MonoBehaviour
         DebugLog("방 스캔 시작");
         UpdateGridFromScene();
 
-        List<RoomInfo> newRooms = new List<RoomInfo>();
-        HashSet<Vector3Int> visitedCells = new HashSet<Vector3Int>();
+        List<RoomInfo> newRooms = new List<RoomInfo>(); // new GC 발생
+        HashSet<Vector3Int> visitedCells = new HashSet<Vector3Int>(); // new GC 발생
 
         foreach (var cell in roomGrid)
         {
             if (cell.Value.isFloor && !visitedCells.Contains(cell.Key))
             {
                 RoomInfo room = FloodFillRoom(cell.Key, visitedCells);
-                if (room != null)
+                if (room is not null)
                 {
                     bool isRoomValid = room.isValid(minWalls, minDoors, minBeds);
                     DebugLog($"방 검증 결과:\n" +
@@ -158,7 +159,7 @@ public class RoomDetector : MonoBehaviour
         if (detectedRooms.Count > 0)
         {
             DebugLog($"총 {detectedRooms.Count}개의 방이 감지됨");
-            OnRoomsUpdated?.Invoke(detectedRooms.Select(r => r.gameObject).ToArray());
+            OnRoomsUpdated?.Invoke(detectedRooms.AsValueEnumerable().Select(r => r.gameObject).ToArray());
         }
         else
         {
@@ -388,8 +389,8 @@ public class RoomDetector : MonoBehaviour
         if (list1.Count != list2.Count)
             return false;
 
-        var sortedList1 = list1.OrderBy(r => r.center.x).ThenBy(r => r.center.z).ToList();
-        var sortedList2 = list2.OrderBy(r => r.center.x).ThenBy(r => r.center.z).ToList();
+        var sortedList1 = list1.AsValueEnumerable().OrderBy(r => r.center.x).ThenBy(r => r.center.z).ToList();
+        var sortedList2 = list2.AsValueEnumerable().OrderBy(r => r.center.x).ThenBy(r => r.center.z).ToList();
 
         for (int i = 0; i < sortedList1.Count; i++)
         {
@@ -410,15 +411,15 @@ public class RoomDetector : MonoBehaviour
             room1.floorCells.Count != room2.floorCells.Count)
             return false;
 
-        bool wallsEqual = room1.walls.All(w1 => room2.walls.Any(w2 => w2.GetInstanceID() == w1.GetInstanceID()));
-        bool doorsEqual = room1.doors.All(d1 => room2.doors.Any(d2 => d2.GetInstanceID() == d1.GetInstanceID()));
-        bool bedsEqual = room1.beds.All(b1 => room2.beds.Any(b2 => b2.GetInstanceID() == b1.GetInstanceID()));
+        bool wallsEqual = room1.walls.AsValueEnumerable().All(w1 => room2.walls.AsValueEnumerable().Any(w2 => w2.GetInstanceID() == w1.GetInstanceID()));
+        bool doorsEqual = room1.doors.AsValueEnumerable().All(d1 => room2.doors.AsValueEnumerable().Any(d2 => d2.GetInstanceID() == d1.GetInstanceID()));
+        bool bedsEqual = room1.beds.AsValueEnumerable().All(b1 => room2.beds.AsValueEnumerable().Any(b2 => b2.GetInstanceID() == b1.GetInstanceID()));
 
         if (!wallsEqual || !doorsEqual || !bedsEqual)
             return false;
 
-        var sortedFloors1 = room1.floorCells.OrderBy(v => v.x).ThenBy(v => v.z).ToList();
-        var sortedFloors2 = room2.floorCells.OrderBy(v => v.x).ThenBy(v => v.z).ToList();
+        var sortedFloors1 = room1.floorCells.AsValueEnumerable().OrderBy(v => v.x).ThenBy(v => v.z).ToList();
+        var sortedFloors2 = room2.floorCells.AsValueEnumerable().OrderBy(v => v.x).ThenBy(v => v.z).ToList();
         
         for (int i = 0; i < sortedFloors1.Count; i++)
         {

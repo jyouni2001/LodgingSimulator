@@ -1,9 +1,13 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
+using Unity.AI.Navigation;
 
 public class AutoNavMeshBaker : MonoBehaviour
 {
+    public NavMeshSurface _navsurface;
+    
     [Header("NavMesh 설정")]
     [Tooltip("NavMesh를 생성할 태그들")]
     public string[] tagsToBake;
@@ -35,7 +39,7 @@ public class AutoNavMeshBaker : MonoBehaviour
 
     [Header("디버그 설정")]
     [Tooltip("디버그 로그를 표시할지 여부")]
-    public bool showDebugLogs = true;
+    public bool showDebugLogs = false;
 
     private NavMeshData navMeshData;
     private NavMeshDataInstance navMeshInstance;
@@ -56,7 +60,7 @@ public class AutoNavMeshBaker : MonoBehaviour
             Debug.LogError("NavMesh를 생성할 태그가 설정되지 않았습니다!");
             return;
         }
-
+        
         // 태그별 오브젝트 캐시 초기화
         CacheTaggedObjects();
 
@@ -104,17 +108,34 @@ public class AutoNavMeshBaker : MonoBehaviour
             }
         }
     }
-
+    
     void Update()
     {
-        if (!isInitialized) return;
+        //if (!isInitialized) return;
 
-        if (autoUpdate && Time.time >= nextUpdateTime && !isBaking)
+        if (autoUpdate && Time.time >= nextUpdateTime/* && !isBaking*/)
         {
-            var settings = CreateNavMeshSettings();
-            BakeNavMesh(settings);
+            StartCoroutine(BuildNavMeshAsync());
+            //_navsurface.BuildNavMesh();
+            Debug.Log("네비메쉬 빌드");
+            //var settings = CreateNavMeshSettings();
+            
+            //BakeNavMesh(settings);
             nextUpdateTime = Time.time + updateInterval;
         }
+    }
+    
+    IEnumerator BuildNavMeshAsync()
+    {
+        AsyncOperation operation = _navsurface.UpdateNavMesh(_navsurface.navMeshData);
+        isBaking = true;
+    
+        while (!operation.isDone)
+        {
+            yield return null;
+        }
+    
+        isBaking = false;
     }
 
     bool BakeNavMesh(NavMeshBuildSettings settings)
@@ -129,6 +150,7 @@ public class AutoNavMeshBaker : MonoBehaviour
             foreach (var tag in tagsToBake)
             {
                 if (string.IsNullOrEmpty(tag) || !tagObjectCache.ContainsKey(tag)) continue;
+                Debug.Log($"오브젝트 이름 : {tag}");
 
                 foreach (var obj in tagObjectCache[tag])
                 {

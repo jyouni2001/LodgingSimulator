@@ -117,3 +117,11 @@ MonoBehaviour:
     <Prefab>k__BackingField: {fileID: 1698733504407223504, guid: 2af296d4a4476114baedf7b8a609772e, type: 3}
     <BuildPrice>k__BackingField: 22
     <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: Stair_1
+    <ID>k__BackingField: 13
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 2}
+    <Prefab>k__BackingField: {fileID: 8923290286289832754, guid: b2005f35a87c00746b55ba93b9b44a65, type: 3}
+    <BuildPrice>k__BackingField: 22
+    <BasePrice>k__BackingField: 0
