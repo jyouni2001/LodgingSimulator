@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6532829140952182575}
   - component: {fileID: 6711966996452867421}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: revolving staircase
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -6,6 +6,9 @@ public class ChangeFloorSystem : MonoBehaviour
     [SerializeField] private Grid grid;
     [SerializeField] private PlacementSystem placementSystem;
     [SerializeField] private InputManager inputManager;
+    
+    [SerializeField] private Camera mainCamera;
+    
     public int currentFloor = 1;
     
     // 층 변경 메서드 (파라미터 없이 currentFloor 사용)
@@ -36,11 +39,53 @@ public class ChangeFloorSystem : MonoBehaviour
                 
                 break;
         }
+        
+        // 카메라 컬링 마스크 업데이트
+        UpdateCameraCullingMask();
 
         OnBuildModeChanged();
         grid.cellSize = newCellSize;
     }
 
+    // 카메라 컬링 마스크 설정: 현재 층과 그 아래 모든 층 표시
+    private void UpdateCameraCullingMask()
+    {
+        if (mainCamera == null)
+        {
+            Debug.LogError("Main Camera is not assigned in ChangeFloorSystem!");
+            return;
+        }
+
+        // 기본 레이어(예: Default, UI 등) 유지
+        int cullingMask = mainCamera.cullingMask;
+
+        // 모든 층 레이어 비우기
+        for (int i = 1; i <= 4; i++)
+        {
+            int layer = LayerMask.NameToLayer($"{i}F");
+            if (layer != -1)
+            {
+                cullingMask &= ~(1 << layer); // 해당 층 레이어 비활성화
+            }
+        }
+
+        // 현재 층과 그 아래 층 레이어 활성화
+        for (int i = 1; i <= currentFloor; i++)
+        {
+            int layer = LayerMask.NameToLayer($"{i}F");
+            if (layer != -1)
+            {
+                cullingMask |= (1 << layer); // 해당 층 레이어 활성화
+            }
+            else
+            {
+                Debug.LogError($"Layer {i}F not found!");
+            }
+        }
+
+        mainCamera.cullingMask = cullingMask;
+    }
+    
     // Up 버튼에서 호출
     public void IncreaseFloor()
     {

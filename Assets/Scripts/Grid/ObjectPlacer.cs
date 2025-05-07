@@ -6,7 +6,7 @@ public class ObjectPlacer : MonoBehaviour
 {
     [SerializeField] private List<GameObject> placedGameObjects = new();
     [SerializeField] private InputManager inputManager;
-    [SerializeField] private GameObject BatchedObj;
+    [SerializeField] private ChangeFloorSystem changeFloorSystem;
     /// <summary>
     /// 매개 변수의 오브젝트들을 배치한다.
     /// </summary> 
@@ -21,6 +21,27 @@ public class ObjectPlacer : MonoBehaviour
         newObject.transform.rotation = rotation;
         //newObject.isStatic = true;
         SoundManager.PlaySound(SoundType.Build, 0.1f); 
+        
+        // 현재 층에 따라 레이어 설정
+        int currentFloor = changeFloorSystem.currentFloor;
+        string layerName = $"{currentFloor}F"; // 예: "1F", "2F", "3F", "4F"
+        int layer = LayerMask.NameToLayer(layerName);
+        if (layer == -1)
+        {
+            Debug.LogError($"Layer {layerName} not found!");
+        }
+        else
+        {
+            Transform firstChild = newObject.transform.GetChild(0);
+            if (firstChild != null)
+            {
+                firstChild.gameObject.layer = layer;
+            }
+            else
+            {
+                Debug.LogWarning("No child object found to set layer!");
+            }
+        }
         
         placedGameObjects.Add(newObject);
         return placedGameObjects.Count - 1;

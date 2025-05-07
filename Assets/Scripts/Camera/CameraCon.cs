@@ -24,9 +24,7 @@ public class CameraCon : MonoBehaviour
     [SerializeField] private float             yaw   = -90f;    // 좌우 회전 (Y축)
     [SerializeField] private float             pitch = 60f;     // 상하 회전 (X축)
     [SerializeField] private CinemachineCamera cam;             // 카메라 참조
-    
-
-
+    [SerializeField] private Camera cam2;
     
     
     
@@ -40,6 +38,14 @@ public class CameraCon : MonoBehaviour
             return;
         }
 
+        if (cam2 is null)
+        {
+            cam2 = Camera.main;
+            return;
+        }
+
+        cam2 = Camera.main;
+
         //카메라 값 초기화
         offset = cam.transform.position;
         Debug.Log($"{offset} 여기");
@@ -47,6 +53,10 @@ public class CameraCon : MonoBehaviour
         
         //target.transform.position = offset;
         targetFOV = cam.Lens.FieldOfView; 
+        
+        // 초기 컬링 마스크 설정 (1F만 표시)
+        int layerMask = 1 << LayerMask.NameToLayer("1F");
+        cam2.cullingMask |= layerMask;
     }
 
     private void LateUpdate()

@@ -38,7 +38,9 @@ public class PlacementSystem : MonoBehaviour
     public ObjectsDatabaseSO database;
     [SerializeField] private GameObject previewObject;
     [SerializeField] private SpawnEffect spawnEffect;
+    [SerializeField] private ChangeFloorSystem changeFloorSystem;
 
+    
     [Header("그리드 관련")]
     [SerializeField] private List<GameObject> gridVisualization;
     [SerializeField] private List<Bounds> planeBounds;
@@ -318,6 +320,7 @@ public class PlacementSystem : MonoBehaviour
         }
 
         previewObject = Instantiate(database.objectsData[selectedObjectIndex].Prefab);
+        
         ApplyPreviewMaterial(previewObject);
     }
 
@@ -478,6 +481,16 @@ public class PlacementSystem : MonoBehaviour
              // 벽 레이어만 검사
              int wallLayerMask = LayerMask.GetMask("Wall");
         
+             // 현재 층과 아래 층 레이어 마스크
+             /*int currentFloor = changeFloorSystem.currentFloor;
+             int wallLayerMask = 0;
+             for (int i = 1; i <= currentFloor; i++)
+             {
+                 int layer = LayerMask.NameToLayer($"{i}F");
+                 if (layer != -1)
+                     wallLayerMask |= (1 << layer);
+             }*/
+             
              // 더 정확한 충돌 검사 방법 - 다중 Raycast 사용
              bool collision = false;
         

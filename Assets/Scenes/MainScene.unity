@@ -322,7 +322,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   placedGameObjects: []
   inputManager: {fileID: 519522462}
-  BatchedObj: {fileID: 533859733}
+  changeFloorSystem: {fileID: 2076916984}
 --- !u!1 &52600009
 GameObject:
   m_ObjectHideFlags: 0
@@ -3395,7 +3395,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 16383
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -6856,7 +6856,7 @@ MonoBehaviour:
     m_Bits: 512
   objectLayer:
     serializedVersion: 2
-    m_Bits: 15360
+    m_Bits: 261120
   BuildUI: {fileID: 52600009}
   isBuildMode: 0
 --- !u!1 &533859733
@@ -8383,7 +8383,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &702576093
 Transform:
   m_ObjectHideFlags: 0
@@ -9949,7 +9949,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01610e2a774cf614ea700bfb63930b47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  money: 1000
+  money: 5000
 --- !u!1 &948510710
 GameObject:
   m_ObjectHideFlags: 0
@@ -10829,6 +10829,7 @@ MonoBehaviour:
   database: {fileID: 11400000, guid: a210e61efb4380d438bbfe0a16698a7e, type: 2}
   previewObject: {fileID: 0}
   spawnEffect: {fileID: 1541092961}
+  changeFloorSystem: {fileID: 2076916984}
   gridVisualization:
   - {fileID: 1134061654}
   planeBounds: []
@@ -11430,7 +11431,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1119924795
 Transform:
   m_ObjectHideFlags: 0
@@ -12309,6 +12310,7 @@ MonoBehaviour:
   yaw: -90
   pitch: 60
   cam: {fileID: 1156550924}
+  cam2: {fileID: 330585545}
 --- !u!114 &1156550928
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15587,7 +15589,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1526090434
 Transform:
   m_ObjectHideFlags: 0
@@ -22145,6 +22147,7 @@ MonoBehaviour:
   grid: {fileID: 1923795467}
   placementSystem: {fileID: 1026163267}
   inputManager: {fileID: 519522462}
+  mainCamera: {fileID: 330585545}
   currentFloor: 1
 --- !u!1 &2111568856
 GameObject:
