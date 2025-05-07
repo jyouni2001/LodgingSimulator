@@ -20,8 +20,8 @@ public class ObjectPlacer : MonoBehaviour
         newObject.transform.position = position;
         newObject.transform.rotation = rotation;
         //newObject.isStatic = true;
+        SoundManager.PlaySound(SoundType.Build, 0.1f); 
         
-    
         placedGameObjects.Add(newObject);
         return placedGameObjects.Count - 1;
     }

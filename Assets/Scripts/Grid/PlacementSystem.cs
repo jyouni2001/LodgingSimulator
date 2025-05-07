@@ -350,27 +350,26 @@ public class PlacementSystem : MonoBehaviour
     #region 오브젝트 배치
     private void PlaceStructure()
     {
-        if (isDragging) // 드래그 중에는 단일 배치 실행하지 않음
-            return;
+        // 드래그 중에는 단일 배치 실행하지 않음
+        if (isDragging) return;
+        if (inputManager.IsPointerOverUI())  return;
 
-        if (inputManager.IsPointerOverUI())
-        {
-            return;
-        }
-
+        
+        
         Vector3 mousePosition = inputManager.GetSelectedMapPosition();
         Vector3Int gridPosition = grid.WorldToCell(mousePosition);
 
         bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex, previewRotation);
         if (!placementValidity) return;
-
+        
         Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition);
+        
         int index = objectPlacer.PlaceObject(database.objectsData[selectedObjectIndex].Prefab, worldPosition, previewRotation);
-
+        
         PlayerWallet.Instance.SpendMoney(database.objectsData[selectedObjectIndex].BuildPrice);
 
         Debug.Log($"오브젝트 배치 좌표 : {worldPosition}");
-        
+    
         spawnEffect.OnBuildingPlaced(worldPosition);
 
 
@@ -387,8 +386,8 @@ public class PlacementSystem : MonoBehaviour
             grid,
             isWall
         );
-
         if (inputManager.hit.transform is not null) Debug.Log($"현재 설치된 오브젝트 : {index}, 선택한 오브젝트 : {inputManager.hit.transform.name}");
+    
     }
     #endregion
 
@@ -399,7 +398,15 @@ public class PlacementSystem : MonoBehaviour
         bool placingWall = objectToPlace.IsWall;
         GameObject prefab = database.objectsData[selectedObjectIndex].Prefab;
 
-        // 1. 배치 영역 확인 (planeBounds) - 기존 로직 유지
+        // 1. 소지금 체크
+        int buildPrice = objectToPlace.BuildPrice;
+        if (PlayerWallet.Instance.GetMoney() < buildPrice)
+        {
+            Debug.Log("배치 불가: 소지금 부족");
+            return false; // 소지금 부족 시 배치 불가능
+        }
+        
+        // 2. 배치 영역 확인 (planeBounds) - 기존 로직 유지
         List<Vector3Int> positionsToCheck = floorData.CalculatePosition(gridPosition, objectToPlace.Size, rotation, grid);
         foreach (Vector3Int pos in positionsToCheck)
         {
@@ -418,7 +425,6 @@ public class PlacementSystem : MonoBehaviour
             // 바닥 플로어를 배치하려는 경우, 해당 위치에 이미 다른 바닥 플로어가 있는지 확인
             if (!floorData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
             {
-                //Debug.Log($"배치 불가: 해당 위치에 이미 바닥 플로어가 존재합니다. 위치: {gridPosition}");
                 return false;
             }
             return true;
@@ -426,10 +432,9 @@ public class PlacementSystem : MonoBehaviour
 
         if (objectToPlace.kindIndex == 3)
         {
-            // 바닥 플로어를 배치하려는 경우, 해당 위치에 이미 다른 바닥 플로어가 있는지 확인
+            // 장식품을 배치하려는 경우, 해당 위치에 장식품이 있는지 확인
             if (!decoData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
             {
-                //Debug.Log($"배치 불가: 해당 위치에 이미 바닥 플로어가 존재합니다. 위치: {gridPosition}");
                 return false;
             }
             return true;
@@ -450,7 +455,6 @@ public class PlacementSystem : MonoBehaviour
     
              if (objCollider is null)
              {
-                 //Debug.LogWarning($"오브젝트 {prefab.name}에 콜라이더가 없습니다. 충돌 검사를 건너뜁니다.");
                  Destroy(tempObject);
                  return furnitureData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall);
              }
@@ -494,7 +498,6 @@ public class PlacementSystem : MonoBehaviour
                  Vector3 startPos = colliderCenter + Vector3.Scale(cornerDir, colliderSize / 2f);
                  Vector3 direction = -cornerDir.normalized;
                  float distance = colliderSize.magnitude / 2f;
-                 Debug.Log($"{distance} 레이 거리");
             
                  Debug.DrawRay(startPos, direction * distance, Color.yellow, 2f);
             
