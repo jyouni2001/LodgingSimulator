@@ -423,16 +423,32 @@ public class PlacementSystem : MonoBehaviour
             }
         }
 
+        // 바닥 오브젝트 설치 시
         if (objectToPlace.kindIndex == 0)
         {
+            Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition); // 그리드 위치를 월드 좌표로 변환
+            RaycastHit hit;
+
+            // 아래로 짧은 레이캐스트 발사 (0.1f 위에서 시작해 0.2f 거리만큼 검사)
+            if (Physics.Raycast(worldPosition + Vector3.up * 0.1f, Vector3.down, out hit, 0.2f, LayerMask.GetMask("StairCollider")))
+            {
+                if (hit.collider != null)
+                {
+                    Debug.Log("설치 불가능: 계단과 충돌");
+                    return false; // 계단 콜라이더와 충돌하면 설치 불가
+                }
+            }
+            
             // 바닥 플로어를 배치하려는 경우, 해당 위치에 이미 다른 바닥 플로어가 있는지 확인
             if (!floorData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
             {
                 return false;
             }
+            
             return true;
         }
 
+        // 장식품 설치 시
         if (objectToPlace.kindIndex == 3)
         {
             // 장식품을 배치하려는 경우, 해당 위치에 장식품이 있는지 확인
@@ -443,7 +459,8 @@ public class PlacementSystem : MonoBehaviour
             return true;
         }
 
-        if (!placingWall) // 가구를 설치하려는 경우
+        // 가구를 설치 시
+        if (!placingWall) 
         {
              // 가구의 실제 월드 좌표 기준 크기와 중심을 계산
              
@@ -480,16 +497,6 @@ public class PlacementSystem : MonoBehaviour
         
              // 벽 레이어만 검사
              int wallLayerMask = LayerMask.GetMask("Wall");
-        
-             // 현재 층과 아래 층 레이어 마스크
-             /*int currentFloor = changeFloorSystem.currentFloor;
-             int wallLayerMask = 0;
-             for (int i = 1; i <= currentFloor; i++)
-             {
-                 int layer = LayerMask.NameToLayer($"{i}F");
-                 if (layer != -1)
-                     wallLayerMask |= (1 << layer);
-             }*/
              
              // 더 정확한 충돌 검사 방법 - 다중 Raycast 사용
              bool collision = false;
@@ -674,6 +681,27 @@ public class PlacementSystem : MonoBehaviour
         // 모든 검사를 통과하면 배치 가능
         return true;
     }
+    
+    // 벽/기둥의 중심 위치 계산
+    private Vector3Int GetCenterPosition(PlacementData placementData)
+    {
+        Vector3Int center = Vector3Int.zero;
+        foreach (Vector3Int pos in placementData.occupiedPositions)
+        {
+            center += pos;
+        }
+        center /= placementData.occupiedPositions.Count;
+        return center;
+    }
+
+// 5x5 그리드 범위 확인
+    private bool IsWithin5x5Grid(Vector3Int centerPosition, Vector3Int gridPosition)
+    {
+        int dx = Mathf.Abs(centerPosition.x - gridPosition.x);
+        int dz = Mathf.Abs(centerPosition.z - gridPosition.z);
+        return dx <= 2 && dz <= 2; // 중심 포함 5x5 범위
+    }
+    
     #endregion
 
     #region 건축 종료

@@ -10932,7 +10932,7 @@ MonoBehaviour:
   m_GenerateLinks: 0
   m_IgnoreNavMeshAgent: 1
   m_IgnoreNavMeshObstacle: 1
-  m_OverrideTileSize: 0
+  m_OverrideTileSize: 1
   m_TileSize: 256
   m_OverrideVoxelSize: 1
   m_VoxelSize: 0.06
