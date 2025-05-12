@@ -67,6 +67,8 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private GameObject changeFloorButton;
     
     [SerializeField] private GridData selectedData;
+    
+    [SerializeField] private GameObject highlightedObject;
     private void Awake()
     {
         // 싱글톤 인스턴스 설정
@@ -103,18 +105,13 @@ public class PlacementSystem : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.T))
+        if (Input.GetKeyDown(KeyCode.T)) // 언제든 삭제 가능
         {
             FloorLock = true;
             Debug.Log($"증축 시스템 해금 상태 = {FloorLock}");
         }
 
-        // 삭제 모드일 때 마우스 인디케이터 업데이트
-        if (isDeleteMode)
-        {
-            Vector3 mousePosition = inputManager.GetSelectedMapPosition();
-            mouseIndicator.transform.position = mousePosition;
-        }
+        DeliteModeMouth();
 
 
         if (selectedObjectIndex < 0) return;
@@ -123,7 +120,7 @@ public class PlacementSystem : MonoBehaviour
         PreviewObjectFunc();
         DragPlacement();
     }
-
+    
     #region 플레인 초기화
 
     /// <summary>
@@ -1076,12 +1073,12 @@ public class PlacementSystem : MonoBehaviour
 
     #region 삭제 모드
 
-    public bool isDeleteMode = false;
+    //public bool isDeleteMode = false;
 
     public void StartDeleteMode()
     {
         StopPlacement(); // 기존 배치 모드 종료
-        isDeleteMode = true;
+        inputManager.isDeleteMode = true;
         inputManager.OnClicked += DeleteStructure; // 클릭 시 삭제 함수 호출
         inputManager.OnExit += StopDeleteMode;
         mouseIndicator.SetActive(true); // 인디케이터 활성화
@@ -1090,7 +1087,7 @@ public class PlacementSystem : MonoBehaviour
 
     public void StopDeleteMode()
     {
-        isDeleteMode = false;
+        inputManager.isDeleteMode = false;
         inputManager.OnClicked -= DeleteStructure;
         inputManager.OnExit -= StopDeleteMode;
         mouseIndicator.SetActive(false); // 인디케이터 비활성화
@@ -1191,22 +1188,6 @@ public class PlacementSystem : MonoBehaviour
         // decoData 확인
         if (decoData.placedObjects.AsValueEnumerable().Any(kvp => kvp.Value.AsValueEnumerable().Any(data => data.PlacedObjectIndex == objectIndex)))
             return decoData;
-
-        /*// floorData 확인
-        if (floorData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
-            return floorData;
-
-        // furnitureData 확인
-        if (furnitureData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
-            return furnitureData;
-
-        // wallData 확인
-        if (wallData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
-            return wallData;
-
-        // decoData 확인
-        if (decoData.placedObjects.Any(kvp => kvp.Value.Any(data => data.PlacedObjectIndex == objectIndex)))
-            return decoData;*/
 
         return null;
     }
@@ -1316,5 +1297,59 @@ public class PlacementSystem : MonoBehaviour
     }
     
 
+    #endregion
+    
+    #region 삭제 모드 시 마우스 상태
+
+    private void DeliteModeMouth()
+    {
+        // 삭제 모드일 때 마우스 인디케이터 업데이트
+        if (inputManager.isDeleteMode)
+        {
+            Vector3 mousePosition = inputManager.GetSelectedMapPosition();
+            mouseIndicator.transform.position = mousePosition;
+            
+            // 마우스 위치로 오브젝트 감지
+            GameObject newHighlightedObject = inputManager.GetClickedObject();
+            if (newHighlightedObject != highlightedObject)
+            {
+                // 이전 오브젝트 비주얼 복원
+                if (highlightedObject != null)
+                {
+                    ResetObjectVisual(highlightedObject);
+                }
+
+                // 새로운 오브젝트 하이라이트
+                highlightedObject = newHighlightedObject;
+                if (highlightedObject != null)
+                {
+                    HighlightObject(highlightedObject);
+                }
+            }
+        }
+    }
+
+    #endregion
+    
+    #region 오브젝트 하이라이트
+    // 오브젝트 하이라이트
+    private void HighlightObject(GameObject obj)
+    {
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+        foreach (Renderer renderer in renderers)
+        {
+            renderer.material.color = new Color(1f, 0.5f, 0.5f, 1f); // 약간 붉은색으로 변경
+        }
+    }
+
+    // 오브젝트 비주얼 복원
+    private void ResetObjectVisual(GameObject obj)
+    {
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+        foreach (Renderer renderer in renderers)
+        {
+            renderer.material.color = Color.white; // 기본 색상으로 복원
+        }
+    }
     #endregion
 }

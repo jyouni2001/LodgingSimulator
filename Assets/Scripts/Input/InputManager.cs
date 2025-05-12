@@ -26,9 +26,68 @@ public class InputManager : MonoBehaviour
     public RaycastHit   hit;
     public RaycastHit   hit2; 
     public bool         isBuildMode = false;
+    public bool isDeleteMode = false;
     public bool IsPointerOverUI() => EventSystem.current.IsPointerOverGameObject();
     
     private void Start()
+    {
+        InitialBuildUI();
+    }
+    
+    private void Update()
+    {
+        // B키로 건설 상태 토글
+        if (Input.GetKeyDown(KeyCode.B) && !IsPointerOverUI())
+        {
+            isBuildMode = !isBuildMode;
+            if (isBuildMode)
+            {
+                ShowBuildUI(); // BuildUI 애니메이션 실행
+            }
+            else
+            {
+                HideBuildUI(); // BuildUI 애니메이션 실행
+                placementSystem.ExitBuildMode();
+                OnExit?.Invoke();
+            }
+
+            ChangeFloorForBuildMode();
+        }
+        
+        // 마우스 우클릭으로 건설 중지
+        if (Input.GetMouseButtonDown(1) && isBuildMode && !IsPointerOverUI())
+        {
+            OnExit?.Invoke();
+        }
+
+        if (Input.GetMouseButtonDown(0) && isDeleteMode)
+        {
+            OnClicked?.Invoke();
+        }
+
+        // ESC 키로 건설 상태 종료
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (isBuildMode)
+            {
+                isBuildMode = false;
+                placementSystem.ExitBuildMode();
+                HideBuildUI();
+            }
+            OnExit?.Invoke();
+        }
+
+        // 기존 코드 유지
+        if (Input.GetKeyDown(KeyCode.L) && isBuildMode)
+        {
+            if (isDeleteMode)
+                placementSystem.StopDeleteMode();
+            else
+                placementSystem.StartDeleteMode();
+        }
+    }
+
+    private void InitialBuildUI()
     {
         // BuildUI의 초기 위치 설정
         if (BuildUI is not null)
@@ -58,53 +117,6 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        // B키로 건설 상태 토글
-        if (Input.GetKeyDown(KeyCode.B) && !IsPointerOverUI())
-        {
-            isBuildMode = !isBuildMode;
-            if (isBuildMode)
-            {
-                ShowBuildUI(); // BuildUI 애니메이션 실행
-            }
-            else
-            {
-                HideBuildUI(); // BuildUI 애니메이션 실행
-                placementSystem.ExitBuildMode();
-                OnExit?.Invoke();
-            }
-
-            ChangeFloorForBuildMode();
-        }
-
-        if (Input.GetMouseButtonDown(0))
-        {
-            OnClicked?.Invoke();
-        }
-
-        // ESC 키로 건설 상태 종료
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (isBuildMode)
-            {
-                isBuildMode = false;
-                placementSystem.ExitBuildMode();
-                HideBuildUI();
-            }
-            OnExit?.Invoke();
-        }
-
-        // 기존 코드 유지
-        if (Input.GetKeyDown(KeyCode.L) && isBuildMode)
-        {
-            if (placementSystem.isDeleteMode)
-                placementSystem.StopDeleteMode();
-            else
-                placementSystem.StartDeleteMode();
-        }
-    }
-    
 
     /// <summary>
     /// BuildUI를 위로 올리는 Dotween 애니메이션 코드
