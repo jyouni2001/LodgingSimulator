@@ -55,16 +55,21 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Normal_Strength: 0.6
+    - _AO: 0.5
+    - _Alpha: 1
+    - _Metalic: 1
+    - _Normal_Strength: 0.5
     - _QueueControl: 1
     - _QueueOffset: 0
-    - _Refraction: 0
-    - _Smoothness: 0.67
-    - _Water_Lerp: 0.533
+    - _Refraction: 0.1
+    - _Smoothness: 0.275
+    - _Water_Lerp: 0.373
     m_Colors:
-    - _UV1: {r: 4, g: 4, b: 0.13, a: 0}
-    - _UV2: {r: 5, g: 5, b: 0, a: 0}
-    - _Water_Speed1: {r: 0.1, g: 0.1, b: 0, a: 0}
-    - _Water_Speed2: {r: -0.1, g: 0.1, b: 0, a: 0}
+    - _Color: {r: 0.16233535, g: 0.60377336, b: 0.6037736, a: 1}
+    - _Emission: {r: 0.0051174797, g: 0.027848465, b: 0.047169805, a: 0}
+    - _UV1: {r: 3, g: 3, b: 0, a: 0}
+    - _UV2: {r: 10, g: 3, b: 0, a: 0}
+    - _Water_Speed1: {r: 0.01, g: 0.01, b: 0, a: 0}
+    - _Water_Speed2: {r: -0.02, g: 0.03, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
