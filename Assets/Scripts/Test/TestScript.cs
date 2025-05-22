@@ -1,55 +1,42 @@
-using System;
-using System.Diagnostics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class TestScript : MonoBehaviour
 {
-    public GameObject testObject;
-    private int iterations = 1000000;
+    public Volume volume;
+    private VolumetricClouds volumetricClouds;
+    public float offsetPerSeconds;
 
-    void Start()
+    private void Start()
     {
-        testObject = new GameObject();
-
-        // == null 체크 전 메모리 측정
-        long memoryBefore = GC.GetTotalMemory(false);
-
-        // == null 체크
-        Stopwatch sw1 = new Stopwatch();
-        sw1.Start();
-        for (int i = 0; i < iterations; i++)
+        // Volume에서 VolumetricClouds 컴포넌트 가져오기
+        if (volume != null)
         {
-            if (testObject == null)
+            volume.profile.TryGet(out volumetricClouds);
+            if (volumetricClouds == null)
             {
-                // do nothing
+                Debug.LogWarning("VolumetricClouds 컴포넌트를 찾을 수 없습니다. Volume 프로필을 확인해주세요.");
             }
         }
-        sw1.Stop();
-
-        // == null 체크 후 메모리 측정
-        long memoryAfter = GC.GetTotalMemory(false);
-        long memoryUsed1 = memoryAfter - memoryBefore;
-
-        // is null 체크 전 메모리 측정
-        memoryBefore = GC.GetTotalMemory(false);
-
-        // is null 체크
-        Stopwatch sw2 = new Stopwatch();
-        sw2.Start();
-        for (int i = 0; i < iterations; i++)
+        else
         {
-            if (testObject is null)
-            {
-                // do nothing
-            }
+            Debug.LogWarning("Volume이 할당되지 않았습니다. 인스펙터에서 Volume을 설정해주세요.");
         }
-        sw2.Stop();
+    }
 
-        // is null 체크 후 메모리 측정
-        memoryAfter = GC.GetTotalMemory(false);
-        long memoryUsed2 = memoryAfter - memoryBefore;
+    private void Update()
+    {
+        if (volumetricClouds != null)
+        {
+            // 현재 Shape Offset 값 가져오기
+            Vector3 currentOffset = volumetricClouds.shapeOffset.value;
 
-        UnityEngine.Debug.Log($"== null check time: {sw1.ElapsedMilliseconds} ms, ticks: {sw1.ElapsedTicks} ticks, memory used: {memoryUsed1} bytes");
-        UnityEngine.Debug.Log($"is null check time: {sw2.ElapsedMilliseconds} ms, ticks: {sw2.ElapsedTicks} ticks, memory used: {memoryUsed2} bytes");
+            // 1초에 0.1씩 증가하도록 계산 (Time.deltaTime으로 프레임 독립적으로 동작)
+            float increaseAmount = offsetPerSeconds * Time.deltaTime; // 1초에 0.1 증가
+            currentOffset += new Vector3(increaseAmount, increaseAmount, increaseAmount);
+
+            // 새로운 값 적용
+            volumetricClouds.shapeOffset.value = currentOffset;
+        }
     }
 }

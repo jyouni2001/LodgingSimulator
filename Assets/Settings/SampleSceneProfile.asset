@@ -393,8 +393,8 @@ MonoBehaviour:
     m_OverrideState: 0
     m_Value: 5000
   shapeOffset:
-    m_OverrideState: 0
-    m_Value: {x: 0, y: 0, z: 0}
+    m_OverrideState: 1
+    m_Value: {x: 6.17, y: 0, z: 0}
   earthCurvature:
     m_OverrideState: 1
     m_Value: 0
@@ -645,12 +645,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be582cd2053a69e4da9d74f077d74bb8, type: 3}
   m_Name: Fog
   m_EditorClassIdentifier: 
-  active: 1
+  active: 0
   enabled:
     m_OverrideState: 1
     m_Value: 1
   colorMode:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: 1
   color:
     m_OverrideState: 0
@@ -660,7 +660,7 @@ MonoBehaviour:
     m_Value: {r: 1, g: 1, b: 1, a: 1}
   maxFogDistance:
     m_OverrideState: 1
-    m_Value: 1000
+    m_Value: 1
   mipFogMaxMip:
     m_OverrideState: 0
     m_Value: 0.5
@@ -678,13 +678,13 @@ MonoBehaviour:
     m_Value: 1
   baseHeight:
     m_OverrideState: 0
-    m_Value: 0
+    m_Value: 102.88
   maximumHeight:
     m_OverrideState: 0
-    m_Value: 100
+    m_Value: 102.88
   meanFreePath:
     m_OverrideState: 1
-    m_Value: 100
+    m_Value: 50000
 --- !u!114 &2103382033014837518
 MonoBehaviour:
   m_ObjectHideFlags: 3

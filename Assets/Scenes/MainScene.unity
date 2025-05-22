@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 0
-  m_FogColor: {r: 0.6792453, g: 0.6792453, b: 0.6792453, a: 1}
+  m_FogColor: {r: 0.5943396, g: 0.5943396, b: 0.5943396, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.001
   m_LinearFogStart: 200
@@ -13424,6 +13424,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1253383767}
   - component: {fileID: 1253383766}
+  - component: {fileID: 1253383768}
   m_Layer: 0
   m_Name: Test
   m_TagString: Untagged
@@ -13461,6 +13462,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1253383768
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1253383765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecc77d202a63f554bbe0575932906fbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  volume: {fileID: 832575518}
+  offsetPerSeconds: 0.01
 --- !u!1 &1254137645
 GameObject:
   m_ObjectHideFlags: 0
