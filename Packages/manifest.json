@@ -2,6 +2,7 @@
   "dependencies": {
     "com.cysharp.zlinq": "https://github.com/Cysharp/ZLinq.git?path=src/ZLinq.Unity/Assets/ZLinq.Unity",
     "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+    "com.jiaozi158.unity-physically-based-sky-urp": "https://github.com/jiaozi158/UnityPhysicallyBasedSkyURP.git",
     "com.unity.ai.navigation": "2.0.7",
     "com.unity.collab-proxy": "2.7.1",
     "com.unity.feature.cinematic": "1.0.0",

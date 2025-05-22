@@ -3,6 +3,7 @@ using System.Collections.Generic;
 //using System.Linq;
 using ZLinq;
 using JY;
+using UnityEditor;
 
 public class RoomDetector : MonoBehaviour
 {
@@ -475,10 +476,10 @@ public class RoomDetector : MonoBehaviour
                 }
             }
 
-            UnityEditor.Handles.Label(room.bounds.center, 
+            /*Handles.Label(room.bounds.center, 
                 $"Room {room.roomId}\nWalls: {room.walls.Count}\n" +
                 $"Doors: {room.doors.Count}\nBeds: {room.beds.Count}\n" +
-                $"Valid: {room.isValid(minWalls, minDoors, minBeds)}");
+                $"Valid: {room.isValid(minWalls, minDoors, minBeds)}");*/
         }
     }
 

@@ -104,7 +104,7 @@ public class InputManager : MonoBehaviour
 
                 // 초기 상태: BuildUI 숨김
                 uiRect.anchoredPosition = uiHidePosition;
-                BuildUI.SetActive(true); // 비활성화 대신 위치로 제어
+                BuildUI.SetActive(false); // 비활성화 대신 위치로 제어
             }
             else
             {
