@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3389639955024647215}
   - component: {fileID: 4007492568910098497}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Pv_Furniture_ShowerBooth
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -53,7 +53,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 3, y: 1, z: 1.5}
-  m_Center: {x: -1, y: 0.5, z: -1}
+  m_Center: {x: 1, y: 0.5, z: 0}
 --- !u!1001 &4689722604677923832
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -88,7 +88,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: eae9ae4e198fbaf44bfeb06d69f4559c, type: 2}
     - target: {fileID: 4582249913522955690, guid: 471da18506a112f408831aa24445a9db, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4582249913522955690, guid: 471da18506a112f408831aa24445a9db, type: 3}
       propertyPath: m_LocalPosition.y
@@ -96,7 +96,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4582249913522955690, guid: 471da18506a112f408831aa24445a9db, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4582249913522955690, guid: 471da18506a112f408831aa24445a9db, type: 3}
       propertyPath: m_LocalRotation.w

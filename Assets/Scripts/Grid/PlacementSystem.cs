@@ -26,7 +26,7 @@ public class PlacementSystem : MonoBehaviour
             return _instance;
         }
     }
-
+    public int indicatorMax = 100;
     [SerializeField] public GameObject mouseIndicator;
     [SerializeField] public GameObject cellIndicatorPrefab;
     private List<GameObject> cellIndicators = new List<GameObject>();
@@ -157,10 +157,8 @@ public class PlacementSystem : MonoBehaviour
 
         Vector2Int objectSize = database.objectsData[selectedObjectIndex].Size;
         int requiredIndicators = objectSize.x * objectSize.y;
-
-        // 최대 인디케이터 수 제한
-        const int maxIndicators = 50; // 적절한 값으로 설정
-        while (cellIndicators.Count < requiredIndicators && cellIndicators.Count < maxIndicators)
+        
+        while (cellIndicators.Count < requiredIndicators && cellIndicators.Count < indicatorMax)
         {
             GameObject newIndicator = Instantiate(cellIndicatorPrefab, transform);
             cellIndicators.Add(newIndicator);
@@ -426,6 +424,8 @@ public class PlacementSystem : MonoBehaviour
             Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition); // 그리드 위치를 월드 좌표로 변환
             RaycastHit hit;
 
+            Debug.Log("바닥플로어 설치 중");
+
             // 아래로 짧은 레이캐스트 발사 (0.1f 위에서 시작해 0.2f 거리만큼 검사)
             if (Physics.Raycast(worldPosition + Vector3.up * 0.1f, Vector3.down, out hit, 0.2f, LayerMask.GetMask("StairCollider")))
             {
@@ -439,6 +439,7 @@ public class PlacementSystem : MonoBehaviour
             // 바닥 플로어를 배치하려는 경우, 해당 위치에 이미 다른 바닥 플로어가 있는지 확인
             if (!floorData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
             {
+                Debug.Log("이미 그 자리에 바닥플로어가 있습니다.");
                 return false;
             }
             

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4414630767948721297}
   - component: {fileID: 4079155971788850897}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Pv_Furniture_BathTub
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -52,8 +52,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 0.5, z: 2}
-  m_Center: {x: 0, y: 0.5, z: 0}
+  m_Size: {x: 2.5, y: 0.8, z: 2.5}
+  m_Center: {x: 1, y: 1, z: 1}
 --- !u!1001 &7443697012521034736
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -64,7 +64,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 281488f4046c56a49a994e907f26e659, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 281488f4046c56a49a994e907f26e659, type: 3}
       propertyPath: m_LocalPosition.y
@@ -72,7 +72,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 281488f4046c56a49a994e907f26e659, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 281488f4046c56a49a994e907f26e659, type: 3}
       propertyPath: m_LocalRotation.w

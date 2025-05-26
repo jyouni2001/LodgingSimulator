@@ -117,11 +117,123 @@ MonoBehaviour:
     <Prefab>k__BackingField: {fileID: 1698733504407223504, guid: 2af296d4a4476114baedf7b8a609772e, type: 3}
     <BuildPrice>k__BackingField: 22
     <BasePrice>k__BackingField: 0
-  - <Name>k__BackingField: Stair_1
+  - <Name>k__BackingField: Stair
     <ID>k__BackingField: 13
     <kindIndex>k__BackingField: 1
     IsWall: 0
     <Size>k__BackingField: {x: 2, y: 2}
     <Prefab>k__BackingField: {fileID: 8923290286289832754, guid: b2005f35a87c00746b55ba93b9b44a65, type: 3}
     <BuildPrice>k__BackingField: 22
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: GasStove
+    <ID>k__BackingField: 14
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 1}
+    <Prefab>k__BackingField: {fileID: 6046157369948389120, guid: 6d0446225aac5e549a5e1cd925ff34fb, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: PickupTable
+    <ID>k__BackingField: 15
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 1}
+    <Prefab>k__BackingField: {fileID: 5606232033442940732, guid: a7c0c8e80ce88714eb8a14423b927018, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: BigBed
+    <ID>k__BackingField: 16
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 1}
+    <Prefab>k__BackingField: {fileID: 6797451524426507159, guid: 317669bd0c5902d45a938da3e5914777, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: Table_1
+    <ID>k__BackingField: 17
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 2}
+    <Prefab>k__BackingField: {fileID: 4585284726219760509, guid: 2883d9e90f1f7024dba7913370d81342, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: Table_2
+    <ID>k__BackingField: 18
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 1, y: 2}
+    <Prefab>k__BackingField: {fileID: 4838324142736045107, guid: a9edd0e9f3fa5c54abd05aff5d86d737, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: Floor_2
+    <ID>k__BackingField: 19
+    <kindIndex>k__BackingField: 0
+    IsWall: 0
+    <Size>k__BackingField: {x: 1, y: 1}
+    <Prefab>k__BackingField: {fileID: 3760256934785209011, guid: 31d0aa86d35619c4d9d2782cd4e898cc, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: BathTub
+    <ID>k__BackingField: 20
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 2}
+    <Prefab>k__BackingField: {fileID: 1586921238415871832, guid: 71390bed9f6fb084e8c7bab475f81bd8, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: ShowerBooth
+    <ID>k__BackingField: 21
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 1}
+    <Prefab>k__BackingField: {fileID: 3385512835200355953, guid: 7bda9b4ecfbfa404d9b5abf3158ff018, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: Floor_3
+    <ID>k__BackingField: 22
+    <kindIndex>k__BackingField: 0
+    IsWall: 0
+    <Size>k__BackingField: {x: 1, y: 1}
+    <Prefab>k__BackingField: {fileID: 3288001676654931963, guid: 76f793a3fc8efce40a03382849b5cd3f, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: Floor_4
+    <ID>k__BackingField: 23
+    <kindIndex>k__BackingField: 0
+    IsWall: 0
+    <Size>k__BackingField: {x: 1, y: 1}
+    <Prefab>k__BackingField: {fileID: 6502072012508937602, guid: 9cedcd9525c2edc4fa966c0efdaecec9, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: BigBathtub
+    <ID>k__BackingField: 24
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 3}
+    <Prefab>k__BackingField: {fileID: 8609706837519303403, guid: 5396a92a02cc7c747a7986710bc97195, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: CoffeeShop
+    <ID>k__BackingField: 25
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 7, y: 7}
+    <Prefab>k__BackingField: {fileID: 7653019209934300126, guid: df2a8ee06771adc4085659277940edcb, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: Lounge
+    <ID>k__BackingField: 26
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 11, y: 11}
+    <Prefab>k__BackingField: {fileID: 7162102330214889868, guid: b6c8649065419464ca1fdb007490c7e9, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: WeddingHall
+    <ID>k__BackingField: 27
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 7, y: 8}
+    <Prefab>k__BackingField: {fileID: 4229897219312774922, guid: 4179a3453f69f514299ac61d0d159957, type: 3}
+    <BuildPrice>k__BackingField: 20
     <BasePrice>k__BackingField: 0
