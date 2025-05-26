@@ -5,6 +5,9 @@ using DG.Tweening; // DOTween 사용을 위해 추가
 
 public class InputManager : MonoBehaviour
 {
+    [Header("상호작용 시스템")]
+    [SerializeField] private ObjectInteractionUI interactionUI;
+
     [Header("컴포넌트")]
     [SerializeField] private PlacementSystem placementSystem;
     [SerializeField] private Camera cam;
@@ -84,6 +87,46 @@ public class InputManager : MonoBehaviour
                 placementSystem.StopDeleteMode();
             else
                 placementSystem.StartDeleteMode();
+        }
+
+        // 일반 모드에서 오브젝트 클릭 처리
+        if (Input.GetMouseButtonDown(0) && !isBuildMode && !isDeleteMode && !IsPointerOverUI())
+        {
+            HandleObjectSelection();
+        }
+    }
+
+    private void HandleObjectSelection()
+    {
+        GameObject clickedObject = GetClickedObject();
+        
+        if (clickedObject != null)
+        {
+            Debug.Log($"{clickedObject.name}을 클릭");
+
+            // 설치된 오브젝트인지 확인
+            int objectIndex = FindFirstObjectByType<ObjectPlacer>().GetObjectIndex(clickedObject);
+            Debug.Log($"{clickedObject.name}의 objectIndex는 {objectIndex}");
+            if (objectIndex >= 0)
+            {
+                Vector3 objectPosition = clickedObject.transform.position;
+                Debug.Log($"{clickedObject.name}는 {objectPosition}에 위치");
+
+                // interactionUI null 체크 추가
+                if (interactionUI != null)
+                {
+                    interactionUI.ShowInteractionUI(clickedObject, objectPosition);
+                }
+                else
+                {
+                    Debug.LogError("InteractionUI가 할당되지 않았습니다! Inspector에서 할당해주세요.");
+                }
+            }
+        }
+        else
+        {
+            // 빈 공간 클릭 시 UI 숨김
+            if(clickedObject != null)  interactionUI.HideInteractionUI();
         }
     }
 
@@ -191,15 +234,6 @@ public class InputManager : MonoBehaviour
             Debug.Log($"{hit.transform.name}");
             lastPosition = hit.point;
         }
-
-        // 위 코드는 그리드에 맞게 건설할 수 있도록 그대로 둔다.
-        // 아래 코드를 통해, 총 5층의 레이캐스트가 작동하도록 하고, 1~5층 각각의 레이어를 가진 오브젝트를 둔다.
-        // 층수가 올라가는 버튼을 누를 때 마다 그 층외의 나머지 층 레이어는 전부 비활성화 시킨다.
-
-        /*if (Physics.Raycast(ray, out hit2, 100, batchedLayer))
-        {
-            
-        }*/
         
         return lastPosition;
     }

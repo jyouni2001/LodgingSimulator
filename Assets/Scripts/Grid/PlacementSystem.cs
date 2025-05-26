@@ -27,14 +27,14 @@ public class PlacementSystem : MonoBehaviour
         }
     }
 
-    [SerializeField] private GameObject mouseIndicator;
-    [SerializeField] private GameObject cellIndicatorPrefab;
+    [SerializeField] public GameObject mouseIndicator;
+    [SerializeField] public GameObject cellIndicatorPrefab;
     private List<GameObject> cellIndicators = new List<GameObject>();
 
     [Header("컴포넌트")]
     [SerializeField] private InputManager inputManager;
     [SerializeField] private ObjectPlacer objectPlacer;
-    [SerializeField] private Grid grid;
+    [SerializeField] public Grid grid;
     public ObjectsDatabaseSO database;
     [SerializeField] private GameObject previewObject;
     [SerializeField] private SpawnEffect spawnEffect;
@@ -42,7 +42,7 @@ public class PlacementSystem : MonoBehaviour
 
     
     [Header("그리드 관련")]
-    [SerializeField] private List<GameObject> gridVisualization;
+    [SerializeField] public List<GameObject> gridVisualization;
     [SerializeField] private List<Bounds> planeBounds;
 
     [FormerlySerializedAs("plane")] [Header("플레인 리스트")]
@@ -1171,7 +1171,7 @@ public class PlacementSystem : MonoBehaviour
         }
     }
 
-    private GridData FindGridDataByObjectIndex(int objectIndex)
+    public GridData FindGridDataByObjectIndex(int objectIndex)
     {
         // floorData 확인
         if (floorData.placedObjects.AsValueEnumerable().Any(kvp => kvp.Value.AsValueEnumerable().Any(data => data.PlacedObjectIndex == objectIndex)))
@@ -1192,6 +1192,11 @@ public class PlacementSystem : MonoBehaviour
         return null;
     }
 
+    // database를 public으로 접근 가능하게 하거나 getter 추가
+    public ObjectsDatabaseSO GetDatabase()
+    {
+        return database;
+    }
     #endregion
 
     #region 그리드바운드 시각화 (디버그 끝날 시 삭제 예정)
@@ -1295,10 +1300,20 @@ public class PlacementSystem : MonoBehaviour
     {
         return FloorLock;
     }
-    
+
+    // 또는 getter 메서드 추가
+    public GameObject GetCellIndicatorPrefab()
+    {
+        return cellIndicatorPrefab;
+    }
+
+    public GameObject GetMouseIndicator()
+    {
+        return mouseIndicator;
+    }
 
     #endregion
-    
+
     #region 삭제 모드 시 마우스 상태
 
     private void DeliteModeMouth()
