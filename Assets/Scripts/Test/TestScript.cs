@@ -38,5 +38,17 @@ public class TestScript : MonoBehaviour
             // 새로운 값 적용
             volumetricClouds.shapeOffset.value = currentOffset;
         }
+
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            Time.timeScale = 10;
+        }
+        
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            Time.timeScale = 1;
+        }
     }
+    
+    
 }
