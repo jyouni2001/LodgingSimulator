@@ -392,7 +392,7 @@ public class PlacementSystem : MonoBehaviour
     #endregion
 
     #region 점유상태 확인
-    public bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
+    private bool CheckPlacementValidity(Vector3Int gridPosition, int selectedObjectIndex, Quaternion rotation)
     {
         ObjectData objectToPlace = database.objectsData[selectedObjectIndex];
         bool placingWall = objectToPlace.IsWall;
@@ -678,6 +678,27 @@ public class PlacementSystem : MonoBehaviour
         // 모든 검사를 통과하면 배치 가능
         return true;
     }
+    
+    // 벽/기둥의 중심 위치 계산
+    private Vector3Int GetCenterPosition(PlacementData placementData)
+    {
+        Vector3Int center = Vector3Int.zero;
+        foreach (Vector3Int pos in placementData.occupiedPositions)
+        {
+            center += pos;
+        }
+        center /= placementData.occupiedPositions.Count;
+        return center;
+    }
+
+// 5x5 그리드 범위 확인
+    private bool IsWithin5x5Grid(Vector3Int centerPosition, Vector3Int gridPosition)
+    {
+        int dx = Mathf.Abs(centerPosition.x - gridPosition.x);
+        int dz = Mathf.Abs(centerPosition.z - gridPosition.z);
+        return dx <= 2 && dz <= 2; // 중심 포함 5x5 범위
+    }
+    
     #endregion
 
     #region 건축 종료
@@ -1051,6 +1072,8 @@ public class PlacementSystem : MonoBehaviour
     #endregion
 
     #region 삭제 모드
+
+    //public bool isDeleteMode = false;
 
     public void StartDeleteMode()
     {
