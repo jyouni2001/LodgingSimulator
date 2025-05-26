@@ -104,8 +104,16 @@ public class InputManager : MonoBehaviour
         {
             Debug.Log($"{clickedObject.name}을 클릭");
 
+            // ObjectPlacer null 체크 추가
+            ObjectPlacer objectPlacer = FindFirstObjectByType<ObjectPlacer>();
+            if (objectPlacer == null)
+            {
+                Debug.LogError("ObjectPlacer를 찾을 수 없습니다!");
+                return;
+            }
+
             // 설치된 오브젝트인지 확인
-            int objectIndex = FindFirstObjectByType<ObjectPlacer>().GetObjectIndex(clickedObject);
+            int objectIndex = objectPlacer.GetObjectIndex(clickedObject);
             Debug.Log($"{clickedObject.name}의 objectIndex는 {objectIndex}");
             if (objectIndex >= 0)
             {

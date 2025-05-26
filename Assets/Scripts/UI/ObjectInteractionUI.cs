@@ -22,6 +22,7 @@ public class ObjectInteractionUI : MonoBehaviour
     private int selectedObjectIndex;
     private bool isMoving = false;
     private bool isRotating = false;
+    private bool justShown = false; // UI가 방금 표시되었는지 확인하는 플래그
 
     // 이동 시 필요한 원본 데이터 저장
     private PlacementData originalPlacementData;
@@ -69,8 +70,21 @@ public class ObjectInteractionUI : MonoBehaviour
         destroyButton?.onClick.AddListener(DestroyObject);
     }
 
+    private GameObject currentSelectedObject; // 현재 선택된 오브젝트 추적
+
+    public bool IsUIActive()
+    {
+        return interactionPanel != null && interactionPanel.activeInHierarchy;
+    }
+
+    public bool IsSameObjectSelected(GameObject targetObject)
+    {
+        return currentSelectedObject == targetObject;
+    }
+
     public void ShowInteractionUI(GameObject targetObject, Vector3 worldPosition)
     {
+
         Debug.Log("ShowInteractionUI 시작");
         selectedObject = targetObject;
 
@@ -106,20 +120,18 @@ public class ObjectInteractionUI : MonoBehaviour
         Debug.Log($"UI 위치: {screenPosition}");
         interactionPanel.transform.position = screenPosition;
 
-        // UI 애니메이션으로 표시
-        interactionPanel.SetActive(true);
-        interactionPanel.transform.localScale = Vector3.zero;
-        interactionPanel.transform.DOScale(Vector3.one, 0.3f).SetEase(Ease.OutBack);
-
-        // UI 위치를 오브젝트 위쪽으로 설정
-        /*Vector3 screenPosition = mainCamera.WorldToScreenPoint(worldPosition + Vector3.up * 2f);
-        Debug.Log($"위치 : {screenPosition}");
-        interactionPanel.transform.position = screenPosition;
+        // UI 표시 플래그 설정
+        justShown = true;
 
         // UI 애니메이션으로 표시
         interactionPanel.SetActive(true);
         interactionPanel.transform.localScale = Vector3.zero;
-        interactionPanel.transform.DOScale(Vector3.one, 0.3f).SetEase(Ease.OutBack);*/
+        interactionPanel.transform.DOScale(Vector3.one, 0.3f)
+            .SetEase(Ease.OutBack)
+            .OnComplete(() => {
+                // 애니메이션 완료 후 클릭 감지 활성화
+                justShown = false;
+            });
     }
 
     public void HideInteractionUI()
@@ -485,6 +497,8 @@ public class ObjectInteractionUI : MonoBehaviour
 
     private void HandleClickOutside()
     {
+        if (justShown) return;
+
         if (Input.GetMouseButtonDown(0) && !isMoving && interactionPanel.activeInHierarchy)
         {
             Vector2 mousePosition = Input.mousePosition;
