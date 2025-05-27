@@ -322,9 +322,9 @@ public class PlacementSystem : MonoBehaviour
     public Renderer[] renderers2;
     private void ApplyPreviewMaterial(GameObject obj)
     {
-        Debug.Log("현재 머티리얼 변경중");
+        //Debug.Log("현재 머티리얼 변경중");
         renderers2 = obj.GetComponentsInChildren<Renderer>();
-        Debug.Log($"{obj.name}의 자손 머티리얼");
+        //Debug.Log($"{obj.name}의 자손 머티리얼");
 
         foreach (Renderer renderer in renderers2)
         {
@@ -366,7 +366,7 @@ public class PlacementSystem : MonoBehaviour
         
         PlayerWallet.Instance.SpendMoney(database.objectsData[selectedObjectIndex].BuildPrice);
 
-        Debug.Log($"오브젝트 배치 좌표 : {worldPosition}");
+        //Debug.Log($"오브젝트 배치 좌표 : {worldPosition}");
     
         spawnEffect.OnBuildingPlaced(worldPosition);
 
@@ -384,7 +384,7 @@ public class PlacementSystem : MonoBehaviour
             grid,
             isWall
         );
-        if (inputManager.hit.transform is not null) Debug.Log($"현재 설치된 오브젝트 : {index}, 선택한 오브젝트 : {inputManager.hit.transform.name}");
+        //if (inputManager.hit.transform is not null) Debug.Log($"현재 설치된 오브젝트 : {index}, 선택한 오브젝트 : {inputManager.hit.transform.name}");
     
     }
     #endregion
@@ -460,9 +460,8 @@ public class PlacementSystem : MonoBehaviour
         // 가구를 설치 시
         if (!placingWall) 
         {
-             // 가구의 실제 월드 좌표 기준 크기와 중심을 계산
-             
-             GameObject tempObject = Instantiate(prefab, grid.GetCellCenterWorld(gridPosition), rotation);
+            // 가구의 실제 월드 좌표 기준 크기와 중심을 계산             
+            GameObject tempObject = Instantiate(prefab, grid.GetCellCenterWorld(gridPosition), rotation);
         
              // 콜라이더를 가져옴
              Collider objCollider = tempObject.GetComponent<Collider>();
@@ -476,16 +475,16 @@ public class PlacementSystem : MonoBehaviour
                  Destroy(tempObject);
                  return furnitureData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall);
              }
-    
-             // 충돌 검사를 위해 콜라이더는 유지하고 렌더러는 비활성화
-             Renderer[] renderers = tempObject.GetComponentsInChildren<Renderer>();
+
+            // 충돌 검사를 위해 콜라이더는 유지하고 렌더러는 비활성화
+            Renderer[] renderers = tempObject.GetComponentsInChildren<Renderer>();
              foreach (Renderer renderer in renderers)
              {
                  renderer.enabled = false;
              }
-    
-             // 마진 값 조정 (더 작은 값으로 검사 영역 축소)
-             float collisionMargin = 0.05f; // 5cm 마진
+
+            // 마진 값 조정 (더 작은 값으로 검사 영역 축소)
+            float collisionMargin = 0.05f; // 5cm 마진
         
              Vector3 colliderCenter = objCollider.bounds.center;
              Vector3 colliderSize = objCollider.bounds.size - new Vector3(collisionMargin, collisionMargin, collisionMargin);
@@ -593,7 +592,7 @@ public class PlacementSystem : MonoBehaviour
                  return false;
              }
         }
-     
+
         if (placingWall)
         {
             // 1. 기존 다른 벽과의 충돌 검사
@@ -602,6 +601,7 @@ public class PlacementSystem : MonoBehaviour
                 Debug.Log($"벽 배치 불가: 같은 각도의 벽 충돌 at {gridPosition}");
                 return false;
             }
+            Debug.Log($"벽-벽 충돌 검사 통과 at {gridPosition}");
 
             // 2. 벽과 가구 간 충돌 검사 (Raycast 기반)
             GameObject tempObject = Instantiate(prefab, grid.GetCellCenterWorld(gridPosition), rotation);
@@ -612,93 +612,166 @@ public class PlacementSystem : MonoBehaviour
                 wallCollider = tempObject.GetComponentInChildren<Collider>();
             }
 
-            if (wallCollider is not null)
+            if (wallCollider is null)
             {
-                // 충돌 검사를 위해 렌더러 비활성화
-                Renderer[] renderers = tempObject.GetComponentsInChildren<Renderer>();
-                foreach (Renderer renderer in renderers)
+                Debug.Log($"벽 배치 불가: 콜라이더 없음 at {gridPosition}");
+                Destroy(tempObject);
+                return false;
+            }
+            Debug.Log($"콜라이더 확인 완료: {wallCollider.gameObject.name}");
+
+            // 충돌 검사를 위해 렌더러 비활성화
+            Renderer[] renderers = tempObject.GetComponentsInChildren<Renderer>();
+            foreach (Renderer renderer in renderers)
+            {
+                renderer.enabled = false;
+            }
+
+            // 가구 레이어 마스크 설정
+            int furnitureLayerMask = LayerMask.GetMask("Furniture");
+
+            // 벽 콜라이더의 중심과 크기
+            Vector3 colliderCenter = wallCollider.bounds.center;
+            Vector3 colliderSize = wallCollider.bounds.size;
+
+            // 벽의 바닥 위치 계산 (Raycast 발사 위치)
+            Vector3 wallBottomCenter = colliderCenter - tempObject.transform.up * (colliderSize.y / 5f);
+
+            // 디버그 시각화: 콜라이더 범위 및 발사 위치 표시
+            Debug.DrawLine(colliderCenter - colliderSize / 2, colliderCenter + colliderSize / 2, Color.blue, 2f);
+            Debug.DrawLine(wallBottomCenter - new Vector3(0.1f, 0, 0.1f), wallBottomCenter + new Vector3(0.1f, 0, 0.1f), Color.green, 2f);
+
+            Vector3 leftRaycastOrigin1 = wallBottomCenter - tempObject.transform.forward * 1;
+            Vector3 rightRaycastOrigin2 = wallBottomCenter + tempObject.transform.forward * 1;
+
+            // Raycast 방향 설정 (벽의 로컬 아래 방향)
+            Vector3 raycastDirection = -tempObject.transform.up;
+
+            // Raycast 거리 계산: 벽 바닥에서 그리드 바닥까지의 거리
+            float distance = Mathf.Abs(wallBottomCenter.y - grid.GetCellCenterWorld(gridPosition).y) + 1f;
+
+            // 각 위치에서 Raycast 발사
+            Vector3[] raycastOrigins = new Vector3[]
+            {
+        leftRaycastOrigin1, rightRaycastOrigin2
+            };
+
+            bool collision = false;
+            foreach (Vector3 origin in raycastOrigins)
+            {
+                Debug.DrawRay(origin, raycastDirection * distance, Color.yellow, 2f);
+                if (Physics.Raycast(origin, raycastDirection, distance, furnitureLayerMask))
                 {
-                    renderer.enabled = false;
-                }
-
-                // 가구 레이어 마스크 설정
-                int furnitureLayerMask = LayerMask.GetMask("Furniture");
-
-                // 벽 콜라이더의 중심과 크기
-                Vector3 colliderCenter = wallCollider.bounds.center;
-                Vector3 colliderSize = wallCollider.bounds.size;
-
-                // 벽의 바닥 위치 계산 (Raycast 발사 위치)
-                Vector3 wallBottomCenter = colliderCenter - tempObject.transform.up * (colliderSize.y / 5f);
-
-                // 디버그 시각화: 콜라이더 범위 및 발사 위치 표시
-                Debug.DrawLine(colliderCenter - colliderSize/2, colliderCenter + colliderSize/2, Color.blue, 2f); // 콜라이더 범위
-                Debug.DrawLine(wallBottomCenter - new Vector3(0.1f, 0, 0.1f), wallBottomCenter + new Vector3(0.1f, 0, 0.1f), Color.green, 2f); // 발사 위치
-
-
-                Vector3 leftRaycastOrigin1 = wallBottomCenter - tempObject.transform.forward * 1; // 왼쪽 첫 번째 위치
-                Vector3 rightRaycastOrigin2 = wallBottomCenter + tempObject.transform.forward * 1; // 오른쪽 두 번째 위치
-                
-                // Raycast 방향 설정 (벽의 로컬 아래 방향)
-                Vector3 raycastDirection = -tempObject.transform.up;
-
-                // Raycast 거리 계산: 벽 바닥에서 그리드 바닥까지의 거리
-                float distance = Mathf.Abs(wallBottomCenter.y - grid.GetCellCenterWorld(gridPosition).y) + 1f; // 바닥까지 거리 + 여유분
-
-                // 각 위치에서 Raycast 발사
-                Vector3[] raycastOrigins = new Vector3[]
-                {
-                    leftRaycastOrigin1, rightRaycastOrigin2
-                };
-
-                bool collision = false;
-                foreach (Vector3 origin in raycastOrigins)
-                {
-                    Debug.DrawRay(origin, raycastDirection * distance, Color.yellow, 2f); // 디버그: 노란색으로 Raycast 경로 표시
-
-                    if (Physics.Raycast(origin, raycastDirection, distance, furnitureLayerMask))
-                    {
-                        collision = true;
-                        Debug.DrawRay(origin, raycastDirection * distance, Color.red, 2f); // 디버그: 충돌 시 빨간색으로 표시
-                        Debug.Log($"벽 배치 불가: Raycast로 가구와 충돌 감지됨 at {gridPosition}, 방향: {raycastDirection}, 발사 위치: {origin}");
-                        break;
-                    }
-                }
-
-                // 충돌이 감지되면 벽 설치 차단
-                if (collision)
-                {
-                    Destroy(tempObject);
-                    return false;
+                    collision = true;
+                    Debug.DrawRay(origin, raycastDirection * distance, Color.red, 2f);
+                    Debug.Log($"벽 배치 불가: Raycast로 가구와 충돌 감지됨 at {gridPosition}, 방향: {raycastDirection}, 발사 위치: {origin}");
+                    break;
                 }
             }
 
+            if (!collision)
+            {
+                Debug.Log($"벽-가구 충돌 검사 통과 at {gridPosition}");
+            }
+
+            // 충돌이 감지되면 벽 설치 차단
+            if (collision)
+            {
+                Destroy(tempObject);
+                return false;
+            }
+
             Destroy(tempObject);
+            Debug.Log($"벽 배치 가능: 모든 검사 통과 at {gridPosition}");
         }
+
+        /* if (placingWall)
+         {
+             // 1. 기존 다른 벽과의 충돌 검사
+             if (!wallData.CanPlaceObjectAt(gridPosition, objectToPlace.Size, rotation, grid, placingWall))
+             {
+                 Debug.Log($"벽 배치 불가: 같은 각도의 벽 충돌 at {gridPosition}");
+                 return false;
+             }
+
+             // 2. 벽과 가구 간 충돌 검사 (Raycast 기반)
+             GameObject tempObject = Instantiate(prefab, grid.GetCellCenterWorld(gridPosition), rotation);
+
+             Collider wallCollider = tempObject.GetComponent<Collider>();
+             if (wallCollider is null)
+             {
+                 wallCollider = tempObject.GetComponentInChildren<Collider>();
+             }
+
+             if (wallCollider is not null)
+             {
+                 // 충돌 검사를 위해 렌더러 비활성화
+                 Renderer[] renderers = tempObject.GetComponentsInChildren<Renderer>();
+                 foreach (Renderer renderer in renderers)
+                 {
+                     renderer.enabled = false;
+                 }
+
+                 // 가구 레이어 마스크 설정
+                 int furnitureLayerMask = LayerMask.GetMask("Furniture");
+
+                 // 벽 콜라이더의 중심과 크기
+                 Vector3 colliderCenter = wallCollider.bounds.center;
+                 Vector3 colliderSize = wallCollider.bounds.size;
+
+                 // 벽의 바닥 위치 계산 (Raycast 발사 위치)
+                 Vector3 wallBottomCenter = colliderCenter - tempObject.transform.up * (colliderSize.y / 5f);
+
+                 // 디버그 시각화: 콜라이더 범위 및 발사 위치 표시
+                 Debug.DrawLine(colliderCenter - colliderSize/2, colliderCenter + colliderSize/2, Color.blue, 2f); // 콜라이더 범위
+                 Debug.DrawLine(wallBottomCenter - new Vector3(0.1f, 0, 0.1f), wallBottomCenter + new Vector3(0.1f, 0, 0.1f), Color.green, 2f); // 발사 위치
+
+
+                 Vector3 leftRaycastOrigin1 = wallBottomCenter - tempObject.transform.forward * 1; // 왼쪽 첫 번째 위치
+                 Vector3 rightRaycastOrigin2 = wallBottomCenter + tempObject.transform.forward * 1; // 오른쪽 두 번째 위치
+
+                 // Raycast 방향 설정 (벽의 로컬 아래 방향)
+                 Vector3 raycastDirection = -tempObject.transform.up;
+
+                 // Raycast 거리 계산: 벽 바닥에서 그리드 바닥까지의 거리
+                 float distance = Mathf.Abs(wallBottomCenter.y - grid.GetCellCenterWorld(gridPosition).y) + 1f; // 바닥까지 거리 + 여유분
+
+                 // 각 위치에서 Raycast 발사
+                 Vector3[] raycastOrigins = new Vector3[]
+                 {
+                     leftRaycastOrigin1, rightRaycastOrigin2
+                 };
+
+                 bool collision = false;
+                 foreach (Vector3 origin in raycastOrigins)
+                 {
+                     Debug.DrawRay(origin, raycastDirection * distance, Color.yellow, 2f); // 디버그: 노란색으로 Raycast 경로 표시
+
+                     if (Physics.Raycast(origin, raycastDirection, distance, furnitureLayerMask))
+                     {
+                         collision = true;
+                         Debug.DrawRay(origin, raycastDirection * distance, Color.red, 2f); // 디버그: 충돌 시 빨간색으로 표시
+                         Debug.Log($"벽 배치 불가: Raycast로 가구와 충돌 감지됨 at {gridPosition}, 방향: {raycastDirection}, 발사 위치: {origin}");
+                         break;
+                     }
+                 }
+
+                 // 충돌이 감지되면 벽 설치 차단
+                 if (collision)
+                 {
+                     Destroy(tempObject);
+                     return false;
+                 }
+             }
+
+             Destroy(tempObject);
+         }*/
+
+        Debug.Log("벽 검사 끝");
     
         // 모든 검사를 통과하면 배치 가능
         return true;
-    }
-    
-    // 벽/기둥의 중심 위치 계산
-    private Vector3Int GetCenterPosition(PlacementData placementData)
-    {
-        Vector3Int center = Vector3Int.zero;
-        foreach (Vector3Int pos in placementData.occupiedPositions)
-        {
-            center += pos;
-        }
-        center /= placementData.occupiedPositions.Count;
-        return center;
-    }
-
-// 5x5 그리드 범위 확인
-    private bool IsWithin5x5Grid(Vector3Int centerPosition, Vector3Int gridPosition)
-    {
-        int dx = Mathf.Abs(centerPosition.x - gridPosition.x);
-        int dz = Mathf.Abs(centerPosition.z - gridPosition.z);
-        return dx <= 2 && dz <= 2; // 중심 포함 5x5 범위
-    }
+    }   
     
     #endregion
 

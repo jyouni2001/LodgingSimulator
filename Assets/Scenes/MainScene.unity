@@ -4321,7 +4321,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -17174,6 +17174,7 @@ MonoBehaviour:
   maxSunIntensity: 2
   maxMoonIntensity: 1
   showDebugInfo: 0
+  currentMoonAngle: 0
 --- !u!1 &1254137645
 GameObject:
   m_ObjectHideFlags: 0
@@ -19924,7 +19925,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1526090434
 Transform:
   m_ObjectHideFlags: 0
@@ -23113,9 +23114,9 @@ RectTransform:
   - {fileID: 1572312429}
   m_Father: {fileID: 974466840}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 1}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -200, y: -100}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 0, y: 0.5}
+  m_AnchoredPosition: {x: 250, y: 340}
   m_SizeDelta: {x: 230, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1668441045
@@ -29210,8 +29211,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1523943468}
   m_HandleRect: {fileID: 1523943467}
   m_Direction: 0
-  m_Value: -0.0000002441405
-  m_Size: 0.42307252
+  m_Value: -0.000004801429
+  m_Size: 0.42307335
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -30035,7 +30036,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -274.9997, y: 136.47386}
+  m_AnchoredPosition: {x: -274.99625, y: 136.47386}
   m_SizeDelta: {x: 1300, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2141453194

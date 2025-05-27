@@ -24,7 +24,7 @@ public class PlayerWallet : MonoBehaviour
     public void AddMoney(int amount)
     {
         money += amount;
-        Debug.Log($"플레이어 소지금 증가: {amount}원, 현재 소지금: {money}원");
+        //Debug.Log($"플레이어 소지금 증가: {amount}원, 현재 소지금: {money}원");
     }
 
     public void SpendMoney(int amount)
@@ -32,11 +32,11 @@ public class PlayerWallet : MonoBehaviour
         if (money >= amount)
         {
             money -= amount;
-            Debug.Log($"플레이어 소지금 감소: {amount}원, 현재 소지금: {money}원");
+            //Debug.Log($"플레이어 소지금 감소: {amount}원, 현재 소지금: {money}원");
         }
         else
         {
-            Debug.LogWarning($"소지금 부족: 필요 {amount}원, 현재 {money}원");
+            //Debug.LogWarning($"소지금 부족: 필요 {amount}원, 현재 {money}원");
         }
     }
 

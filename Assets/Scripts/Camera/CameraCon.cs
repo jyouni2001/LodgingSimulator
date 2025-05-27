@@ -30,7 +30,7 @@ public class CameraCon : MonoBehaviour
     
     private void Start()
     {
-        Debug.Log($"{target.transform.position}부터 시작");
+        //Debug.Log($"{target.transform.position}부터 시작");
         if (cam is null)
         {
             Debug.LogError("CinemachineVirtualCamera가 할당되지 않았습니다!");
