@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 /// <summary>
 /// 해와 달의 위치를 시간에 따라 제어하는 클래스
@@ -12,6 +13,12 @@ public class SunMoonController : MonoBehaviour
     [Header("천체 오브젝트")]
     [SerializeField] private Transform sunTransform;
     [SerializeField] private Transform moonTransform;
+
+    [Header("천체 렌즈플레어")] 
+    [SerializeField] private LensFlareComponentSRP sunLensFlare;
+    [SerializeField] private LensFlareComponentSRP moonLensFlare;
+    
+    
     
     [Header("빛 컴포넌트")]
     [SerializeField] private Light sunLight;
@@ -31,7 +38,7 @@ public class SunMoonController : MonoBehaviour
     [SerializeField] private float maxMoonIntensity = 0.5f;
     
     [Header("디버그")]
-    [SerializeField] private bool showDebugInfo = false;
+    [SerializeField] private bool showDebugInfo;
     
     private TimeSystem timeSystem;
     private float targetSunAngle;
@@ -99,6 +106,10 @@ public class SunMoonController : MonoBehaviour
         // 초기 각도 동기화
         currentSunAngle = targetSunAngle;
         currentMoonAngle = targetMoonAngle;
+        
+        // 렌즈플레어 초기화 (아침 시작 전제)
+        moonLensFlare.intensity = 0f;
+        sunLensFlare.intensity = 1.5f;
         
         // 초기 적용
         ApplyRotation();
@@ -256,13 +267,18 @@ public class SunMoonController : MonoBehaviour
                 float sunColorFactor = Mathf.Clamp01(sunHeight * 2f); // 낮은 각도에서 붉게
                 sunLight.color = Color.Lerp(new Color(1f, 0.6f, 0.4f), Color.white, sunColorFactor);
             }
+            
+            if (sunLensFlare != null)
+            {
+                sunLensFlare.intensity = sunVisible ? 1.5f : 0f;
+            }
         }
         
         // 달 빛 설정
         if (moonLight != null)
         {
             // 달이 지평선 위에 있을 때만 빛을 켬
-            bool moonVisible = true;//currentMoonAngle > -180f && currentMoonAngle < 180f;
+            bool moonVisible = currentMoonAngle > -180f && currentMoonAngle < 180f;
             //moonLight.enabled = moonVisible;
             
             if (moonVisible)
@@ -270,6 +286,14 @@ public class SunMoonController : MonoBehaviour
                 moonLight.intensity = moonIntensityCurve.Evaluate(moonHeight) * maxMoonIntensity;
                 moonLight.color = new Color(0.8f, 0.8f, 1f); // 차가운 달빛
             }
+            
+            // LensFlare 컴포넌트의 intensity 설정
+            
+            if (moonLensFlare != null)
+            {
+                moonLensFlare.intensity = moonVisible ? 1f : 0f;
+            }
+            
         }
     }
 

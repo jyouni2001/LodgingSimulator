@@ -57,13 +57,13 @@ Material:
     m_Floats:
     - _AO: 1.2
     - _Alpha: 1
-    - _Metalic: 1
+    - _Metalic: 0
     - _Normal_Strength: 0.05
     - _QueueControl: 1
     - _QueueOffset: 0
     - _Refraction: 0.1
     - _Smoothness: 0.8
-    - _Water_Lerp: 0.5
+    - _Water_Lerp: 0.8
     m_Colors:
     - _Color: {r: 0.16233535, g: 0.60377336, b: 0.6037736, a: 1}
     - _Emission: {r: 0.0051174797, g: 0.027848465, b: 0.07058824, a: 0}
