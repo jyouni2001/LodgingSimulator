@@ -33,6 +33,18 @@ namespace JY
         public void SetRoomBounds(Bounds bounds)
         {
             roomBounds = bounds;
+            
+            // Y축 높이를 5로 조정
+            float roomHeight = 4f; // 원하는 Y축 높이
+            Vector3 adjustedMin = roomBounds.min;
+            Vector3 adjustedMax = roomBounds.max;
+            
+            float originalYMin = bounds.min.y;
+            adjustedMin.y = originalYMin; // 바닥 높이
+            adjustedMax.y = roomHeight; // 천장 높이
+            
+            roomBounds.SetMinMax(adjustedMin, adjustedMax);
+            
             UpdateRoomContents();
             Debug.Log($"방 {roomID}의 범위가 업데이트되었습니다. 중심: {bounds.center}, 크기: {bounds.size}");
         }
@@ -42,7 +54,7 @@ namespace JY
             furnitureList.Clear();
             
             // 씬의 모든 FurnitureID 컴포넌트 찾기
-            var allFurniture = GameObject.FindObjectsOfType<FurnitureID>();
+            var allFurniture = GameObject.FindObjectsByType<FurnitureID>(FindObjectsSortMode.None);
             
             // roomBounds 안에 있는 가구만 필터링
             foreach (var furniture in allFurniture)

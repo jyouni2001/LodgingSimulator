@@ -26,20 +26,20 @@ public class ObjectPlacer : MonoBehaviour
         int currentFloor = changeFloorSystem.currentFloor;
         string layerName = $"{currentFloor}F"; // 예: "1F", "2F", "3F", "4F"
         int layer = LayerMask.NameToLayer(layerName);
+        int stairColliderLayer = LayerMask.NameToLayer("StairCollider");
         if (layer == -1)
         {
             Debug.LogError($"Layer {layerName} not found!");
         }
         else
         {
-            Transform firstChild = newObject.transform.GetChild(0);
-            if (firstChild != null)
+            // 모든 자손 오브젝트의 레이어 변경
+            foreach (Transform child in newObject.transform.GetComponentsInChildren<Transform>(true))
             {
-                firstChild.gameObject.layer = layer;
-            }
-            else
-            {
-                Debug.LogWarning("No child object found to set layer!");
+                if (child != newObject.transform && child.gameObject.layer != stairColliderLayer)
+                {
+                    child.gameObject.layer = layer;
+                }
             }
         }
         
