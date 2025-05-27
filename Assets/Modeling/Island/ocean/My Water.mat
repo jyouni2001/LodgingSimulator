@@ -61,7 +61,7 @@ Material:
     - _Normal_Strength: 0.05
     - _QueueControl: 1
     - _QueueOffset: 0
-    - _Refraction: 0.1
+    - _Refraction: 0
     - _Smoothness: 0.8
     - _Water_Lerp: 0.8
     m_Colors:

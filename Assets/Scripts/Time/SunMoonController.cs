@@ -44,7 +44,7 @@ public class SunMoonController : MonoBehaviour
     private float targetSunAngle;
     private float targetMoonAngle;
     private float currentSunAngle;
-    private float currentMoonAngle;
+    [SerializeField] private float currentMoonAngle;
 
     #endregion
 

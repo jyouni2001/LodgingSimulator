@@ -2211,7 +2211,7 @@
     "m_Title": "Normal Map",
     "m_Position": {
         "x": -2347.000244140625,
-        "y": -120.00001525878906
+        "y": -119.99998474121094
     }
 }
 
@@ -4597,7 +4597,7 @@
         "m_Id": "6fb7ac03470b415e982536311678acbd"
     },
     "m_AllowMaterialOverride": false,
-    "m_SurfaceType": 1,
+    "m_SurfaceType": 0,
     "m_ZTestMode": 4,
     "m_ZWriteControl": 0,
     "m_AlphaMode": 0,
