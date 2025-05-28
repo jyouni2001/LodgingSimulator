@@ -333,14 +333,22 @@ public class PlacementSystem : MonoBehaviour
 
             for (int i = 0; i < originalMat.Length; i++)
             {
+                
+                
                 originalMat[i].SetFloat("_Surface", 1);
-                //originalMat[i].SetFloat("_Alphta", 0.3f);
-                originalMat[i].SetFloat("_Blend", 1);                
-
-                newMaterial[i] = originalMat[i];
+                originalMat[i].SetFloat("_Blend", 1);   
+                
+                Color color = originalMat[i].GetColor("_BaseColor");
+                color.a = 0.2f;
+                originalMat[i].SetColor("_BaseColor", color);
             }
+            
+            Debug.Log($"현재 {renderer.gameObject.name}의 머티리얼 개수 : {originalMat.Length}");
 
             renderer.materials = newMaterial;
+            
+            renderer.enabled = false;
+            renderer.enabled = true;
         }
     }
     #endregion
