@@ -64,11 +64,14 @@ public class PlacementSystem : MonoBehaviour
 
     private bool FloorLock = false;
 
-    [SerializeField] private GameObject changeFloorButton;
-    
-    [SerializeField] private GridData selectedData;
-    
+    [SerializeField] private GameObject changeFloorButton;    
+    [SerializeField] private GridData selectedData;    
     [SerializeField] private GameObject highlightedObject;
+
+    public Renderer[] renderers2;
+
+    [SerializeField] private Material previewMaterialInstance;
+
     private void Awake()
     {
         // 싱글톤 인스턴스 설정
@@ -319,12 +322,10 @@ public class PlacementSystem : MonoBehaviour
         ApplyPreviewMaterial(previewObject);
     }
 
-    public Renderer[] renderers2;
+   
     private void ApplyPreviewMaterial(GameObject obj)
     {
-        //Debug.Log("현재 머티리얼 변경중");
         renderers2 = obj.GetComponentsInChildren<Renderer>();
-        //Debug.Log($"{obj.name}의 자손 머티리얼");
 
         foreach (Renderer renderer in renderers2)
         {
@@ -333,22 +334,21 @@ public class PlacementSystem : MonoBehaviour
 
             for (int i = 0; i < originalMat.Length; i++)
             {
-                
-                
-                originalMat[i].SetFloat("_Surface", 1);
-                originalMat[i].SetFloat("_Blend", 1);   
-                
+                originalMat[i] = previewMaterialInstance;
+
+                /*originalMat[i].SetFloat("_Surface", 1);
+                originalMat[i].SetFloat("_Blend", 1);
+
                 Color color = originalMat[i].GetColor("_BaseColor");
                 color.a = 0.2f;
-                originalMat[i].SetColor("_BaseColor", color);
+                originalMat[i].SetColor("_BaseColor", color);*/
+
+                newMaterial[i] = originalMat[i];
             }
             
             Debug.Log($"현재 {renderer.gameObject.name}의 머티리얼 개수 : {originalMat.Length}");
 
-            renderer.materials = newMaterial;
-            
-            renderer.enabled = false;
-            renderer.enabled = true;
+            renderer.materials = newMaterial;           
         }
     }
     #endregion

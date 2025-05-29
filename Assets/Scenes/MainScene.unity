@@ -4017,7 +4017,7 @@ Terrain:
   m_SplatMapDistance: 1000
   m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
-  m_ShadowCastingMode: 2
+  m_ShadowCastingMode: 0
   m_DrawHeightmap: 1
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
@@ -5961,7 +5961,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  useOcclusion: 1
+  useOcclusion: 0
   useBackgroundCloudOcclusion: 0
   environmentOcclusion: 0
   useWaterOcclusion: 0
@@ -7279,6 +7279,18 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1160082908839697891, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
+      propertyPath: m_GroupingID
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1160082908839697891, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
+      propertyPath: m_DrawInstanced
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1160082908839697891, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
+      propertyPath: m_AllowAutoConnect
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1160082908839697891, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
       propertyPath: m_ShadowCastingMode
       value: 0
       objectReference: {fileID: 0}
@@ -7286,6 +7298,18 @@ PrefabInstance:
       propertyPath: m_LightmapParameters
       value: 
       objectReference: {fileID: 15201, guid: 0000000000000000f000000000000000, type: 0}
+    - target: {fileID: 1160082908839697891, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1160082908839697891, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
+      propertyPath: m_IgnoreQualitySettings
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1160082908839697891, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
+      propertyPath: m_EnableHeightmapRayTracing
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1615072536870260972, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -7341,6 +7365,10 @@ PrefabInstance:
     - target: {fileID: 1921465428425037866, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
       propertyPath: m_Layer
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1921465428425037866, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2030841654332021428, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
       propertyPath: m_Layer
@@ -7868,7 +7896,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7306835517451340779, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.97
+      value: -2.469
       objectReference: {fileID: 0}
     - target: {fileID: 7306835517451340779, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
       propertyPath: m_LocalPosition.z
@@ -12561,7 +12589,7 @@ Terrain:
   m_SplatMapDistance: 1000
   m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
-  m_ShadowCastingMode: 2
+  m_ShadowCastingMode: 0
   m_DrawHeightmap: 1
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
@@ -14227,6 +14255,7 @@ MonoBehaviour:
   changeFloorButton: {fileID: 1668441043}
   highlightedObject: {fileID: 0}
   renderers2: []
+  previewMaterialInstance: {fileID: 2100000, guid: 11e934656ca136d4ba08393855c50232, type: 2}
   boundsColor: {r: 0, g: 1, b: 0, a: 1}
 --- !u!1 &1032360398
 GameObject:
@@ -16303,7 +16332,7 @@ Terrain:
   m_SplatMapDistance: 1000
   m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
-  m_ShadowCastingMode: 2
+  m_ShadowCastingMode: 0
   m_DrawHeightmap: 1
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
@@ -19930,7 +19959,7 @@ Terrain:
   m_SplatMapDistance: 1000
   m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
-  m_ShadowCastingMode: 2
+  m_ShadowCastingMode: 0
   m_DrawHeightmap: 1
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
@@ -20640,7 +20669,7 @@ Terrain:
   m_SplatMapDistance: 1000
   m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
-  m_ShadowCastingMode: 2
+  m_ShadowCastingMode: 0
   m_DrawHeightmap: 1
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
@@ -25848,7 +25877,7 @@ Terrain:
   m_SplatMapDistance: 1000
   m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
-  m_ShadowCastingMode: 2
+  m_ShadowCastingMode: 0
   m_DrawHeightmap: 1
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
@@ -26764,7 +26793,7 @@ Terrain:
   m_SplatMapDistance: 1000
   m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
-  m_ShadowCastingMode: 2
+  m_ShadowCastingMode: 0
   m_DrawHeightmap: 1
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
@@ -29148,7 +29177,7 @@ Terrain:
   m_SplatMapDistance: 1000
   m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
-  m_ShadowCastingMode: 2
+  m_ShadowCastingMode: 0
   m_DrawHeightmap: 1
   m_DrawInstanced: 0
   m_DrawTreesAndFoliage: 1
@@ -30072,8 +30101,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1523943468}
   m_HandleRect: {fileID: 1523943467}
   m_Direction: 0
-  m_Value: 1
-  m_Size: 0.42307684
+  m_Value: 1.0000247
+  m_Size: 0.42306146
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -30630,7 +30659,7 @@ Transform:
   m_GameObject: {fileID: 2123152607}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 204.9484, y: 13.62, z: 255.2692}
+  m_LocalPosition: {x: 204.9484, y: 14.1, z: 255.2692}
   m_LocalScale: {x: 1.1570494, y: 1, z: 5.5843086}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -30897,7 +30926,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1025, y: 136.47386}
+  m_AnchoredPosition: {x: -1025.0187, y: 136.47386}
   m_SizeDelta: {x: 1300, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2141453194

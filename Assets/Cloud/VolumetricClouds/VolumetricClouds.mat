@@ -51,7 +51,7 @@ Material:
     - _AccumulationFactor: 0.95
     - _AltitudeDistortion: 0.0625
     - _AmbientProbeDimmer: 0.718
-    - _CloudNearPlane: 1186.0298
+    - _CloudNearPlane: 860.74457
     - _DensityMultiplier: 0.080000006
     - _EarthRadius: 1000000
     - _ErosionFactor: 0.8
@@ -75,7 +75,7 @@ Material:
     - _ShapeScale: 5
     - _SmallWindSpeed: 0.25
     - _SunLightDimmer: 1
-    - _VerticalErosionWindDisplacement: -0.06597511
+    - _VerticalErosionWindDisplacement: -0.2756787
     - _VerticalShapeNoiseOffset: 0
     - _VerticalShapeWindDisplacement: 0
     m_Colors:
