@@ -129,7 +129,7 @@ public class AIAgent : MonoBehaviour
             return false;
         }
 
-        roomManager = FindObjectOfType<RoomManager>();
+        roomManager = FindFirstObjectByType<RoomManager>();
         spawnPoint = spawn.transform;
 
         GameObject counter = GameObject.FindGameObjectWithTag("Counter");
@@ -137,7 +137,7 @@ public class AIAgent : MonoBehaviour
 
         if (counterManager == null)
         {
-            counterManager = FindObjectOfType<CounterManager>();
+            counterManager = FindFirstObjectByType<CounterManager>();
             if (counterManager == null)
             {
                 Debug.LogWarning($"AI {gameObject.name}: CounterManager를 찾을 수 없습니다.");
@@ -718,7 +718,7 @@ public class AIAgent : MonoBehaviour
             }
         }
 
-        var roomManager = FindObjectOfType<RoomManager>();
+        var roomManager = FindFirstObjectByType<RoomManager>();
         if (roomManager != null)
         {
             int amount = roomManager.ProcessRoomPayment(gameObject.name);

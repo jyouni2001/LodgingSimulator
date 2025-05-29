@@ -50,6 +50,7 @@ public class TimeSystem : MonoBehaviour
     public string CurrentTimeString { get; private set; }
     public DayPhase CurrentDayPhase { get; private set; }
 
+
     // 싱글톤 인스턴스
     private static TimeSystem _instance;
 
@@ -91,7 +92,7 @@ public class TimeSystem : MonoBehaviour
         {
             if (_instance == null)
             {
-                _instance = FindObjectOfType<TimeSystem>();
+                _instance = FindFirstObjectByType<TimeSystem>();
                 if (_instance == null)
                 {
                     GameObject obj = new GameObject("TimeSystem");
@@ -106,6 +107,7 @@ public class TimeSystem : MonoBehaviour
 
     #region Unity Lifecycle Methods
     
+
     private void Awake()
     {
         InitializeSingleton();

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class TestScript : MonoBehaviour
+public class FlowCloudSystem : MonoBehaviour
 {
     public Volume volume;
     private VolumetricClouds volumetricClouds;

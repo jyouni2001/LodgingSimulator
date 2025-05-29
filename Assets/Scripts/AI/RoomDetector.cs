@@ -62,8 +62,8 @@ public class RoomDetector : MonoBehaviour
 
     private void InitializeComponents()
     {
-        placementSystem = placementSystem ?? FindObjectOfType<PlacementSystem>();
-        grid = grid ?? FindObjectOfType<Grid>();
+        placementSystem = placementSystem ?? FindFirstObjectByType<PlacementSystem>();
+        grid = grid ?? FindFirstObjectByType<Grid>();
 
         if (placementSystem == null || grid == null)
         {
