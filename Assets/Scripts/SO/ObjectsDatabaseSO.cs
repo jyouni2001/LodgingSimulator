@@ -31,26 +31,26 @@ public class ObjectsDatabaseSO : ScriptableObject
 public class ObjectData
 {
     [field : SerializeField]
-    public string Name { get; private set; }
+    public string Name { get;  set; }
     
     [field : SerializeField]
-    public int ID { get; private set; }
+    public int ID { get;  set; }
 
     [field : SerializeField]
-    public int kindIndex { get; private set; }
+    public int kindIndex { get;  set; }
 
     [field: SerializeField]
     public bool IsWall; 
 
     [field: SerializeField] 
-    public Vector2Int Size { get; private set; } = Vector2Int.one;
+    public Vector2Int Size { get;  set; } = Vector2Int.one;
     
     [field : SerializeField]
-    public GameObject Prefab { get; private set; }
+    public GameObject Prefab { get;  set; }
 
     [field : SerializeField]
-    public int BuildPrice { get; private set; }
+    public int BuildPrice { get;  set; }
 
     [field: SerializeField]
-    public int BasePrice { get; private set; }
+    public int BasePrice { get;  set; }
 }
