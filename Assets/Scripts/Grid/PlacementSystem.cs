@@ -1,10 +1,8 @@
 using System.Collections.Generic;
-//using System.Linq;
 using ZLinq;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
-using System;
 
 public class PlacementSystem : MonoBehaviour
 {
@@ -26,6 +24,7 @@ public class PlacementSystem : MonoBehaviour
             return _instance;
         }
     }
+    
     public int indicatorMax = 100;
     [SerializeField] public GameObject mouseIndicator;
     [SerializeField] public GameObject cellIndicatorPrefab;
@@ -68,7 +67,7 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private GridData selectedData;    
     [SerializeField] private GameObject highlightedObject;
 
-    public Renderer[] renderers2;
+    public Renderer[] objRenderers;
 
     [SerializeField] private Material previewMaterialInstance;
 
@@ -325,30 +324,20 @@ public class PlacementSystem : MonoBehaviour
    
     private void ApplyPreviewMaterial(GameObject obj)
     {
-        renderers2 = obj.GetComponentsInChildren<Renderer>();
-
-        foreach (Renderer renderer in renderers2)
+        objRenderers = obj.GetComponentsInChildren<Renderer>();
+        
+        foreach (Renderer objRenderer in objRenderers)
         {
-            Material[] originalMat = renderer.materials;
+            Material[] originalMat = objRenderer.materials;
             Material[] newMaterial = new Material[originalMat.Length];
 
             for (int i = 0; i < originalMat.Length; i++)
             {
                 originalMat[i] = previewMaterialInstance;
 
-                /*originalMat[i].SetFloat("_Surface", 1);
-                originalMat[i].SetFloat("_Blend", 1);
-
-                Color color = originalMat[i].GetColor("_BaseColor");
-                color.a = 0.2f;
-                originalMat[i].SetColor("_BaseColor", color);*/
-
                 newMaterial[i] = originalMat[i];
             }
-            
-            Debug.Log($"현재 {renderer.gameObject.name}의 머티리얼 개수 : {originalMat.Length}");
-
-            renderer.materials = newMaterial;           
+            objRenderer.materials = newMaterial;           
         }
     }
     #endregion
@@ -362,8 +351,8 @@ public class PlacementSystem : MonoBehaviour
 
         
         
-        Vector3 mousePosition = inputManager.GetSelectedMapPosition();
-        Vector3Int gridPosition = grid.WorldToCell(mousePosition);
+        //Vector3 mousePosition = inputManager.GetSelectedMapPosition();
+        Vector3Int gridPosition = grid.WorldToCell(inputManager.GetSelectedMapPosition());
 
         bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex, previewRotation);
         if (!placementValidity) return;

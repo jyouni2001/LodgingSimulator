@@ -25,7 +25,7 @@ public class CameraCon : MonoBehaviour
     [SerializeField] private float             pitch = 60f;     // 상하 회전 (X축)
     [SerializeField] private CinemachineCamera cam;             // 카메라 참조
     [SerializeField] private Camera cam2;
-    
+    [SerializeField] private InputManager inputManager;
     
     
     private void Start()
@@ -61,6 +61,8 @@ public class CameraCon : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (inputManager.IsPointerOverUI())  return;
+        
         SmoothWheel();       // 줌 처리
         HandleMovement();    // WASD 이동
         HandleRotation();    // 마우스 우클릭 회전
