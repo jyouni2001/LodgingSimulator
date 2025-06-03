@@ -189,6 +189,7 @@ public class InputManager : MonoBehaviour
             // DOTween으로 Y축 이동 애니메이션
             uiTween = uiRect.DOAnchorPosY(uiShowPosition.y, 0.5f) // 0.5초 동안 이동
                 .SetEase(Ease.OutQuad) // 부드러운 이징
+                .SetUpdate(UpdateType.Normal, true) // 타임스케일 영향 X
                 .OnComplete(() => uiTween = null); // 완료 시 트윈 변수 초기화
         }
     }
@@ -212,6 +213,7 @@ public class InputManager : MonoBehaviour
             // DOTween으로 Y축 이동 애니메이션
             uiTween = uiRect.DOAnchorPosY(uiHidePosition.y, 0.5f) // 0.5초 동안 이동
                 .SetEase(Ease.InQuad) // 부드러운 이징
+                .SetUpdate(UpdateType.Normal, true) // 타임스케일 영향 X
                 .OnComplete(() =>
                 {
                     uiTween = null;

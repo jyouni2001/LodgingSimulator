@@ -112,7 +112,9 @@ public class CameraCon : MonoBehaviour
             cam.Lens.FieldOfView, // 현재 값
             targetFOV,                      // 목표 값
             ref fovVelocity,                // 참조 속도 변수
-            fovSmoothTime                   // 부드럽게 만드는 시간
+            fovSmoothTime,                   // 부드럽게 만드는 시간
+            Mathf.Infinity,
+            Time.unscaledDeltaTime
         );
 
     }
@@ -130,7 +132,7 @@ public class CameraCon : MonoBehaviour
         if (moveDirection.magnitude > 0)
         {
             // 카메라의 로컬 방향을 기준으로 이동
-            Vector3 move = transform.TransformDirection(moveDirection) * (moveSpeed * Time.deltaTime);
+            Vector3 move = transform.TransformDirection(moveDirection) * (moveSpeed * Time.unscaledDeltaTime);
             move.y = 0f; // y축 이동은 줌으로만 제어
             target.transform.position += move;
         }

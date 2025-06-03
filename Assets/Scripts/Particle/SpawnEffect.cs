@@ -59,8 +59,11 @@ public class SpawnEffect : MonoBehaviour
         effect.transform.position = position;
         effect.SetActive(true);
 
+        effect.TryGetComponent<ParticleSystem>(out ParticleSystem ps);
+
         // Particle System 재생
-        ParticleSystem ps = effect.GetComponent<ParticleSystem>();
+        //ParticleSystem ps = effect.GetComponent<ParticleSystem>();
+       
         if (ps != null)
         {
             ps.Play();
