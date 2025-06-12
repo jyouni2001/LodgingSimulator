@@ -30,14 +30,6 @@
       },
       "hash": "f8f1f3fbc4708f378252b6188ce416a57ccd06af"
     },
-    "com.occasoftware.super-simple-skybox": {
-      "version": "file:com.occasoftware.super-simple-skybox",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {
-        "com.unity.shadergraph": "14.0.7"
-      }
-    },
     "com.unity.ai.navigation": {
       "version": "2.0.7",
       "depth": 0,

@@ -2,8 +2,8 @@ using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using JY;
+using ZLinq;
 
 public interface IRoomDetector
 {
@@ -201,7 +201,7 @@ public class AIAgent : MonoBehaviour
             GameObject[] taggedRooms = GameObject.FindGameObjectsWithTag("Room");
             foreach (GameObject room in taggedRooms)
             {
-                if (!roomList.Any(r => r.gameObject == room))
+                if (!roomList.AsValueEnumerable().Any(r => r.gameObject == room))
                 {
                     roomList.Add(new RoomInfo(room));
                 }
@@ -237,7 +237,7 @@ public class AIAgent : MonoBehaviour
                     if (!processedRoomIds.Contains(newRoom.roomId))
                     {
                         processedRoomIds.Add(newRoom.roomId);
-                        var existingRoom = roomList.FirstOrDefault(r => r.roomId == newRoom.roomId);
+                        var existingRoom = roomList.AsValueEnumerable().FirstOrDefault(r => r.roomId == newRoom.roomId);
                         if (existingRoom != null)
                         {
                             newRoom.isOccupied = existingRoom.isOccupied;
@@ -589,7 +589,8 @@ public class AIAgent : MonoBehaviour
     {
         lock (lockObject)
         {
-            var availableRooms = roomList.Select((room, index) => new { room, index })
+            var availableRooms = roomList.AsValueEnumerable()
+                                         .Select((room, index) => new { room, index })
                                          .Where(r => !r.room.isOccupied)
                                          .Select(r => r.index)
                                          .ToList();

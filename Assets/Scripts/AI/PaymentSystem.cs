@@ -1,11 +1,11 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
+using ZLinq;
 
 namespace JY
 {
     public class PaymentSystem : MonoBehaviour
-    {
+    { 
         [System.Serializable]
         private class PaymentInfo
         {
@@ -71,7 +71,7 @@ namespace JY
         public int GetTotalUnpaidAmount(string aiName)
         {
             return paymentQueue
-                .Where(p => p.aiName == aiName && !p.isPaid)
+                .AsValueEnumerable().Where(p => p.aiName == aiName && !p.isPaid)
                 .Sum(p => p.amount);
         }
     }

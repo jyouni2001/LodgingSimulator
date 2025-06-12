@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using ZLinq;
@@ -53,7 +52,7 @@ public class ObjectDatabaseEditor : Editor
             var newObject = new ObjectData
             {
                 Name = newObjectName,
-                ID = database.objectsData.Count > 0 ? database.objectsData.Max(o => o.ID) + 1 : 0,
+                ID = database.objectsData.Count > 0 ? database.objectsData.AsValueEnumerable().Max(o => o.ID) + 1 : 0,
                 kindIndex = selectedTab,
                 Size = newObjectSize,
                 Prefab = newObjectPrefab,

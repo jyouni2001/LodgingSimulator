@@ -16,7 +16,7 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] private GameObject previewObject;
     [SerializeField] private SpawnEffect spawnEffect;
     [SerializeField] private ChangeFloorSystem changeFloorSystem;
-    [SerializeField] private GridData selectedData; 
+    private GridData selectedData; 
     
     private Renderer previewRenderer;
     private Vector3Int gridPosition;
@@ -34,6 +34,8 @@ public class PlacementSystem : MonoBehaviour
     private int currentPurchaseLevel = 1;
     private bool FloorLock;
     
+    // 가구 레이어 마스크 설정
+    private int furnitureLayerMask;
     
     [Header("그리드 오브젝트")]
     [SerializeField] public List<GameObject> gridVisualization;
@@ -77,7 +79,7 @@ public class PlacementSystem : MonoBehaviour
         InitializePlane();
 
         database.InitializeDictionary();
-        
+        furnitureLayerMask = LayerMask.GetMask("Furniture");
         if (purchaseButton is not null)
         {
             purchaseButton.onClick.AddListener(PurchaseNextLand);
@@ -611,8 +613,7 @@ public class PlacementSystem : MonoBehaviour
                 renderer.enabled = false;
             }
 
-            // 가구 레이어 마스크 설정
-            int furnitureLayerMask = LayerMask.GetMask("Furniture");
+            
 
             // 벽 콜라이더의 중심과 크기
             Vector3 colliderCenter = wallCollider.bounds.center;

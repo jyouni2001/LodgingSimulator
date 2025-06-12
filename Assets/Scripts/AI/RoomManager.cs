@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
 using JY;
+using ZLinq;
 
 /// <summary>
 /// 방 관리 및 요금 청구를 담당하는 매니저 클래스
@@ -162,12 +162,12 @@ public class RoomManager : MonoBehaviour
     // 특정 금액 범위 내의 방 찾기
     public List<RoomContents> FindRoomsInPriceRange(int minPrice, int maxPrice)
     {
-        return allRooms.Where(r => !r.IsRoomUsed && r.TotalRoomPrice >= minPrice && r.TotalRoomPrice <= maxPrice).ToList();
+        return allRooms.AsValueEnumerable().Where(r => !r.IsRoomUsed && r.TotalRoomPrice >= minPrice && r.TotalRoomPrice <= maxPrice).ToList();
     }
     
     // 사용 가능한 모든 방 찾기
     public List<RoomContents> GetAvailableRooms()
     {
-        return allRooms.Where(r => !r.IsRoomUsed).ToList();
+        return allRooms.AsValueEnumerable().Where(r => !r.IsRoomUsed).ToList();
     }
 } 
