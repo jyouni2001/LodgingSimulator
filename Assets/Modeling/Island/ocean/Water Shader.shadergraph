@@ -2211,7 +2211,7 @@
     "m_Title": "Normal Map",
     "m_Position": {
         "x": -2347.0,
-        "y": -119.99998474121094
+        "y": -120.0
     }
 }
 
@@ -4598,13 +4598,13 @@
     },
     "m_AllowMaterialOverride": false,
     "m_SurfaceType": 0,
-    "m_ZTestMode": 4,
+    "m_ZTestMode": 2,
     "m_ZWriteControl": 0,
     "m_AlphaMode": 0,
     "m_RenderFace": 2,
     "m_AlphaClip": false,
     "m_CastShadows": true,
-    "m_ReceiveShadows": true,
+    "m_ReceiveShadows": false,
     "m_DisableTint": false,
     "m_AdditionalMotionVectorMode": 0,
     "m_AlembicMotionVectors": false,

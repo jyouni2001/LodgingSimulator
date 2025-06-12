@@ -29,7 +29,7 @@ Material:
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2900
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -55,7 +55,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Alpha: 0.6
+    - _Alpha: 1.5
     - _Normal_Strength: 0.2
     - _QueueControl: 1
     - _QueueOffset: 0
@@ -63,7 +63,7 @@ Material:
     - _Smoothness: 0.766
     - _Water_Lerp: 0.5
     m_Colors:
-    - _Color: {r: 0, g: 1, b: 0.9797981, a: 1}
+    - _Color: {r: 0.1802243, g: 0.63270104, b: 0.8490566, a: 1}
     - _UV1: {r: 1, g: 3, b: 0.13, a: 0}
     - _UV2: {r: 10, g: 10, b: 0, a: 0}
     - _Water_Speed1: {r: 0.3, g: 0.1, b: 0, a: 0}

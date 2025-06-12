@@ -98,6 +98,11 @@ public class InputManager : MonoBehaviour
 
     private void HandleObjectSelection()
     {
+        if (interactionUI is not null && interactionUI.IsUIActive())
+        {
+            return; // UI가 열려 있으면 다른 오브젝트 선택 무시
+        }
+        
         GameObject clickedObject = GetClickedObject();
         
         if (clickedObject != null)
@@ -134,6 +139,8 @@ public class InputManager : MonoBehaviour
         else
         {
             // 빈 공간 클릭 시 UI 숨김
+            //if (interactionUI != null && interactionUI.IsUIActive()) interactionUI.HideInteractionUI();
+            
             if(clickedObject != null)  interactionUI.HideInteractionUI();
         }
     }

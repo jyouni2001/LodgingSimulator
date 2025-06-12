@@ -46,6 +46,10 @@ https://assetstore.unity.com/publishers/15018
 Version history
 ---------------
 
+Version 7.0
+- Contact shadows: added support for point lights
+- More options for constat shadows: depth bias far, edge softness, planar shadows
+
 Version 6.1
 - Added early out samples option
 - Added option to render only contact shadows

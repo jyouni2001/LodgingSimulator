@@ -7591,6 +7591,10 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 3227467681231805968, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3227467681231805968, guid: 95ad9a64d382b184fb300b059eb64b85, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 0
       objectReference: {fileID: 0}
@@ -14213,16 +14217,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25af3e3e37185cd46b0edc826cae3a40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  indicatorMax: 150
-  mouseIndicator: {fileID: 846661954}
-  cellIndicatorPrefab: {fileID: 4822721988204683880, guid: c0bb915b11fc5344991ab319aa51bd46, type: 3}
   inputManager: {fileID: 519522462}
   objectPlacer: {fileID: 36320661}
-  grid: {fileID: 1923795467}
-  database: {fileID: 11400000, guid: a210e61efb4380d438bbfe0a16698a7e, type: 2}
   previewObject: {fileID: 0}
   spawnEffect: {fileID: 1541092961}
   changeFloorSystem: {fileID: 2076916984}
+  grid: {fileID: 1923795467}
+  database: {fileID: 11400000, guid: a210e61efb4380d438bbfe0a16698a7e, type: 2}
+  indicatorMax: 150
+  mouseIndicator: {fileID: 846661954}
+  cellIndicatorPrefab: {fileID: 4822721988204683880, guid: c0bb915b11fc5344991ab319aa51bd46, type: 3}
   gridVisualization:
   - {fileID: 1134061654}
   planeBounds: []
@@ -19490,7 +19494,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 1
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -23018,7 +23022,7 @@ MonoBehaviour:
   shadowSource: 1
   sampleCount: 16
   earlyOutSamples: 32
-  lightSize: 6
+  lightSize: 8
   enableContactHardening: 1
   contactStrength: 0.5
   contactStrengthKnee: 0.0001
@@ -23026,11 +23030,11 @@ MonoBehaviour:
   occludersCount: 8
   occludersSearchRadius: 8
   blurIterations: 0
-  blurType: 10
+  blurType: 30
   blurSpread: 1
-  blurEdgeSharpness: 0
+  blurEdgeSharpness: 1
   blurEdgeTolerance: 5
-  blurDepthAttenStart: 50
+  blurDepthAttenStart: 75
   blurDepthAttenLength: 50
   blurGrazingAttenuation: 0
   blendCascades: 0

@@ -19,7 +19,6 @@ public class ObjectPlacer : MonoBehaviour
         GameObject newObject = Instantiate(prefab); //, BatchedObj.transform, true);
         newObject.transform.position = position;
         newObject.transform.rotation = rotation;
-        //newObject.isStatic = true;
         SoundManager.PlaySound(SoundType.Build, 0.1f); 
         
         // 현재 층에 따라 레이어 설정
@@ -43,8 +42,32 @@ public class ObjectPlacer : MonoBehaviour
             }
         }
         
-        placedGameObjects.Add(newObject);
-        return placedGameObjects.Count - 1;
+        // 비어 있는 인덱스 찾기
+        int index = -1;
+        for (int i = 0; i < placedGameObjects.Count; i++)
+        {
+            if (placedGameObjects[i] == null)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        // 비어 있는 인덱스가 없으면 끝에 추가
+        if (index == -1)
+        {
+            placedGameObjects.Add(newObject);
+            index = placedGameObjects.Count - 1;
+        }
+        else
+        {
+            placedGameObjects[index] = newObject;
+        }
+
+        return index;
+        
+        //placedGameObjects.Add(newObject);
+        //return placedGameObjects.Count - 1;
     }
 
     /// <summary>
@@ -60,6 +83,7 @@ public class ObjectPlacer : MonoBehaviour
             {
                 Destroy(obj);
             }
+            //placedGameObjects.RemoveAt(index);
             placedGameObjects[index] = null; // 참조 제거 (선택적으로 리스트에서 완전히 제거 가능)
         }
     }

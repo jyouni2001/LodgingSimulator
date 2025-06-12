@@ -61,13 +61,6 @@ public class CameraCon : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (inputManager.IsPointerOverUI())  return;
-        
-        SmoothWheel();       // 줌 처리
-        HandleMovement();    // WASD 이동
-        HandleRotation();    // 마우스 우클릭 회전
-        CameraConfiner();    // 카메라가 경계에서 끼이는 버그 해결 
-
         // 카메라 위치 및 회전 적용
         Vector3 targetPosition = new Vector3(
             target is not null ? target.position.x : 0f,
@@ -76,6 +69,13 @@ public class CameraCon : MonoBehaviour
         );
 
         if (target is not null) target.transform.position = targetPosition;
+        
+        if (inputManager.IsPointerOverUI())  return;
+        
+        SmoothWheel();       // 줌 처리
+        HandleMovement();    // WASD 이동
+        HandleRotation();    // 마우스 우클릭 회전
+        CameraConfiner();    // 카메라가 경계에서 끼이는 버그 해결 
     }
 
     /// <summary>

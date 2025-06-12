@@ -2,32 +2,35 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using System.Collections.Generic;
+using ZLinq;
 
 public class ObjectInteractionUI : MonoBehaviour
 {
-    [Header("UI 컴포넌트")]
+    [Header("UI 관련 오브젝트")]
     [SerializeField] private GameObject interactionPanel;
     [SerializeField] private Button moveButton;
     [SerializeField] private Button rotateButton;
     [SerializeField] private Button destroyButton;
     [SerializeField] private Canvas worldCanvas;
 
-    [Header("시스템 참조")]
+    [Header("컴포넌트")]
     [SerializeField] private PlacementSystem placementSystem;
     [SerializeField] private ObjectPlacer objectPlacer;
     [SerializeField] private InputManager inputManager;
     [SerializeField] private Camera mainCamera;
 
+    // 이동 시 필요한 원본 데이터 저장
+    private PlacementData originalPlacementData;
+    private GridData originalGridData;
+    private Vector3Int originalGridPosition;
+    
+    // 변수
     private GameObject selectedObject;
     private int selectedObjectIndex;
     private bool isMoving = false;
     private bool isRotating = false;
     private bool justShown = false; // UI가 방금 표시되었는지 확인하는 플래그
-
-    // 이동 시 필요한 원본 데이터 저장
-    private PlacementData originalPlacementData;
-    private GridData originalGridData;
-    private Vector3Int originalGridPosition;
+    private bool isInteracting = false;  
 
     [Header("이동 모드 프리뷰")]
     [SerializeField] private GameObject cellIndicatorPrefab; // PlacementSystem과 동일한 프리팹 사용
@@ -106,7 +109,7 @@ public class ObjectInteractionUI : MonoBehaviour
         // 오브젝트의 경계 상단(Bounds)을 기준으로 머리 위 위치 계산
         Renderer renderer = selectedObject.GetComponentInChildren<Renderer>();
         Vector3 headPosition = worldPosition;
-        if (renderer != null)
+        if (renderer is not null)
         {
             headPosition = renderer.bounds.center + Vector3.up * (renderer.bounds.extents.y + 0.5f); ; // 상단에 약간 여유 추가
         }
@@ -126,7 +129,7 @@ public class ObjectInteractionUI : MonoBehaviour
         // UI 애니메이션으로 표시
         interactionPanel.SetActive(true);
         interactionPanel.transform.localScale = Vector3.zero;
-        interactionPanel.transform.DOScale(Vector3.one, 0.3f)
+        interactionPanel.transform.DOScale(Vector3.one * 1.5f , 0.3f)
             .SetEase(Ease.OutBack)
             .OnComplete(() => {
                 // 애니메이션 완료 후 클릭 감지 활성화
@@ -138,7 +141,7 @@ public class ObjectInteractionUI : MonoBehaviour
     {
         if (interactionPanel.activeInHierarchy)
         {
-            interactionPanel.transform.DOScale(Vector3.zero, 0.2f)
+            interactionPanel.transform.DOScale(Vector3.zero, 0.1f)
                 .SetEase(Ease.InBack)
                 .OnComplete(() => interactionPanel.SetActive(false));
         }
@@ -150,16 +153,13 @@ public class ObjectInteractionUI : MonoBehaviour
 
     private void StartMoveMode()
     {
+        if (isInteracting) return;
+
+        isInteracting = true;
         isMoving = true;
         isRotating = false;
         Debug.Log("이동 모드 시작");
-
-        // 이동 모드 프리뷰 시작
         StartMovePreview();
-
-        // 이동 모드 시각적 피드백 추가
-        //HighlightObject(selectedObject, Color.blue);
-
         interactionPanel.SetActive(false);
     }
 
@@ -200,6 +200,10 @@ public class ObjectInteractionUI : MonoBehaviour
         // 마우스 인디케이터 비활성화
         if (mouseIndicator != null)
             mouseIndicator.SetActive(false);
+        
+        isInteracting = false;
+        isMoving = false;
+        
 
         Debug.Log("이동 프리뷰 종료");
     }
@@ -325,20 +329,37 @@ public class ObjectInteractionUI : MonoBehaviour
 
     private void RotateObject()
     {
+        if (isInteracting) return; // 인터랙션 중이면 무시
         if (selectedObject == null) return;
+
+        isInteracting = true;
+        isRotating = true;
 
         // 90도씩 회전
         Quaternion newRotation = selectedObject.transform.rotation * Quaternion.Euler(0, 90, 0);
-        selectedObject.transform.DORotate(newRotation.eulerAngles, 0.5f).SetEase(Ease.OutQuad);
-
+        selectedObject.transform.DORotate(newRotation.eulerAngles, 0.5f)
+        .SetEase(Ease.OutQuad)
+        .OnComplete(() =>
+        {
+            isRotating = false;
+            isInteracting = false; // 회전 완료 후 인터랙션 해제
+            UpdateObjectRotationInGridData(newRotation);
+            ShowInteractionUI(selectedObject, selectedObject.transform.position); // UI 다시 표시
+        });
+        
+        // selectedObject.transform.DORotate(newRotation.eulerAngles, 0.5f).SetEase(Ease.OutQuad);
+       
         // GridData에서 회전 정보 업데이트
-        UpdateObjectRotationInGridData(newRotation);
+        //UpdateObjectRotationInGridData(newRotation);
     }
 
     private void DestroyObject()
     {
+        if (isInteracting) return;
         if (selectedObject == null || selectedObjectIndex < 0) return;
 
+        isInteracting = true;
+        
         // 기존 삭제 로직 활용
         GridData selectedData = FindGridDataByObjectIndex(selectedObjectIndex);
         if (selectedData != null)
@@ -358,6 +379,7 @@ public class ObjectInteractionUI : MonoBehaviour
                             selectedData.RemoveObjectByIndex(selectedObjectIndex);
                             objectPlacer.RemoveObject(selectedObjectIndex);
                             PlayerWallet.Instance.AddMoney(objectData.BuildPrice);
+                            isInteracting = false;
                             HideInteractionUI();
                         });
                 }
@@ -575,6 +597,26 @@ public class ObjectInteractionUI : MonoBehaviour
 
         // 현재 위치와 같으면 이동 불가
         if (gridPosition == originalGridPosition) return false;
+        
+        // 전체 점유 셀 계산
+        List<Vector3Int> positions = originalGridData.CalculatePosition(
+            gridPosition,
+            objectData.Size,
+            originalPlacementData.Rotation,
+            placementSystem.grid
+        );
+        
+        // 모든 점유 셀이 planeBounds 내에 있는지 확인
+        bool isWithinBounds = positions.AsValueEnumerable().All(pos =>
+        {
+            Vector3 worldPos = placementSystem.grid.GetCellCenterWorld(pos);
+            return placementSystem.planeBounds.AsValueEnumerable().Any(bound => bound.Contains(worldPos));
+        });
+
+        if (!isWithinBounds)
+        {
+            return false;
+        }
 
         // 임시로 현재 위치에서 제거
         RemoveFromCurrentGridData();

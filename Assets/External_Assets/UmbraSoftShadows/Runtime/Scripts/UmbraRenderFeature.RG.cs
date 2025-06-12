@@ -234,13 +234,11 @@ namespace Umbra {
                     }
 
                     // Add contact shadows
-                    if (profile.contactShadows) {
-                        SetupContactShadowsMaterial(passData.cameraData.camera, profile, mat);
+                    if (profile.contactShadows && SetupContactShadowsMaterial(passData.cameraData.camera, profile, mat)) {
                         if (!settings.debugShadows && profile.actualContactShadowsInjectionPoint == ContactShadowsInjectionPoint.ShadowTexture) {
                             Blitter.BlitCameraTexture(cmd, shadowsHandle, shadowsHandle, mat, (int)Pass.ContactShadows);
                         }
                     }
-
 
                     // Downscale depth for upscaler 
                     if (profile.downsample && profile.preserveEdges) {

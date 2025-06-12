@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Umbra {
 
@@ -38,10 +41,12 @@ namespace Umbra {
             readonly public static int ContactShadowsData1 = Shader.PropertyToID("_ContactShadowsData1");
             readonly public static int ContactShadowsData2 = Shader.PropertyToID("_ContactShadowsData2");
             readonly public static int ContactShadowsData3 = Shader.PropertyToID("_ContactShadowsData3");
+            readonly public static int ContactShadowsData4 = Shader.PropertyToID("_ContactShadowsData4");
             readonly public static int ContactShadowsBlendMode = Shader.PropertyToID("_ContactShadowsBlend");
             readonly public static int ReceiverPlaneAltitude = Shader.PropertyToID("_ReceiverPlaneAltitude");
             readonly public static int OverlayShadowColor = Shader.PropertyToID("_OverlayShadowColor");
             readonly public static int EarlyOutSamples = Shader.PropertyToID("_EarlyOutSamples");
+            readonly public static int PointLightPosition = Shader.PropertyToID("_PointLightPosition");
 
             public static Vector3 Vector3Back = Vector3.back;
             public static Vector3 Vector3Forward = Vector3.forward;
@@ -54,6 +59,8 @@ namespace Umbra {
             public const string SKW_CONTACT_HARDENING = "_CONTACT_HARDENING";
             public const string SKW_MASK_TEXTURE = "_MASK_TEXTURE";
             public const string SKW_RECEIVER_PLANE = "_RECEIVER_PLANE";
+            public const string SKW_USE_POINT_LIGHT = "_USE_POINT_LIGHT";
+            public const string SKW_CONTACT_SHADOWS_SOFT_EDGES = "_SOFT_EDGES";
         }
 
         enum Pass {
@@ -118,6 +125,7 @@ namespace Umbra {
             }
         }
 
+
         public override void Create () {
             if (m_SSShadowsPass == null) {
                 m_SSShadowsPass = new UmbraScreenSpaceShadowsPass();
@@ -157,7 +165,31 @@ namespace Umbra {
             CoreUtils.Destroy(mat);
         }
 
-        static void SetupContactShadowsMaterial (Camera cam, UmbraProfile profile, Material mat) {
+        static bool SetupContactShadowsMaterial (Camera cam, UmbraProfile profile, Material mat) {
+
+            float intensityMultiplier = profile.contactShadowsIntensityMultiplier;
+            // Check if we should use point lights for contact shadows
+            mat.DisableKeyword(ShaderParams.SKW_USE_POINT_LIGHT);
+            if (settings.contactShadowsSource == ContactShadowsSource.PointLights && settings.pointLightsTrigger != null) {
+                Vector3 triggerPosition = settings.pointLightsTrigger.position;
+
+                // Find the point light that contains the trigger position
+                float fade = 0;
+                foreach (var kvp in UmbraPointLightContactShadows.umbraPointLights) {
+                    UmbraPointLightContactShadows pointLightComponent = kvp.Value;
+                    if (pointLightComponent == null) continue;
+                    fade = pointLightComponent.ComputeVolumeFade(triggerPosition);
+                    if (fade > 0) {
+                        // Set point light data for the shader
+                        Vector3 pointLightPosition = pointLightComponent.transform.position;
+                        mat.SetVector(ShaderParams.PointLightPosition, new Vector4(pointLightPosition.x, pointLightPosition.y, pointLightPosition.z, 1.0f));
+                        mat.EnableKeyword(ShaderParams.SKW_USE_POINT_LIGHT);
+                        break; // Use the first point light found
+                    }
+                }
+                if (fade <= 0) return false;
+                intensityMultiplier *= fade;
+            }
 
             float farClipPlane = cam.farClipPlane;
             UniversalRenderPipelineAsset urpAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
@@ -171,10 +203,21 @@ namespace Umbra {
             else {
                 contactShadowsMaxDistance = shadowMaxDistance / farClipPlane;
             }
-            mat.SetVector(ShaderParams.ContactShadowsData1, new Vector4(profile.contactShadowsStepping, profile.contactShadowsIntensityMultiplier, profile.contactShadowsJitter, profile.contactShadowsDistanceFade));
+            mat.SetVector(ShaderParams.ContactShadowsData1, new Vector4(profile.contactShadowsStepping, intensityMultiplier, profile.contactShadowsJitter, profile.contactShadowsDistanceFade));
             mat.SetVector(ShaderParams.ContactShadowsData2, new Vector4(profile.contactShadowsStartDistance / farClipPlane, profile.contactShadowsStartDistanceFade / farClipPlane, contactShadowsMaxDistance, profile.contactShadowsNormalBias));
             mat.SetVector(ShaderParams.ContactShadowsData3, new Vector4(profile.contactShadowsThicknessNear / farClipPlane, profile.contactShadowsThicknessDistanceMultiplier * 0.1f, profile.contactShadowsVignetteSize, profile.contactShadowsBias));
+            mat.SetVector(ShaderParams.ContactShadowsData4, new Vector4(profile.contactShadowsBiasFar + 0.0025f, profile.contactShadowsEdgeSoftness, profile.contactShadowsPlanarShadows ? 0f : 1f, 0));
             mat.SetInt(ShaderParams.ContactShadowsBlendMode, settings.debugShadows ? (int)BlendMode.SrcAlpha : (int)BlendMode.OneMinusSrcAlpha);
+
+            // Enable/disable soft edges keyword
+            if (profile.contactShadowsSoftEdges) {
+                mat.EnableKeyword(ShaderParams.SKW_CONTACT_SHADOWS_SOFT_EDGES);
+            }
+            else {
+                mat.DisableKeyword(ShaderParams.SKW_CONTACT_SHADOWS_SOFT_EDGES);
+            }
+
+            return true;
         }
 
         static void SetupContactShadowsAfterOpaqueOnlyMaterial (UmbraProfile profile, Material mat) {
@@ -215,10 +258,17 @@ namespace Umbra {
             }
 
             // Fetch settings from current main directional light
+            Light light = null;
             shadowLightIndex = renderingData.lightData.mainLightIndex;
-            if (shadowLightIndex < 0) return;
-
-            Light light = renderingData.lightData.visibleLights[shadowLightIndex].light;
+            if (shadowLightIndex < 0) {
+                // fallback to static instance search in case that "Only Contact Shadows" option is used
+                if (UmbraSoftShadows.instance != null) {
+                    light = UmbraSoftShadows.instance.GetComponent<Light>();
+                }
+            }
+            else {
+                light = renderingData.lightData.visibleLights[shadowLightIndex].light;
+            }
             if (light == null) return;
 
             if (!umbraSettings.TryGetValue(light, out settings)) return;
@@ -275,11 +325,12 @@ namespace Umbra {
                         renderer.EnqueuePass(m_OverlayShadowsPass);
                     }
                     if (settings.profile.contactShadows || settings.profile.shadowSource == ShadowSource.OnlyContactShadows) {
-                        SetupContactShadowsMaterial(cam, settings.profile, mat);
-                        if (settings.profile.shadowSource != ShadowSource.UmbraShadows || settings.profile.actualContactShadowsInjectionPoint == ContactShadowsInjectionPoint.AfterOpaque) {
-                            SetupContactShadowsAfterOpaqueOnlyMaterial(settings.profile, mat);
-                            m_ContactShadowsAfterOpaquePass.Setup();
-                            renderer.EnqueuePass(m_ContactShadowsAfterOpaquePass);
+                        if (SetupContactShadowsMaterial(cam, settings.profile, mat)) {
+                            if (settings.profile.shadowSource != ShadowSource.UmbraShadows || settings.profile.actualContactShadowsInjectionPoint == ContactShadowsInjectionPoint.AfterOpaque) {
+                                SetupContactShadowsAfterOpaqueOnlyMaterial(settings.profile, mat);
+                                m_ContactShadowsAfterOpaquePass.Setup();
+                                renderer.EnqueuePass(m_ContactShadowsAfterOpaquePass);
+                            }
                         }
                     }
                 }
@@ -332,6 +383,7 @@ namespace Umbra {
             public readonly Dictionary<Camera, RTHandle> shadowTextures = new Dictionary<Camera, RTHandle>();
             static bool newShadowmap = true;
             static readonly float[] autoCascadeScales = new float[4];
+
 
             public void Dispose () {
                 foreach (var rt in shadowTextures.Values) {
@@ -796,7 +848,7 @@ namespace Umbra {
 #endif
             public override void Execute (ScriptableRenderContext context, ref RenderingData renderingData) {
                 Material mat = UmbraScreenSpaceShadowsPass.mat;
-                if (mat == null) return;
+                if (mat == null || source.rt == null) return;
                 var cmd = renderingData.commandBuffer;
                 using (new ProfilingScope(cmd, m_ProfilingSampler)) {
                     UmbraProfile profile = settings.profile;

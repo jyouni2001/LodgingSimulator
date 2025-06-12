@@ -60,13 +60,13 @@ Material:
     - _Metalic: 0
     - _Normal_Strength: 0.05
     - _QueueControl: 1
-    - _QueueOffset: 0
-    - _Refraction: 0
+    - _QueueOffset: -50
+    - _Refraction: -0.05
     - _Smoothness: 0.8
     - _Water_Lerp: 0.8
     m_Colors:
-    - _Color: {r: 0.16233535, g: 0.60377336, b: 0.6037736, a: 1}
-    - _Emission: {r: 0.0051174797, g: 0.027848465, b: 0.07058824, a: 0}
+    - _Color: {r: 0.17755428, g: 0.3962264, b: 0.3962264, a: 1}
+    - _Emission: {r: 0.004774777, g: 0.025983537, b: 0.06586116, a: 0}
     - _UV1: {r: 10, g: 10, b: 0, a: 0}
     - _UV2: {r: 10, g: 10, b: 0, a: 0}
     - _Water_Speed1: {r: 0.01, g: 0.01, b: 0, a: 0}

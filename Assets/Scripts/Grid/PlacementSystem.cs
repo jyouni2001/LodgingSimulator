@@ -8,67 +8,53 @@ public class PlacementSystem : MonoBehaviour
 {
     // 싱글톤 인스턴스
     private static PlacementSystem _instance;
-
-    public static PlacementSystem Instance
-    {
-        get
-        {
-            if (_instance is null)
-            {
-                _instance = FindFirstObjectByType<PlacementSystem>();
-                if (_instance is null)
-                {
-                    Debug.LogError("PlacementSystem 인스턴스가 씬에 존재하지 않습니다. PlacementSystem 오브젝트를 추가해주세요.");
-                }
-            }
-            return _instance;
-        }
-    }
+    public static PlacementSystem Instance => _instance;
     
+    [Header("컴포넌트")]
+    [SerializeField] private InputManager inputManager;
+    [SerializeField] private ObjectPlacer objectPlacer;
+    [SerializeField] private GameObject previewObject;
+    [SerializeField] private SpawnEffect spawnEffect;
+    [SerializeField] private ChangeFloorSystem changeFloorSystem;
+    [SerializeField] private GridData selectedData; 
+    
+    private Renderer previewRenderer;
+    private Vector3Int gridPosition;
+    private Quaternion previewRotation = Quaternion.identity;
+    public Grid grid;
+    public ObjectsDatabaseSO database;
+    public GridData floorData, furnitureData, wallData, decoData;
+    
+    [Header("변수")]
     public int indicatorMax = 100;
     [SerializeField] public GameObject mouseIndicator;
     [SerializeField] public GameObject cellIndicatorPrefab;
     private List<GameObject> cellIndicators = new List<GameObject>();
-
-    [Header("컴포넌트")]
-    [SerializeField] private InputManager inputManager;
-    [SerializeField] private ObjectPlacer objectPlacer;
-    [SerializeField] public Grid grid;
-    public ObjectsDatabaseSO database;
-    [SerializeField] private GameObject previewObject;
-    [SerializeField] private SpawnEffect spawnEffect;
-    [SerializeField] private ChangeFloorSystem changeFloorSystem;
-
+    private int selectedObjectIndex = -1;
+    private int currentPurchaseLevel = 1;
+    private bool FloorLock;
     
-    [Header("그리드 관련")]
+    
+    [Header("그리드 오브젝트")]
     [SerializeField] public List<GameObject> gridVisualization;
-    [SerializeField] private List<Bounds> planeBounds;
-
+    public List<Bounds> planeBounds;
+    
     [FormerlySerializedAs("plane")] [Header("플레인 리스트")]
     public List<GameObject> plane1f;
     public List<GameObject> plane2f;
     public List<GameObject> plane3f;
     public List<GameObject> plane4f;
 
-    private int selectedObjectIndex = -1;
-    public GridData floorData, furnitureData, wallData, decoData;
-    private Renderer previewRenderer;
-    private Vector3Int gridPosition;
-    private Quaternion previewRotation = Quaternion.identity;
-
     [Header("땅 구매 버튼")]
     [SerializeField] private Button purchaseButton;
     [SerializeField] private Button purchase2FButton;
-    private int currentPurchaseLevel = 1;
-
-    private bool FloorLock = false;
-
+    
+    [Header("증축 시스템 관련 버튼")]
     [SerializeField] private GameObject changeFloorButton;    
-    [SerializeField] private GridData selectedData;    
+    
+    [Header("미리보기 관련")]
     [SerializeField] private GameObject highlightedObject;
-
     public Renderer[] objRenderers;
-
     [SerializeField] private Material previewMaterialInstance;
 
     private void Awake()
@@ -103,6 +89,7 @@ public class PlacementSystem : MonoBehaviour
         }
         
         changeFloorButton.SetActive(false);
+        FloorLock = false;
     }
 
     private void Update()

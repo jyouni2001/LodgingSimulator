@@ -18,8 +18,9 @@ namespace Umbra {
         SerializedProperty loopStepOptimization, frameSkipOptimization, skipFrameMaxCameraDisplacement, skipFrameMaxCameraRotation, downsample;
         SerializedProperty style, maskTexture, maskScale;
         SerializedProperty contactShadows, contactShadowsInjectionPoint, contactShadowsSampleCount, contactShadowsStepping;
-        SerializedProperty contactShadowsThicknessNear, contactShadowsThicknessDistanceMultiplier, contactShadowsJitter, contactShadowsBias;
+        SerializedProperty contactShadowsThicknessNear, contactShadowsThicknessDistanceMultiplier, contactShadowsJitter, contactShadowsBias, contactShadowsBiasFar;
         SerializedProperty contactShadowsIntensityMultiplier, contactShadowsDistanceFade, contactShadowsStartDistance, contactShadowsStartDistanceFade, contactShadowsNormalBias, contactShadowsVignetteSize;
+        SerializedProperty contactShadowsEdgeSoftness, contactShadowsSoftEdges, contactShadowsPlanarShadows;
         SerializedProperty transparentReceiverPlane, receiverPlaneAltitude;
         SerializedProperty earlyOutSamples;
 
@@ -79,12 +80,16 @@ namespace Umbra {
             contactShadowsThicknessDistanceMultiplier = serializedObject.FindProperty("contactShadowsThicknessDistanceMultiplier");
             contactShadowsJitter = serializedObject.FindProperty("contactShadowsJitter");
             contactShadowsBias = serializedObject.FindProperty("contactShadowsBias");
+            contactShadowsBiasFar = serializedObject.FindProperty("contactShadowsBiasFar");
             contactShadowsDistanceFade = serializedObject.FindProperty("contactShadowsDistanceFade");
             contactShadowsStartDistance = serializedObject.FindProperty("contactShadowsStartDistance");
             contactShadowsStartDistanceFade = serializedObject.FindProperty("contactShadowsStartDistanceFade");
             contactShadowsNormalBias = serializedObject.FindProperty("contactShadowsNormalBias");
             contactShadowsVignetteSize = serializedObject.FindProperty("contactShadowsVignetteSize");
             contactShadowsIntensityMultiplier = serializedObject.FindProperty("contactShadowsIntensityMultiplier");
+            contactShadowsEdgeSoftness = serializedObject.FindProperty("contactShadowsEdgeSoftness");
+            contactShadowsSoftEdges = serializedObject.FindProperty("contactShadowsSoftEdges");
+            contactShadowsPlanarShadows = serializedObject.FindProperty("contactShadowsPlanarShadows");
             transparentReceiverPlane = serializedObject.FindProperty("transparentReceiverPlane");
             receiverPlaneAltitude = serializedObject.FindProperty("receiverPlaneAltitude");
             earlyOutSamples = serializedObject.FindProperty("earlyOutSamples");
@@ -167,11 +172,19 @@ namespace Umbra {
                 EditorGUILayout.PropertyField(contactShadowsStepping, new GUIContent("Stepping"));
                 EditorGUILayout.PropertyField(contactShadowsThicknessNear, new GUIContent("Thickness Near"));
                 EditorGUILayout.PropertyField(contactShadowsThicknessDistanceMultiplier, new GUIContent("Thickness Distance Multiplier"));
+                EditorGUILayout.PropertyField(contactShadowsPlanarShadows, new GUIContent("Planar Shadows"));
                 EditorGUILayout.PropertyField(contactShadowsJitter, new GUIContent("Jitter"));
-                EditorGUILayout.PropertyField(contactShadowsBias, new GUIContent("Bias"));
                 EditorGUILayout.PropertyField(contactShadowsStartDistance, new GUIContent("Start Distance"));
                 EditorGUILayout.PropertyField(contactShadowsStartDistanceFade, new GUIContent("Start Distance Fade"));
+                EditorGUILayout.PropertyField(contactShadowsBias, new GUIContent("Depth Bias Near"));
+                EditorGUILayout.PropertyField(contactShadowsBiasFar, new GUIContent("Depth Bias Far"));
                 EditorGUILayout.PropertyField(contactShadowsNormalBias, new GUIContent("Normal Bias"));
+                EditorGUILayout.PropertyField(contactShadowsSoftEdges, new GUIContent("Soft Edges"));
+                if (contactShadowsSoftEdges.boolValue) {
+                    EditorGUI.indentLevel++;
+                    EditorGUILayout.PropertyField(contactShadowsEdgeSoftness, new GUIContent("Edge Softness"));
+                    EditorGUI.indentLevel--;
+                }
                 EditorGUILayout.PropertyField(contactShadowsVignetteSize, new GUIContent("Vignette Size"));
                 if (shadowSource.intValue == (int)ShadowSource.UmbraShadows) {
                     EditorGUILayout.PropertyField(contactShadowsInjectionPoint, new GUIContent("Injection Point"));

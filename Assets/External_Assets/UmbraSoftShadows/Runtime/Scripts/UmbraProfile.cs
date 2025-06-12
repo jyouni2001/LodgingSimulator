@@ -157,10 +157,6 @@ namespace Umbra {
         [Tooltip("Prevents shadow blurring on geometry edges")]
         public bool preserveEdges = true;
 
-        [Tooltip("Bias applied to Umbra shadows. Use only if self-shadowing occurs on certain surfaces.")]
-        [Range(0, 10)]
-        public float bias;
-
         [Tooltip("Stylized look for shadows")]
         public Style style = Style.Default;
 
@@ -206,7 +202,21 @@ namespace Umbra {
 
         [Tooltip("Adds an offset to the pixel position to avoid self-occlusion")]
         [Range(0f, 1f)]
-        public float contactShadowsBias;
+        public float contactShadowsBias = 0.001f;
+
+        [Tooltip("Bias applied at far distances. Use only if self-shadowing occurs on certain surfaces.")]
+        [Range(0, 1)]
+        public float contactShadowsBiasFar = 0.4f;        
+
+        [Tooltip("Softens the edges of contact shadows. Higher values create softer edges.")]
+        [Range(0.01f, 0.5f)]
+        public float contactShadowsEdgeSoftness = 0.1f;
+
+        [Tooltip("Enables soft edges for contact shadows. When disabled, shadows have hard edges for better performance.")]
+        public bool contactShadowsSoftEdges;
+
+        [Tooltip("Makes contact shadows planar by ignoring the Y component of the light direction. Useful for ground shadows.")]
+        public bool contactShadowsPlanarShadows;
 
         [Tooltip("Adds an extra pass after opaque with custom colored shadows")]
         public bool overlayShadows;

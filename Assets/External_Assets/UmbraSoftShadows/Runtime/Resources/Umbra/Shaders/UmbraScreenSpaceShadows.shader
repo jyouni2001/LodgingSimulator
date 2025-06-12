@@ -158,6 +158,8 @@ Shader "Hidden/Kronnect/UmbraScreenSpaceShadows"
             #pragma multi_compile_local_fragment _ _LOOP_STEP_X2 _LOOP_STEP_X3
             #pragma multi_compile_local_fragment _ _NORMALS_TEXTURE
             #pragma multi_compile_local_fragment _ _RECEIVER_PLANE
+            #pragma multi_compile_local_fragment _ _USE_POINT_LIGHT
+            #pragma multi_compile_local_fragment _ _SOFT_EDGES
             #include "ContactShadows.hlsl"
             ENDHLSL
         }
@@ -194,6 +196,8 @@ Shader "Hidden/Kronnect/UmbraScreenSpaceShadows"
             #pragma multi_compile_local_fragment _ _LOOP_STEP_X2 _LOOP_STEP_X3
             #pragma multi_compile_local_fragment _ _NORMALS_TEXTURE
             #pragma multi_compile_local_fragment _ _RECEIVER_PLANE
+            #pragma multi_compile_local_fragment _ _USE_POINT_LIGHT
+            #pragma multi_compile_local_fragment _ _SOFT_EDGES
             #define CONTACT_SHADOWS_AFTER_OPAQUE
             #include "ContactShadows.hlsl"
             ENDHLSL
