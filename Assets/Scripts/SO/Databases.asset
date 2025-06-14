@@ -237,3 +237,51 @@ MonoBehaviour:
     <Prefab>k__BackingField: {fileID: 4229897219312774922, guid: 4179a3453f69f514299ac61d0d159957, type: 3}
     <BuildPrice>k__BackingField: 20
     <BasePrice>k__BackingField: 0
+  - <Name>k__BackingField: BanquetHall
+    <ID>k__BackingField: 28
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 10, y: 10}
+    <Prefab>k__BackingField: {fileID: 2339851129608252181, guid: c4bbc2fcbe94eb04bb322db2ae6f3eb9, type: 3}
+    <BuildPrice>k__BackingField: 20
+    <BasePrice>k__BackingField: 20
+  - <Name>k__BackingField: BathHouse
+    <ID>k__BackingField: 29
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 8, y: 8}
+    <Prefab>k__BackingField: {fileID: 5786790380426678994, guid: 65a9b8e59903a12458be17f79f92c5e9, type: 3}
+    <BuildPrice>k__BackingField: 30
+    <BasePrice>k__BackingField: 30
+  - <Name>k__BackingField: FitnessCenter
+    <ID>k__BackingField: 30
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 8, y: 8}
+    <Prefab>k__BackingField: {fileID: 462088108535089371, guid: fc1e4b7484a9ad742a40c7d69ccfcccf, type: 3}
+    <BuildPrice>k__BackingField: 30
+    <BasePrice>k__BackingField: 30
+  - <Name>k__BackingField: JjimJilBang
+    <ID>k__BackingField: 31
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 8, y: 8}
+    <Prefab>k__BackingField: {fileID: 645328971350965070, guid: e6ea7f8483ca51048925015d0de7095e, type: 3}
+    <BuildPrice>k__BackingField: 30
+    <BasePrice>k__BackingField: 30
+  - <Name>k__BackingField: FineDining
+    <ID>k__BackingField: 32
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 10, y: 10}
+    <Prefab>k__BackingField: {fileID: 663954814644934084, guid: 6d0b02fb224839441944882d1372b56e, type: 3}
+    <BuildPrice>k__BackingField: 50
+    <BasePrice>k__BackingField: 50
+  - <Name>k__BackingField: FounTain
+    <ID>k__BackingField: 33
+    <kindIndex>k__BackingField: 1
+    IsWall: 0
+    <Size>k__BackingField: {x: 2, y: 2}
+    <Prefab>k__BackingField: {fileID: 8718984862250803680, guid: 57662936e4341c14a86e75509c9ce49d, type: 3}
+    <BuildPrice>k__BackingField: 30
+    <BasePrice>k__BackingField: 30
