@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
+using ZLinq;
 
 namespace JY
 {
@@ -318,7 +318,7 @@ namespace JY
             if (detectedRooms.Count > 0)
             {
                 DebugLog($"총 {detectedRooms.Count}개의 방이 감지됨");
-                OnRoomsUpdated?.Invoke(detectedRooms.Select(r => r.gameObject).ToArray());
+                OnRoomsUpdated?.Invoke(detectedRooms.AsValueEnumerable().Select(r => r.gameObject).ToArray());
             }
             else
             {
@@ -637,10 +637,10 @@ namespace JY
             if (room.floorCells.Count == 0) return false;
             
             // 방의 최소 크기 확인 (예: 2x2 이상)
-            int minX = room.floorCells.Min(c => c.x);
-            int maxX = room.floorCells.Max(c => c.x);
-            int minZ = room.floorCells.Min(c => c.z);
-            int maxZ = room.floorCells.Max(c => c.z);
+            int minX = room.floorCells.AsValueEnumerable().Min(c => c.x);
+            int maxX = room.floorCells.AsValueEnumerable().Max(c => c.x);
+            int minZ = room.floorCells.AsValueEnumerable().Min(c => c.z);
+            int maxZ = room.floorCells.AsValueEnumerable().Max(c => c.z);
             
             int width = maxX - minX + 1;
             int height = maxZ - minZ + 1;
@@ -667,8 +667,8 @@ namespace JY
             if (list1.Count != list2.Count)
                 return false;
 
-            var sortedList1 = list1.OrderBy(r => r.center.x).ThenBy(r => r.center.z).ToList();
-            var sortedList2 = list2.OrderBy(r => r.center.x).ThenBy(r => r.center.z).ToList();
+            var sortedList1 = list1.AsValueEnumerable().OrderBy(r => r.center.x).ThenBy(r => r.center.z).ToList();
+            var sortedList2 = list2.AsValueEnumerable().OrderBy(r => r.center.x).ThenBy(r => r.center.z).ToList();
 
             for (int i = 0; i < sortedList1.Count; i++)
             {
@@ -689,15 +689,15 @@ namespace JY
                 room1.floorCells.Count != room2.floorCells.Count)
                 return false;
 
-            bool wallsEqual = room1.walls.All(w1 => room2.walls.Any(w2 => w2.GetInstanceID() == w1.GetInstanceID()));
-            bool doorsEqual = room1.doors.All(d1 => room2.doors.Any(d2 => d2.GetInstanceID() == d1.GetInstanceID()));
-            bool bedsEqual = room1.beds.All(b1 => room2.beds.Any(b2 => b2.GetInstanceID() == b1.GetInstanceID()));
+            bool wallsEqual = room1.walls.AsValueEnumerable().All(w1 => room2.walls.AsValueEnumerable().Any(w2 => w2.GetInstanceID() == w1.GetInstanceID()));
+            bool doorsEqual = room1.doors.AsValueEnumerable().All(d1 => room2.doors.AsValueEnumerable().Any(d2 => d2.GetInstanceID() == d1.GetInstanceID()));
+            bool bedsEqual = room1.beds.AsValueEnumerable().All(b1 => room2.beds.AsValueEnumerable().Any(b2 => b2.GetInstanceID() == b1.GetInstanceID()));
 
             if (!wallsEqual || !doorsEqual || !bedsEqual)
                 return false;
 
-            var sortedFloors1 = room1.floorCells.OrderBy(v => v.x).ThenBy(v => v.z).ToList();
-            var sortedFloors2 = room2.floorCells.OrderBy(v => v.x).ThenBy(v => v.z).ToList();
+            var sortedFloors1 = room1.floorCells.AsValueEnumerable().OrderBy(v => v.x).ThenBy(v => v.z).ToList();
+            var sortedFloors2 = room2.floorCells.AsValueEnumerable().OrderBy(v => v.x).ThenBy(v => v.z).ToList();
             
             for (int i = 0; i < sortedFloors1.Count; i++)
             {
