@@ -384,7 +384,7 @@ public class PlacementSystem : MonoBehaviour
 
         // 1. 소지금 체크
         int buildPrice = objectToPlace.BuildPrice;
-        if (PlayerWallet.Instance.GetMoney() < buildPrice)
+        if (PlayerWallet.Instance.Money < buildPrice)
         {
             Debug.Log("배치 불가: 소지금 부족");
             return false; // 소지금 부족 시 배치 불가능

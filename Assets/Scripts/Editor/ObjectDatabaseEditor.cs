@@ -16,6 +16,7 @@ public class ObjectDatabaseEditor : Editor
     private int newObjectBuildPrice = 0;
     private int newObjectBasePrice = 0;
     private bool newObjectIsWall = false;
+    private int newObjectReputation = 1;
     private Dictionary<ObjectData, bool> foldoutStates = new Dictionary<ObjectData, bool>();
 
     private void OnEnable()
@@ -46,6 +47,7 @@ public class ObjectDatabaseEditor : Editor
         newObjectBuildPrice = EditorGUILayout.IntField("건축 가격", newObjectBuildPrice);
         newObjectBasePrice = EditorGUILayout.IntField("기본 가격", newObjectBasePrice);
         newObjectIsWall = EditorGUILayout.Toggle("벽 or Not", newObjectIsWall);
+        newObjectReputation = EditorGUILayout.IntField("명성도", newObjectReputation);
 
         if (GUILayout.Button("데이터 추가"))
         {
@@ -58,7 +60,8 @@ public class ObjectDatabaseEditor : Editor
                 Prefab = newObjectPrefab,
                 BuildPrice = newObjectBuildPrice,
                 BasePrice = newObjectBasePrice,
-                IsWall = newObjectIsWall
+                IsWall = newObjectIsWall,
+                ReputationValue = newObjectReputation
             };
             database.objectsData.Add(newObject);
             foldoutStates[newObject] = false;
@@ -71,6 +74,7 @@ public class ObjectDatabaseEditor : Editor
             newObjectBuildPrice = 0;
             newObjectBasePrice = 0;
             newObjectIsWall = false;
+            newObjectReputation = 1;
         }
 
         // Scroll view for objects
@@ -96,6 +100,7 @@ public class ObjectDatabaseEditor : Editor
                 obj.BuildPrice = EditorGUILayout.IntField("건축 가격", obj.BuildPrice);
                 obj.BasePrice = EditorGUILayout.IntField("기본 가격", obj.BasePrice);
                 obj.IsWall = EditorGUILayout.Toggle("벽 or Not", obj.IsWall);
+                obj.ReputationValue = EditorGUILayout.IntField("명성도", obj.ReputationValue);
 
                 if (GUILayout.Button("Delete"))
                 {

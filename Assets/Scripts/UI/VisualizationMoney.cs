@@ -8,6 +8,6 @@ public class VisualizationMoney : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        moneyText.text = "Money : " + PlayerWallet.Instance.GetMoney().ToString();        
+        moneyText.text = "Money : " + PlayerWallet.Instance.Money.ToString();        
     }
 }
