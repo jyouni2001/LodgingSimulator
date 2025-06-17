@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: My Water 5
-  m_Shader: {fileID: -6465566751694194690, guid: 1f430cc352ae317478d1e33ca7921f23, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 9cb055c993c59fe45a543d105ce50705, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -41,6 +41,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 50693e860d2e99d47a2c2ac7841a8f6b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Texture2DAsset_af44697918954e4ca6b8e44cda912c49_Out_0_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -55,15 +59,17 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Alpha: 1.5
-    - _Normal_Strength: 0.2
+    - _Alpha: 1
+    - _Normal_Strength: 0.5
     - _QueueControl: 1
     - _QueueOffset: 0
-    - _Refraction: 0.2
-    - _Smoothness: 0.766
-    - _Water_Lerp: 0.5
+    - _Refraction: 0.4
+    - _Smoothness: 0.84
+    - _Strength: 0.03
+    - _Water_Lerp: 0.668
     m_Colors:
-    - _Color: {r: 0.1802243, g: 0.63270104, b: 0.8490566, a: 1}
+    - _Color: {r: 0, g: 0.6355762, b: 0.9811321, a: 1}
+    - _FoamTiling: {r: 0.1, g: 0.1, b: 0, a: 0}
     - _UV1: {r: 1, g: 3, b: 0.13, a: 0}
     - _UV2: {r: 10, g: 10, b: 0, a: 0}
     - _Water_Speed1: {r: 0.3, g: 0.1, b: 0, a: 0}

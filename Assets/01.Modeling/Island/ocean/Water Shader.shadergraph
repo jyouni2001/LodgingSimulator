@@ -3630,7 +3630,7 @@
     "m_Title": "Normal Map",
     "m_Position": {
         "x": -2361.0,
-        "y": -120.00001525878906
+        "y": -120.00003051757813
     }
 }
 
@@ -5022,7 +5022,7 @@
     "m_ObjectId": "73f3bae5fb7749328f435da2e77d29f4",
     "m_Title": "Foam",
     "m_Position": {
-        "x": -155.0000762939453,
+        "x": -154.99978637695313,
         "y": 788.0
     }
 }
@@ -7149,7 +7149,7 @@
     },
     "m_AllowMaterialOverride": false,
     "m_SurfaceType": 0,
-    "m_ZTestMode": 2,
+    "m_ZTestMode": 4,
     "m_ZWriteControl": 0,
     "m_AlphaMode": 0,
     "m_RenderFace": 2,

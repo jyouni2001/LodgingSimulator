@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: My Water 3
-  m_Shader: {fileID: -6465566751694194690, guid: 1f430cc352ae317478d1e33ca7921f23, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 9cb055c993c59fe45a543d105ce50705, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -29,7 +29,7 @@ Material:
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2950
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -39,6 +39,10 @@ Material:
     m_TexEnvs:
     - _Normal_Map:
         m_Texture: {fileID: 2800000, guid: 50693e860d2e99d47a2c2ac7841a8f6b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Texture2DAsset_af44697918954e4ca6b8e44cda912c49_Out_0_Texture2D:
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -61,9 +65,11 @@ Material:
     - _QueueOffset: 0
     - _Refraction: 0.2
     - _Smoothness: 1
+    - _Strength: 0.3
     - _Water_Lerp: 0
     m_Colors:
     - _Color: {r: 0, g: 0.7258003, b: 1, a: 1}
+    - _FoamTiling: {r: 1, g: 1, b: 0, a: 0}
     - _UV1: {r: 1, g: 3, b: 0.13, a: 0}
     - _UV2: {r: 5, g: 5, b: 0, a: 0}
     - _Water_Speed1: {r: 0, g: 1, b: 0, a: 0}

@@ -752,11 +752,6 @@ namespace JY
                         Gizmos.DrawLine(bed.transform.position, room.bounds.center);
                     }
                 }
-
-                UnityEditor.Handles.Label(room.bounds.center, 
-                    $"Room {room.roomId}\nWalls: {room.walls.Count}\n" +
-                    $"Doors: {room.doors.Count}\nBeds: {room.beds.Count}\n" +
-                    $"Valid: {room.isValid(minWalls, minDoors, minBeds)}");
             }
         }
 

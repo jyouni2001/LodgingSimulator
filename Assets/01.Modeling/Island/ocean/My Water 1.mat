@@ -59,13 +59,13 @@ Material:
     - _QueueControl: 1
     - _QueueOffset: 0
     - _Refraction: 0.5
-    - _Smoothness: 0.34
-    - _Water_Lerp: 0.07
+    - _Smoothness: 0.566
+    - _Water_Lerp: 0
     m_Colors:
-    - _Color: {r: 0, g: 0.37116787, b: 1, a: 1}
-    - _UV1: {r: 2, g: 5, b: 0.13, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _UV1: {r: 1, g: 1, b: 0.13, a: 0}
     - _UV2: {r: 5, g: 5, b: 0, a: 0}
-    - _Water_Speed1: {r: 0.2, g: -0.01, b: 0, a: 0}
+    - _Water_Speed1: {r: 0.1, g: 0.5, b: 0, a: 0}
     - _Water_Speed2: {r: 2.1, g: 0.3, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

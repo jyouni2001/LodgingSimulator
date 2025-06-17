@@ -50,9 +50,9 @@ Material:
     m_Floats:
     - _AccumulationFactor: 0.95
     - _AltitudeDistortion: 0.0625
-    - _AmbientProbeDimmer: 0.718
-    - _CloudNearPlane: 1189.4829
-    - _DensityMultiplier: 0.21912201
+    - _AmbientProbeDimmer: 0.89
+    - _CloudNearPlane: 1195.9125
+    - _DensityMultiplier: 0.38019198
     - _EarthRadius: 1000000
     - _ErosionFactor: 0.8
     - _ErosionOcclusion: 0.1
@@ -71,11 +71,11 @@ Material:
     - _NumPrimarySteps: 90
     - _PowderEffectIntensity: 0.25
     - _Seed: 0
-    - _ShapeFactor: 0.9
+    - _ShapeFactor: 0.88
     - _ShapeScale: 5
     - _SmallWindSpeed: 0.25
     - _SunLightDimmer: 1
-    - _VerticalErosionWindDisplacement: -178.40697
+    - _VerticalErosionWindDisplacement: -4.6456075
     - _VerticalShapeNoiseOffset: 0
     - _VerticalShapeWindDisplacement: 0
     m_Colors:
