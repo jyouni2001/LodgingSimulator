@@ -159,11 +159,11 @@ public class AutoNavMeshBaker : MonoBehaviour
         isBaking = true;
         
         // NavMeshSurface의 설정을 동적으로 업데이트
-        var agent = NavMesh.GetSettingsByID(0);
+        /*var agent = NavMesh.GetSettingsByID(0);
         agent.agentRadius = agentRadius;
         agent.agentHeight = agentHeight;
         agent.agentSlope = agentSlope;
-        agent.agentClimb = agentStepHeight;
+        agent.agentClimb = agentStepHeight;*/
         
         // NavMeshSurface를 사용하여 비동기 빌드
         AsyncOperation operation = _navsurface.UpdateNavMesh(_navsurface.navMeshData);

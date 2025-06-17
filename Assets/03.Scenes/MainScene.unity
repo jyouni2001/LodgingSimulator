@@ -7018,9 +7018,11 @@ MonoBehaviour:
   _navsurface: {fileID: 1032360400}
   tagsToBake:
   - Stair
+  - Floor
+  - Bed
   agentHeight: 2
-  agentRadius: 0.5
-  agentSlope: 45
+  agentRadius: 0.3
+  agentSlope: 60
   agentStepHeight: 0.4
   maxJumpDistance: 2
   minJumpDistance: 0.5
@@ -32195,8 +32197,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1523943468}
   m_HandleRect: {fileID: 1523943467}
   m_Direction: 0
-  m_Value: 0
-  m_Size: 0.3437298
+  m_Value: -0.0000000581287
+  m_Size: 0.34374252
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -33026,7 +33028,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -274.99988, y: 136.47386}
+  m_AnchoredPosition: {x: -274.99985, y: 136.47386}
   m_SizeDelta: {x: 1600, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2141453194

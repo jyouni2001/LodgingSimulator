@@ -12,6 +12,7 @@ TagManager:
   - Door
   - Wall
   - Stair
+  - Sunbed
   layers:
   - Default
   - TransparentFX
