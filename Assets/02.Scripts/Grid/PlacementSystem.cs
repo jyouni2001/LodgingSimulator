@@ -790,7 +790,7 @@ public class PlacementSystem : MonoBehaviour
     {
         bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex, previewRotation);
 
-        if (previewRenderer is not null)
+        if (previewRenderer != null)
         {
             previewRenderer.material.color = placementValidity ? Color.white : Color.red;
         }
@@ -812,12 +812,8 @@ public class PlacementSystem : MonoBehaviour
             foreach (Renderer renderer in renderers)
             {
                 renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0f, 0f, 0.5f);
+                Debug.Log($"재질 현재 상태 = {placementValidity}");
             }
-        }
-        
-        if (previewRenderer is not null)
-        {
-            previewRenderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0f, 0f, 0.5f);
         }
         
         if (Input.GetKeyDown(KeyCode.R) && !isDragging)
@@ -834,8 +830,7 @@ public class PlacementSystem : MonoBehaviour
                 Renderer renderer = indicator.GetComponentInChildren<Renderer>();
                 if (renderer is not null)
                 {
-                    renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.35f) : new Color(1f, 0f, 0f, 0.5f);
-
+                    renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.35f) : new Color(1f, 0f, 0f, 0.7f);
                 }
             }
         }

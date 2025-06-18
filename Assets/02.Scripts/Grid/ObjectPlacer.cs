@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using JY;
 public class ObjectPlacer : MonoBehaviour
 {
     [SerializeField] private List<GameObject> placedGameObjects = new();
     [SerializeField] private InputManager inputManager;
     [SerializeField] private ChangeFloorSystem changeFloorSystem;
+
+    [SerializeField] private AutoNavMeshBaker navMeshBaker;
+
     /// <summary>
     /// 매개 변수의 오브젝트들을 배치한다.
     /// </summary> 
@@ -64,6 +67,8 @@ public class ObjectPlacer : MonoBehaviour
             placedGameObjects[index] = newObject;
         }
 
+        navMeshBaker?.RebuildNavMesh();
+
         return index;
         
         //placedGameObjects.Add(newObject);
@@ -76,15 +81,18 @@ public class ObjectPlacer : MonoBehaviour
     /// <param name="index"></param>
     public void RemoveObject(int index)
     {
+        navMeshBaker?.RebuildNavMesh();
+
         if (index >= 0 && index < placedGameObjects.Count)
         {
             GameObject obj = placedGameObjects[index];
             if (obj != null)
             {
                 Destroy(obj);
+                
             }
             //placedGameObjects.RemoveAt(index);
-            placedGameObjects[index] = null; // 참조 제거 (선택적으로 리스트에서 완전히 제거 가능)
+            placedGameObjects[index] = null; // 참조 제거 (선택적으로 리스트에서 완전히 제거 가능)            
         }
     }
 

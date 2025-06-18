@@ -65,21 +65,12 @@ namespace JY
         /// </summary>
         public void SetRoomBounds(Bounds bounds)
         {
+            // 전달받은 bounds를 그대로 사용 (RoomDetector에서 이미 올바르게 계산됨)
             roomBounds = bounds;
-
-            // Y축 높이를 4로 조정
-            float roomHeight = 4f;
-            Vector3 adjustedMin = roomBounds.min;
-            Vector3 adjustedMax = roomBounds.max;
-
-            float originalYMin = bounds.min.y;
-            adjustedMin.y = originalYMin; // 바닥 높이
-            adjustedMax.y = roomHeight; // 천장 높이
-            
-            roomBounds.SetMinMax(adjustedMin, adjustedMax);
 
             UpdateRoomContents();
             DebugLog($"방 {roomID}의 범위가 업데이트되었습니다. 중심: {bounds.center}, 크기: {bounds.size}", true);
+            DebugLog($"🎯 RoomContents 바운더리: Min({roomBounds.min}) Max({roomBounds.max})", true);
         }
 
         /// <summary>

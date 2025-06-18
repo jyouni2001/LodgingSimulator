@@ -17,20 +17,29 @@ namespace JY
         [Tooltip("그리드 시스템 참조")]
         [SerializeField] private Grid grid;
         
+        [Header("성능 및 안전 설정")]
+        [Tooltip("FloodFill 최대 반복 횟수 (무한 루프 방지)")]
+        [Range(100, 5000)]
+        [SerializeField] private int maxFloodFillIterations = 1000;
+        
+        [Tooltip("최대 방 크기 (무한 확장 방지)")]
+        [Range(50, 1000)]
+        [SerializeField] private int maxRoomSize = 200;
+        
         [Header("디버그 설정")]
         [Tooltip("디버그 로그 표시 여부")]
-        [SerializeField] private bool showDebugLogs = false;
+        [SerializeField] private bool showDebugLogs = true;
         
         [Tooltip("중요한 이벤트만 로그 표시")]
-        [SerializeField] private bool showImportantLogsOnly = true;
+        [SerializeField] private bool showImportantLogsOnly = false;
         
         [Tooltip("방 스캔 과정 로그 표시")]
-        [SerializeField] private bool showScanLogs = false;
+        [SerializeField] private bool showScanLogs = true;
         
         [Header("방 인식 조건")]
         [Tooltip("방으로 인식하기 위한 최소 벽 개수")]
         [Range(1, 20)]
-        [SerializeField] private int minWalls = 4;
+        [SerializeField] private int minWalls = 3;
         
         [Tooltip("방으로 인식하기 위한 최소 문 개수")]
         [Range(1, 10)]
@@ -50,12 +59,12 @@ namespace JY
         
         [Header("층별 감지 설정")]
         [Tooltip("층 구분을 위한 Y축 허용 오차")]
-        [Range(0.1f, 5f)]
-        [SerializeField] private float floorHeightTolerance = 1.5f;
+        [Range(0.1f, 10f)]
+        [SerializeField] private float floorHeightTolerance = FloorConstants.FLOOR_TOLERANCE;
         
         [Tooltip("바닥 감지 오프셋")]
-        [Range(-2f, 0f)]
-        [SerializeField] private float floorDetectionOffset = -0.5f;
+        [Range(-2f, 2f)]
+        [SerializeField] private float floorDetectionOffset = FloorConstants.FLOOR_DETECTION_OFFSET;
         
         [Header("다층 건물 설정")]
         [Tooltip("현재 스캔할 층 번호")]
@@ -161,11 +170,11 @@ namespace JY
         /// </summary>
         private void InitializeFloorSettings()
         {
-            // 층 설정 초기화
-            floorHeightTolerance = 1.5f;
-            floorDetectionOffset = -0.5f;
+            // FloorConstants에서 층 설정 가져오기
+            floorHeightTolerance = FloorConstants.FLOOR_TOLERANCE;
+            floorDetectionOffset = FloorConstants.FLOOR_DETECTION_OFFSET;
             
-            DebugLog($"층 설정 초기화 완료 - 허용 오차: {floorHeightTolerance}, 바닥 오프셋: {floorDetectionOffset}", true);
+            DebugLog($"층 설정 초기화 완료 - 층간 높이: {FloorConstants.FLOOR_HEIGHT}, 허용 오차: {floorHeightTolerance}, 바닥 오프셋: {floorDetectionOffset}", true);
         }
 
         /// <summary>
@@ -198,7 +207,7 @@ namespace JY
             
             // 현재 층만 스캔하는 경우
             float objY = obj.transform.position.y;
-            int objFloor = Mathf.FloorToInt(objY / 3f) + 1; // 3m당 1층으로 계산
+            int objFloor = FloorConstants.GetFloorLevel(objY); // FloorConstants 사용
             
             bool shouldProcess = objFloor == currentScanFloor;
             
@@ -238,6 +247,52 @@ namespace JY
         }
         
         /// <summary>
+        /// 수동 방 스캔 (디버그용)
+        /// </summary>
+        [ContextMenu("수동 방 스캔")]
+        public void ManualScanRooms()
+        {
+            DebugLog("=== 수동 방 스캔 시작 ===", true);
+            ScanForRooms();
+        }
+        
+        /// <summary>
+        /// 태그 상태 확인 (디버그용)
+        /// </summary>
+        [ContextMenu("태그 상태 확인")]
+        public void CheckTagStatus()
+        {
+            DebugLog("=== 태그 상태 확인 시작 ===", true);
+            
+            string[] tagsToCheck = { "Floor", "Wall", "Door", "Bed", "Sunbed" };
+            
+            foreach (string tag in tagsToCheck)
+            {
+                var objects = GameObject.FindGameObjectsWithTag(tag);
+                DebugLog($"{tag} 태그: {objects.Length}개", true);
+                
+                if (objects.Length == 0)
+                {
+                    DebugLog($"⚠️ 경고: {tag} 태그가 설정된 오브젝트가 없습니다!", true);
+                }
+                else
+                {
+                    for (int i = 0; i < Mathf.Min(objects.Length, 3); i++) // 최대 3개만 출력
+                    {
+                        var obj = objects[i];
+                        DebugLog($"  - {obj.name} (위치: {obj.transform.position})", true);
+                    }
+                    if (objects.Length > 3)
+                    {
+                        DebugLog($"  ... 그 외 {objects.Length - 3}개 더", true);
+                    }
+                }
+            }
+            
+            DebugLog("=== 태그 상태 확인 완료 ===", true);
+        }
+        
+        /// <summary>
         /// 방 스캔 실행
         /// </summary>
         public void ScanForRooms()
@@ -258,21 +313,69 @@ namespace JY
                 // 그리드 업데이트
                 UpdateGridFromScene();
                 
-                // 방 찾기
+                                                    // 방 찾기 (각 침대별로 독립적인 방 생성)
                 List<RoomInfo> newRooms = new List<RoomInfo>();
-                HashSet<Vector3Int> visitedCells = new HashSet<Vector3Int>();
+                HashSet<Vector3Int> globalVisitedCells = new HashSet<Vector3Int>();
 
                 foreach (var kvp in roomGrid)
                 {
                     Vector3Int pos = kvp.Key;
                     RoomCell cell = kvp.Value;
 
-                    if (cell.isFloor && !visitedCells.Contains(pos))
+                    if (cell.isBed && !globalVisitedCells.Contains(pos))
                     {
-                        RoomInfo room = FloodFillRoom(pos, visitedCells);
-                        if (room != null && room.isValid(minWalls, minDoors, minBeds))
+                        DebugLog($"=== 침대 셀에서 독립적인 방 탐색 시작: {pos} ===", true);
+                        
+                        // 각 침대별로 독립적인 방문 셀 추적
+                        HashSet<Vector3Int> localVisitedCells = new HashSet<Vector3Int>();
+                        RoomInfo room = FindEnclosedRoom(pos, localVisitedCells);
+                        
+                        if (room != null)
                         {
-                            newRooms.Add(room);
+                            // 다른 방과 겹치는지 확인
+                            bool overlapsWithExisting = false;
+                            foreach (var existingRoom in newRooms)
+                            {
+                                if (DoRoomsOverlap(room, existingRoom))
+                                {
+                                    overlapsWithExisting = true;
+                                    DebugLog($"방 {room.roomId}가 기존 방 {existingRoom.roomId}와 겹쳐서 제외됨", true);
+                                    break;
+                                }
+                            }
+                            
+                            if (!overlapsWithExisting)
+                        {
+                            bool isValidRoom = room.isValid(minWalls, minDoors, minBeds);
+                            DebugLog($"방 유효성 검사:\n" +
+                                     $"  최소 벽 요구: {minWalls}개 (현재: {room.walls.Count}개) {(room.walls.Count >= minWalls ? "✓" : "✗")}\n" +
+                                     $"  최소 문 요구: {minDoors}개 (현재: {room.doors.Count}개) {(room.doors.Count >= minDoors ? "✓" : "✗")}\n" +
+                                     $"  최소 침대 요구: {minBeds}개 (현재: {room.beds.Count}개) {(room.beds.Count >= minBeds ? "✓" : "✗")}\n" +
+                                     $"  최종 결과: {(isValidRoom ? "방 인식 성공" : "방 인식 실패")}", true);
+                            
+                            if (isValidRoom)
+                            {
+                                newRooms.Add(room);
+                                    
+                                    // 전역 방문 목록에 추가 (다른 침대가 같은 영역을 중복 탐색하지 않도록)
+                                    foreach (var floorCell in room.floorCells)
+                                    {
+                                        globalVisitedCells.Add(floorCell);
+                                    }
+                                    foreach (var bed in room.beds)
+                                    {
+                                        if (bed != null)
+                                        {
+                                            Vector3Int bedGridPos = GetAdjustedGridPosition(bed, floorDetectionOffset);
+                                            globalVisitedCells.Add(bedGridPos);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            DebugLog($"FloodFill 결과: null (방 생성 실패)", true);
                         }
                     }
                 }
@@ -413,11 +516,31 @@ namespace JY
                 roomGrid[gridPosition].objects.Add(obj.transform.parent?.gameObject ?? obj);
             });
 
-            /*DebugLog($"그리드 셀 총 개수: {roomGrid.Count}");
-            DebugLog($"바닥 셀: {roomGrid.Values.Count(c => c.isFloor)}개");
-            DebugLog($"벽 셀: {roomGrid.Values.Count(c => c.isWall)}개");
-            DebugLog($"문 셀: {roomGrid.Values.Count(c => c.isDoor)}개");
-            DebugLog($"침대 셀: {roomGrid.Values.Count(c => c.isBed)}개");*/
+            int floorCount = roomGrid.Values.AsValueEnumerable().Count(c => c.isFloor);
+            int wallCount = roomGrid.Values.AsValueEnumerable().Count(c => c.isWall);
+            int doorCount = roomGrid.Values.AsValueEnumerable().Count(c => c.isDoor);
+            int bedCount = roomGrid.Values.AsValueEnumerable().Count(c => c.isBed);
+            
+            DebugLog($"=== 그리드 업데이트 완료 ===\n" +
+                     $"총 셀 개수: {roomGrid.Count}\n" +
+                     $"바닥 셀: {floorCount}개\n" +
+                     $"벽 셀: {wallCount}개\n" +
+                     $"문 셀: {doorCount}개\n" +
+                     $"침대 셀: {bedCount}개\n" +
+                     $"===============================", true);
+            
+            // 바닥 셀 위치 상세 출력
+            if (floorCount > 0)
+            {
+                DebugLog("바닥 셀 위치들:");
+                foreach (var kvp in roomGrid)
+                {
+                    if (kvp.Value.isFloor)
+                    {
+                        DebugLog($"  바닥: {kvp.Key} (월드 높이: {kvp.Value.worldHeight:F1})");
+                    }
+                }
+            }
         }
 
         // 오프셋을 적용한 그리드 위치 계산
@@ -453,153 +576,1555 @@ namespace JY
             }
         }
 
-        private RoomInfo FloodFillRoom(Vector3Int startPos, HashSet<Vector3Int> visitedCells)
-        {
+                 private RoomInfo FindEnclosedRoom(Vector3Int startPos, HashSet<Vector3Int> localVisitedCells)
+         {
+             DebugLog($"=== 침대 기반 독립적인 방 탐색 시작: {startPos} ===", true);
+             
+             // 침대가 있는 위치에서만 방 탐색 시작
+             if (!roomGrid.TryGetValue(startPos, out RoomCell startCell) || !startCell.isBed)
+             {
+                 return null;
+             }
+             
+             DebugLog($"침대 발견: {startPos}", true);
+             
+             // 1단계: 먼저 침대 주변의 벽과 문을 찾기 (벽 경계면 우선)
+             HashSet<Vector3Int> roomWalls = new HashSet<Vector3Int>();
+             HashSet<Vector3Int> roomDoors = new HashSet<Vector3Int>();
+             FindWallBoundariesAroundPosition(startPos, roomWalls, roomDoors);
+             
+             if (roomWalls.Count == 0 && roomDoors.Count == 0)
+             {
+                 DebugLog($"침대 {startPos} 주변에 벽이나 문을 찾을 수 없음", true);
+                 return null;
+             }
+             
+             DebugLog($"벽 경계면 발견: 벽 {roomWalls.Count}개, 문 {roomDoors.Count}개", true);
+             
+             // 2단계: 벽으로 둘러싸인 내부 영역 찾기 (독립적인 탐색)
+             HashSet<Vector3Int> roomFloors = new HashSet<Vector3Int>();
+             HashSet<Vector3Int> bedsInRoom = new HashSet<Vector3Int>();
+             HashSet<Vector3Int> tempGlobalVisited = new HashSet<Vector3Int>(); // 임시 전역 방문 목록
+             
+             FindRoomInteriorByWallBoundaries(startPos, roomWalls, roomDoors, roomFloors, bedsInRoom, localVisitedCells, tempGlobalVisited);
+             
+             // 방 정보 생성
             RoomInfo room = new RoomInfo();
+             room.floorCells.AddRange(roomFloors);
+             
+             // 벽, 문, 침대 오브젝트 수집
+             CollectRoomObjectsSimple(roomWalls, roomDoors, bedsInRoom, room);
+             
+             // 방 경계 및 ID 설정 (벽 경계면 기준)
+             SetupRoomBounds(room);
+             
+             // 간단한 유효성 검사 (침대 1개, 벽 3개 이상, 문 1개 이상)
+             bool isValid = room.beds.Count >= minBeds && room.walls.Count >= minWalls && room.doors.Count >= minDoors;
+             
+             DebugLog($"=== 벽 경계면 기준 독립적인 방 탐색 결과 ===\n" +
+                      $"ID: {room.roomId}\n" +
+                      $"바닥: {room.floorCells.Count}개\n" +
+                      $"벽: {room.walls.Count}개 (최소 {minWalls}개 필요) {(room.walls.Count >= minWalls ? "✓" : "✗")}\n" +
+                      $"문: {room.doors.Count}개 (최소 {minDoors}개 필요) {(room.doors.Count >= minDoors ? "✓" : "✗")}\n" +
+                      $"침대: {room.beds.Count}개 (최소 {minBeds}개 필요) {(room.beds.Count >= minBeds ? "✓" : "✗")}\n" +
+                      $"유효성: {(isValid ? "✅ 방 인식 성공" : "❌ 방 인식 실패")}\n" +
+                      $"================================", true);
+             
+             return isValid ? room : null;
+         }
+         
+         /// <summary>
+         /// 특정 위치 주변의 벽 경계면을 찾기 (제한된 범위)
+         /// </summary>
+         private void FindWallBoundariesAroundPosition(Vector3Int centerPos, HashSet<Vector3Int> walls, HashSet<Vector3Int> doors)
+         {
+             DebugLog($"위치 {centerPos} 주변 벽 경계면 탐색 시작 (제한된 범위)", true);
+             
+             HashSet<Vector3Int> visited = new HashSet<Vector3Int>();
+             Queue<Vector3Int> queue = new Queue<Vector3Int>();
+             
+             queue.Enqueue(centerPos);
+             visited.Add(centerPos);
+             
+             Vector3Int[] directions = GetDirections();
+             int iterations = 0;
+             int maxSearchRadius = 6; // 탐색 반경을 줄여서 독립적인 방 생성
+             int maxSearchCells = 50; // 최대 탐색 셀 수 제한
+             
+             while (queue.Count > 0 && iterations < maxFloodFillIterations && visited.Count < maxSearchCells)
+             {
+                 iterations++;
+                 Vector3Int current = queue.Dequeue();
+                 
+                 // 중심점에서 너무 멀면 중단
+                 float distance = Vector3Int.Distance(centerPos, current);
+                 if (distance > maxSearchRadius)
+                 {
+                     DebugLog($"탐색 반경 초과로 중단: {current} (거리: {distance:F1})", showScanLogs);
+                     continue;
+                 }
+
+                 foreach (var dir in directions)
+                 {
+                     Vector3Int neighbor = current + dir;
+                     
+                     if (visited.Contains(neighbor)) continue;
+                     
+                     // 반경 체크
+                     if (Vector3Int.Distance(centerPos, neighbor) > maxSearchRadius)
+                         continue;
+                     
+                     visited.Add(neighbor);
+                     
+                     // Y축 오프셋을 고려하여 벽과 문 확인
+                     bool foundBoundary = false;
+                     for (int yOffset = 0; yOffset <= 2; yOffset++)
+                     {
+                         Vector3Int checkPos = new Vector3Int(neighbor.x, centerPos.y + yOffset, neighbor.z);
+                         
+                         if (roomGrid.TryGetValue(checkPos, out RoomCell cell))
+                         {
+                             if (cell.isWall)
+                             {
+                                 walls.Add(checkPos);
+                                 foundBoundary = true;
+                                 DebugLog($"벽 경계 발견: {checkPos} (거리: {Vector3Int.Distance(centerPos, neighbor):F1})", showScanLogs);
+                             }
+                             if (cell.isDoor)
+                             {
+                                 doors.Add(checkPos);
+                                 foundBoundary = true;
+                                 DebugLog($"문 경계 발견: {checkPos} (거리: {Vector3Int.Distance(centerPos, neighbor):F1})", showScanLogs);
+                             }
+                         }
+                     }
+                     
+                     // 벽이나 문이 아닌 빈 공간이면 계속 탐색 (단, 반경 내에서만)
+                     if (!foundBoundary && Vector3Int.Distance(centerPos, neighbor) < maxSearchRadius)
+                     {
+                         queue.Enqueue(neighbor);
+                     }
+                 }
+             }
+             
+             DebugLog($"벽 경계면 탐색 완료 - 반복: {iterations}회, 방문 셀: {visited.Count}개, 벽: {walls.Count}개, 문: {doors.Count}개", true);
+         }
+         
+         /// <summary>
+         /// 벽 경계면을 기준으로 방 내부 영역 찾기 (제한된 범위)
+         /// </summary>
+         private void FindRoomInteriorByWallBoundaries(Vector3Int startPos, HashSet<Vector3Int> wallBoundaries, HashSet<Vector3Int> doorBoundaries,
+             HashSet<Vector3Int> roomFloors, HashSet<Vector3Int> bedsInRoom, HashSet<Vector3Int> localVisited, HashSet<Vector3Int> globalVisited)
+         {
+             DebugLog($"벽 경계면 기준 방 내부 탐색 시작: {startPos} (제한된 범위)", true);
+             
             Queue<Vector3Int> queue = new Queue<Vector3Int>();
             queue.Enqueue(startPos);
-            visitedCells.Add(startPos);
+             localVisited.Add(startPos);
+             globalVisited.Add(startPos);
+             
+             Vector3Int[] directions = GetDirections();
+             int iterations = 0;
+             int maxInteriorRadius = 5; // 방 내부 탐색 반경 제한
+             int maxInteriorCells = 30; // 방 내부 최대 셀 수 제한
+             
+             while (queue.Count > 0 && iterations < maxFloodFillIterations && roomFloors.Count < maxInteriorCells)
+             {
+                 iterations++;
+                 Vector3Int current = queue.Dequeue();
+                 
+                 // 시작점에서 너무 멀면 중단
+                 float distance = Vector3Int.Distance(startPos, current);
+                 if (distance > maxInteriorRadius)
+                 {
+                     DebugLog($"방 내부 탐색 반경 초과로 중단: {current} (거리: {distance:F1})", showScanLogs);
+                     continue;
+                 }
+                 
+                 // 현재 위치 분석
+                 if (roomGrid.TryGetValue(current, out RoomCell currentCell))
+                 {
+                     if (currentCell.isFloor)
+                     {
+                         roomFloors.Add(current);
+                         DebugLog($"방 바닥 추가: {current} (거리: {distance:F1})", showScanLogs);
+                     }
+                     if (currentCell.isBed)
+                     {
+                         bedsInRoom.Add(current);
+                         DebugLog($"방 침대 추가: {current} (거리: {distance:F1})", showScanLogs);
+                     }
+                 }
+                 else
+                 {
+                     // 빈 공간도 방 내부로 포함 (벽으로 둘러싸인 경우)
+                     roomFloors.Add(current);
+                     DebugLog($"빈 공간을 방 내부로 추가: {current} (거리: {distance:F1})", showScanLogs);
+                 }
+                 
+                 // 인접한 위치들 탐색
+                 foreach (var dir in directions)
+                 {
+                     Vector3Int neighbor = current + dir;
 
-            Vector3Int minBounds = startPos;
-            Vector3Int maxBounds = startPos;
-
-            DebugLog($"방 탐색 시작 - 시작 위치: {startPos}");
-
-            // 4방향 탐색
-            Vector3Int[] directions = new Vector3Int[]
+                     if (localVisited.Contains(neighbor) || globalVisited.Contains(neighbor))
+                         continue;
+                     
+                     // 시작점에서 너무 멀면 스킵
+                     float neighborDistance = Vector3Int.Distance(startPos, neighbor);
+                     if (neighborDistance > maxInteriorRadius)
+                         continue;
+                     
+                     // 벽이나 문 경계에 막혔는지 확인
+                     bool isBlocked = false;
+                     for (int yOffset = 0; yOffset <= 2; yOffset++)
+                     {
+                         Vector3Int checkPos = new Vector3Int(neighbor.x, current.y + yOffset, neighbor.z);
+                         if (wallBoundaries.Contains(checkPos) || doorBoundaries.Contains(checkPos))
+                         {
+                             isBlocked = true;
+                             break;
+                         }
+                     }
+                     
+                     if (!isBlocked)
+                     {
+                         localVisited.Add(neighbor);
+                         globalVisited.Add(neighbor);
+                         queue.Enqueue(neighbor);
+                         DebugLog($"방 영역 확장: {current} -> {neighbor} (거리: {neighborDistance:F1})", showScanLogs);
+                     }
+                 }
+             }
+             
+             DebugLog($"벽 경계면 기준 방 내부 탐색 완료 - 반복: {iterations}/{maxFloodFillIterations}회, 바닥: {roomFloors.Count}개, 침대: {bedsInRoom.Count}개, 최대 반경: {maxInteriorRadius}", true);
+         }
+         
+         /// <summary>
+         /// 두 방이 겹치는지 확인 (침대, 경계, 바닥 셀 기준) - 독립적인 방 생성을 위한 엄격한 검사
+         /// </summary>
+         private bool DoRoomsOverlap(RoomInfo room1, RoomInfo room2)
+         {
+             if (room1 == null || room2 == null) return false;
+             
+             // 1. 침대 위치 겹침 확인 (같은 침대를 공유하는지) - 가장 중요한 기준
+             bool bedOverlap = false;
+             foreach (var bed1 in room1.beds)
+             {
+                 foreach (var bed2 in room2.beds)
+                 {
+                     if (bed1 == bed2)
+                     {
+                         bedOverlap = true;
+                         DebugLog($"같은 침대 공유 감지: {bed1.name}", true);
+                         break;
+                     }
+                 }
+                 if (bedOverlap) break;
+             }
+             
+             // 2. 바닥 셀 겹침 확인 (50% 이상 겹치면 같은 방으로 판단)
+             int overlapCount = 0;
+             foreach (var floor1 in room1.floorCells)
+             {
+                 if (room2.floorCells.Contains(floor1))
+                 {
+                     overlapCount++;
+                 }
+             }
+             float overlapRatio = (float)overlapCount / Mathf.Min(room1.floorCells.Count, room2.floorCells.Count);
+             bool significantFloorOverlap = overlapRatio > 0.5f; // 50% 이상 겹치면 같은 방
+             
+             // 3. 방 중심점 거리 확인 (너무 가까우면 같은 방일 가능성)
+             float centerDistance = Vector3.Distance(room1.center, room2.center);
+             bool tooClose = centerDistance < 3f; // 3 유닛 이내면 너무 가까움
+             
+             // 4. 바운더리 겹침 확인 (완전히 포함되는 경우)
+             bool boundsContained = room1.bounds.Contains(room2.center) || room2.bounds.Contains(room1.center);
+             
+             bool overlaps = bedOverlap || significantFloorOverlap || (tooClose && boundsContained);
+             
+             if (overlaps)
+             {
+                 DebugLog($"방 겹침 감지: {room1.roomId} vs {room2.roomId}\n" +
+                          $"  - 침대 공유: {bedOverlap}\n" +
+                          $"  - 바닥 겹침: {overlapCount}/{Mathf.Min(room1.floorCells.Count, room2.floorCells.Count)} ({overlapRatio:P1})\n" +
+                          $"  - 중심점 거리: {centerDistance:F1} (기준: 3.0)\n" +
+                          $"  - 바운더리 포함: {boundsContained}", true);
+             }
+             else
+             {
+                 DebugLog($"방 독립성 확인: {room1.roomId} vs {room2.roomId} - 독립적인 방으로 인정", true);
+             }
+             
+             return overlaps;
+         }
+        
+        /// <summary>
+        /// 유효한 방의 시작점인지 확인 (완화된 조건)
+        /// </summary>
+        private bool IsValidRoomStart(Vector3Int pos)
+        {
+            if (!roomGrid.TryGetValue(pos, out RoomCell cell) || !cell.isFloor)
             {
-                new Vector3Int(1, 0, 0),   // 오른쪽
-                new Vector3Int(-1, 0, 0),  // 왼쪽
-                new Vector3Int(0, 0, 1),   // 앞
-                new Vector3Int(0, 0, -1)   // 뒤
+                return false;
+            }
+            
+            // 주변에 최소한의 벽이 있는지 확인 (조건 완화)
+            int wallCount = 0;
+            Vector3Int[] directions = GetDirections();
+            
+            foreach (var dir in directions)
+            {
+                Vector3Int neighbor = pos + dir;
+                if (HasWallAt(neighbor) || HasDoorAt(neighbor))
+                {
+                    wallCount++;
+                }
+            }
+            
+            return wallCount >= 1; // 최소 1개 방향에 벽이나 문이 있으면 시작점으로 인정 (완화)
+        }
+        
+                /// <summary>
+        /// 침대에서 시작해서 벽과 문을 만날 때까지 확장하며 찾기 (반경 제한 없음)
+        /// </summary>
+        private void FindWallsAndDoorsAroundBed(Vector3Int bedPos, HashSet<Vector3Int> walls, HashSet<Vector3Int> doors, int unusedRadius)
+        {
+            DebugLog($"침대 {bedPos}에서 벽/문 탐색 시작 (반경 제한 없음)", true);
+            
+            HashSet<Vector3Int> visited = new HashSet<Vector3Int>();
+            Queue<Vector3Int> queue = new Queue<Vector3Int>();
+            
+            queue.Enqueue(bedPos);
+            visited.Add(bedPos);
+            
+            Vector3Int[] directions = GetDirections();
+            Vector3Int[] diagonals = {
+                new Vector3Int(1, 0, 1), new Vector3Int(-1, 0, 1),
+                new Vector3Int(1, 0, -1), new Vector3Int(-1, 0, -1)
             };
-
-            HashSet<Vector3Int> roomCells = new HashSet<Vector3Int>();
-            roomCells.Add(startPos);
+            
+            // 직선 + 대각선 방향 모두 탐색
+            Vector3Int[] allDirections = new Vector3Int[directions.Length + diagonals.Length];
+            directions.CopyTo(allDirections, 0);
+            diagonals.CopyTo(allDirections, directions.Length);
 
             while (queue.Count > 0)
             {
                 Vector3Int current = queue.Dequeue();
 
-                if (!roomGrid.TryGetValue(current, out RoomCell currentCell))
+                foreach (var dir in allDirections)
                 {
-                    DebugLog($"셀 없음: {current}");
-                    continue;
+                    Vector3Int neighbor = current + dir;
+                    
+                    if (visited.Contains(neighbor)) continue;
+                    visited.Add(neighbor);
+                    
+                    // Y축 오프셋을 고려하여 벽과 문 확인
+                    bool foundWallOrDoor = false;
+                    for (int yOffset = 0; yOffset <= 2; yOffset++)
+                    {
+                        Vector3Int checkPos = new Vector3Int(neighbor.x, bedPos.y + yOffset, neighbor.z);
+                        
+                        if (roomGrid.TryGetValue(checkPos, out RoomCell cell))
+                        {
+                            if (cell.isWall)
+                            {
+                                walls.Add(checkPos);
+                                foundWallOrDoor = true;
+                                DebugLog($"벽 발견: {checkPos}", true);
+                            }
+                            if (cell.isDoor)
+                            {
+                                doors.Add(checkPos);
+                                foundWallOrDoor = true;
+                                DebugLog($"문 발견: {checkPos}", true);
+                            }
+                        }
+                    }
+                    
+                    // 벽이나 문이 아닌 빈 공간이면 계속 탐색
+                    if (!foundWallOrDoor)
+                    {
+                        // 바닥이 있거나 빈 공간이면 계속 확장
+                        if (!roomGrid.ContainsKey(neighbor) || 
+                            (roomGrid.TryGetValue(neighbor, out RoomCell emptyCell) && emptyCell.isFloor))
+                        {
+                            queue.Enqueue(neighbor);
+                        }
+                    }
                 }
-
+            }
+            
+            DebugLog($"벽/문 탐색 완료 - 벽: {walls.Count}개, 문: {doors.Count}개", true);
+        }
+        
+                 /// <summary>
+         /// 침대에서 시작해서 벽에 막힐 때까지 실제 방 영역 탐색 (무한 루프 방지)
+         /// </summary>
+         private void FindActualRoomArea(Vector3Int startPos, HashSet<Vector3Int> roomFloors, HashSet<Vector3Int> roomWalls, 
+             HashSet<Vector3Int> roomDoors, HashSet<Vector3Int> bedsInRoom, HashSet<Vector3Int> localVisited, HashSet<Vector3Int> globalVisited)
+         {
+             DebugLog($"실제 방 영역 탐색 시작: {startPos} (최대 반복: {maxFloodFillIterations}회, 최대 크기: {maxRoomSize})", true);
+             
+             Queue<Vector3Int> queue = new Queue<Vector3Int>();
+             queue.Enqueue(startPos);
+             localVisited.Add(startPos);
+             globalVisited.Add(startPos);
+             
+             Vector3Int[] directions = GetDirections();
+             int iterations = 0;
+             
+             while (queue.Count > 0 && iterations < maxFloodFillIterations && roomFloors.Count < maxRoomSize)
+             {
+                 iterations++;
+                 Vector3Int current = queue.Dequeue();
+                 
+                 // 현재 위치 분석
+                 if (roomGrid.TryGetValue(current, out RoomCell currentCell))
+                 {
                 if (currentCell.isFloor)
                 {
-                    room.floorCells.Add(current);
-                    minBounds = Vector3Int.Min(minBounds, current);
-                    maxBounds = Vector3Int.Max(maxBounds, current);
-
-                    // 주변 셀 검사
+                         roomFloors.Add(current);
+                         DebugLog($"방 바닥 추가: {current}", showScanLogs);
+                     }
+                     if (currentCell.isBed)
+                     {
+                         bedsInRoom.Add(current);
+                         DebugLog($"방 침대 추가: {current}", true);
+                     }
+                 }
+                 
+                 // 인접한 위치들 탐색
                     foreach (var dir in directions)
                     {
                         Vector3Int neighbor = current + dir;
 
-                        // 이웃 셀이 문인지 확인
-                        bool isDoorBetween = false;
-                        if (roomGrid.TryGetValue(neighbor, out RoomCell neighborCell))
-                        {
-                            if (neighborCell.isDoor)
-                            {
-                                isDoorBetween = true;
-                                foreach (var obj in neighborCell.objects)
-                                {
-                                    if (!room.doors.Contains(obj))
-                                    {
-                                        room.doors.Add(obj);
-                                        DebugLog($"문 발견: {neighbor}");
-                                    }
-                                }
-                            }
-                        }
+                     if (localVisited.Contains(neighbor) || globalVisited.Contains(neighbor))
+                         continue;
+                     
+                     // Y축 오프셋을 고려하여 벽과 문 확인
+                     bool isWallOrDoor = false;
+                     for (int yOffset = 0; yOffset <= 2; yOffset++)
+                     {
+                         Vector3Int checkPos = new Vector3Int(neighbor.x, current.y + yOffset, neighbor.z);
+                         if (roomGrid.TryGetValue(checkPos, out RoomCell cell))
+                         {
+                             if (cell.isWall)
+                             {
+                                 roomWalls.Add(checkPos);
+                                 isWallOrDoor = true;
+                                 DebugLog($"방 경계 벽 발견: {checkPos}", showScanLogs);
+                             }
+                             if (cell.isDoor)
+                             {
+                                 roomDoors.Add(checkPos);
+                                 isWallOrDoor = true;
+                                 DebugLog($"방 경계 문 발견: {checkPos}", showScanLogs);
+                             }
+                         }
+                     }
+                     
+                     // 벽이나 문이 아닌 경우 계속 탐색
+                     if (!isWallOrDoor)
+                     {
+                         // 바닥이나 침대가 있거나 빈 공간이면 방 영역으로 확장
+                         if (!roomGrid.ContainsKey(neighbor) || 
+                             (roomGrid.TryGetValue(neighbor, out RoomCell neighborCell) && 
+                              (neighborCell.isFloor || neighborCell.isBed)))
+                         {
+                             localVisited.Add(neighbor);
+                             globalVisited.Add(neighbor);
+                             queue.Enqueue(neighbor);
+                             DebugLog($"방 영역 확장: {current} -> {neighbor}", showScanLogs);
+                         }
+                     }
+                 }
+             }
+             
+             DebugLog($"실제 방 영역 탐색 완료 - 반복: {iterations}/{maxFloodFillIterations}회, 바닥: {roomFloors.Count}개, 벽: {roomWalls.Count}개, 문: {roomDoors.Count}개, 침대: {bedsInRoom.Count}개", true);
+             
+             if (iterations >= maxFloodFillIterations)
+             {
+                 DebugLog($"⚠️ 최대 반복 횟수 도달로 탐색 중단: {startPos}", true);
+             }
+             if (roomFloors.Count >= maxRoomSize)
+             {
+                 DebugLog($"⚠️ 최대 방 크기 도달로 탐색 중단: {startPos}", true);
+             }
+         }
+        
+        /// <summary>
+        /// 벽으로 둘러싸인 실제 방 영역의 모든 바닥 찾기
+        /// </summary>
+        private void FindFloorsInsideWalls(HashSet<Vector3Int> walls, HashSet<Vector3Int> doors, HashSet<Vector3Int> floors, Vector3Int centerPos)
+        {
+            DebugLog($"침대 {centerPos}에서 벽으로 둘러싸인 방 영역 탐색 시작", true);
+            
+            if (walls.Count == 0)
+            {
+                // 벽이 없으면 침대 위치만 추가
+                floors.Add(centerPos);
+                return;
+            }
+            
+            // 벽들의 실제 경계 계산
+            int minX = int.MaxValue, maxX = int.MinValue;
+            int minZ = int.MaxValue, maxZ = int.MinValue;
+            
+            foreach (var wall in walls)
+            {
+                if (wall.x < minX) minX = wall.x;
+                if (wall.x > maxX) maxX = wall.x;
+                if (wall.z < minZ) minZ = wall.z;
+                if (wall.z > maxZ) maxZ = wall.z;
+            }
+            
+            DebugLog($"벽 경계: X({minX}~{maxX}), Z({minZ}~{maxZ})", true);
+            
+            // 벽 경계 내부의 모든 바닥을 FloodFill로 찾기
+            HashSet<Vector3Int> visited = new HashSet<Vector3Int>();
+            Queue<Vector3Int> queue = new Queue<Vector3Int>();
+            
+            // 침대 위치에서 시작
+            queue.Enqueue(centerPos);
+            visited.Add(centerPos);
+            
+            Vector3Int[] directions = GetDirections();
+            
+            while (queue.Count > 0)
+            {
+                Vector3Int current = queue.Dequeue();
+                
+                // 현재 위치가 바닥이면 추가
+                if (roomGrid.TryGetValue(current, out RoomCell currentCell) && currentCell.isFloor)
+                {
+                    floors.Add(current);
+                    DebugLog($"방 바닥 추가: {current}", true);
+                }
+                
+                // 인접한 위치 탐색
+                    foreach (var dir in directions)
+                    {
+                        Vector3Int neighbor = current + dir;
 
-                        // 문이 있는 방향으로는 더 이상 진행하지 않음
-                        if (!isDoorBetween)
-                        {
-                            // 벽 확인
-                            if (roomGrid.TryGetValue(neighbor, out RoomCell wallCell) && wallCell.isWall)
-                            {
-                                foreach (var obj in wallCell.objects)
+                    if (visited.Contains(neighbor)) continue;
+                    
+                    // 벽 경계를 벗어나면 스킵
+                    if (neighbor.x < minX || neighbor.x > maxX || neighbor.z < minZ || neighbor.z > maxZ)
+                        continue;
+                    
+                    // 벽이나 문에 막히면 스킵
+                    if (IsWallOrDoorAt(neighbor, walls, doors))
+                    {
+                        DebugLog($"벽/문으로 차단: {current} -> {neighbor}", true);
+                        continue;
+                    }
+                    
+                    visited.Add(neighbor);
+                    queue.Enqueue(neighbor);
+                }
+            }
+            
+            DebugLog($"방 바닥 탐색 완료: {floors.Count}개", true);
+        }
+        
+        /// <summary>
+        /// 특정 위치에 벽이나 문이 있는지 확인
+        /// </summary>
+        private bool IsWallOrDoorAt(Vector3Int position, HashSet<Vector3Int> walls, HashSet<Vector3Int> doors)
+        {
+            // Y축 오프셋을 고려하여 확인
+            for (int yOffset = 0; yOffset <= 2; yOffset++)
+            {
+                Vector3Int checkPos = new Vector3Int(position.x, position.y + yOffset, position.z);
+                if (walls.Contains(checkPos) || doors.Contains(checkPos))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        /// <summary>
+        /// 바닥이 벽으로 둘러싸여 있는지 확인
+        /// </summary>
+        private bool IsFloorSurroundedByWalls(Vector3Int floorPos, HashSet<Vector3Int> walls, HashSet<Vector3Int> doors)
+        {
+            Vector3Int[] directions = GetDirections();
+            int surroundedSides = 0;
+            
+            foreach (var dir in directions)
+            {
+                Vector3Int neighbor = floorPos + dir;
+                
+                // 인접한 위치에 벽이나 문이 있는지 확인 (Y축 오프셋 고려)
+                bool hasWallOrDoor = false;
+                for (int yOffset = 0; yOffset <= 2; yOffset++)
+                {
+                    Vector3Int checkPos = new Vector3Int(neighbor.x, neighbor.y + yOffset, neighbor.z);
+                    if (walls.Contains(checkPos) || doors.Contains(checkPos))
+                    {
+                        hasWallOrDoor = true;
+                        break;
+                    }
+                }
+                
+                if (hasWallOrDoor)
+                {
+                    surroundedSides++;
+                }
+            }
+            
+            // 최소 2면이 벽으로 둘러싸여 있으면 방 내부로 인정
+            return surroundedSides >= 2;
+        }
+        
+        /// <summary>
+        /// 간단한 방 오브젝트 수집
+        /// </summary>
+        private void CollectRoomObjectsSimple(HashSet<Vector3Int> walls, HashSet<Vector3Int> doors, HashSet<Vector3Int> beds, RoomInfo room)
+        {
+            // 벽 오브젝트 수집
+            foreach (var wallPos in walls)
+            {
+                if (roomGrid.TryGetValue(wallPos, out RoomCell wallCell))
+                {
+                    foreach (var obj in wallCell.objects)
                                 {
                                     if (!room.walls.Contains(obj))
                                     {
                                         room.walls.Add(obj);
-                                        DebugLog($"벽 발견: {neighbor}");
-                                    }
-                                }
-                            }
-
-                            // 침대 확인
-                            if (roomGrid.TryGetValue(neighbor, out RoomCell bedCell) && bedCell.isBed)
+                        }
+                    }
+                }
+            }
+            
+            // 문 오브젝트 수집
+            foreach (var doorPos in doors)
+            {
+                if (roomGrid.TryGetValue(doorPos, out RoomCell doorCell))
+                {
+                    foreach (var obj in doorCell.objects)
+                    {
+                        if (!room.doors.Contains(obj))
+                        {
+                            room.doors.Add(obj);
+                        }
+                    }
+                }
+            }
+            
+            // 침대 오브젝트 수집
+            foreach (var bedPos in beds)
+            {
+                if (roomGrid.TryGetValue(bedPos, out RoomCell bedCell))
                             {
                                 foreach (var obj in bedCell.objects)
                                 {
                                     if (!room.beds.Contains(obj))
                                     {
                                         room.beds.Add(obj);
-                                        DebugLog($"침대 발견: {neighbor}");
-                                    }
-                                }
-                            }
-
-                            // Sunbed 확인 (일반 방에서도 수집)
-                            if (roomGrid.TryGetValue(neighbor, out RoomCell sunbedCell) && sunbedCell.isSunbed)
+                        }
+                    }
+                }
+            }
+            
+            DebugLog($"오브젝트 수집 완료 - 벽: {room.walls.Count}, 문: {room.doors.Count}, 침대: {room.beds.Count}", true);
+        }
+        
+                 /// <summary>
+         /// 연결된 바닥 셀들 찾기 (벽으로 차단되지 않은 인접한 바닥들, 무한 루프 방지)
+         /// </summary>
+         private void FindConnectedFloors(Vector3Int startPos, HashSet<Vector3Int> connectedFloors, HashSet<Vector3Int> globalVisited)
+         {
+             Queue<Vector3Int> queue = new Queue<Vector3Int>();
+             HashSet<Vector3Int> localVisited = new HashSet<Vector3Int>();
+             
+             queue.Enqueue(startPos);
+             localVisited.Add(startPos);
+             
+             Vector3Int[] directions = GetDirections();
+             int iterations = 0;
+             
+             while (queue.Count > 0 && iterations < maxFloodFillIterations && connectedFloors.Count < maxRoomSize)
+             {
+                 iterations++;
+                 Vector3Int current = queue.Dequeue();
+                 
+                 if (!roomGrid.TryGetValue(current, out RoomCell currentCell) || !currentCell.isFloor)
+                 {
+                     continue;
+                 }
+                 
+                 connectedFloors.Add(current);
+                 globalVisited.Add(current);
+                 
+                 DebugLog($"연결된 바닥 추가: {current}", showScanLogs);
+                 
+                 // 인접한 바닥 셀 탐색
+                 foreach (var dir in directions)
+                 {
+                     Vector3Int neighbor = current + dir;
+                     
+                     // 이미 방문했으면 스킵
+                     if (localVisited.Contains(neighbor) || globalVisited.Contains(neighbor))
+                     {
+                         continue;
+                     }
+                     
+                     // 벽이나 문으로 차단되어 있는지 확인
+                     if (IsBlockedByWallOrDoor(current, neighbor))
+                     {
+                         DebugLog($"벽/문으로 차단됨: {current} -> {neighbor}", showScanLogs);
+                         continue;
+                     }
+                     
+                     // 바닥이 있으면 큐에 추가
+                     if (roomGrid.TryGetValue(neighbor, out RoomCell neighborCell) && neighborCell.isFloor)
+                     {
+                         queue.Enqueue(neighbor);
+                         localVisited.Add(neighbor);
+                         DebugLog($"바닥 확장: {current} -> {neighbor}", showScanLogs);
+                     }
+                 }
+             }
+             
+             DebugLog($"연결된 바닥 탐색 완료: 반복 {iterations}/{maxFloodFillIterations}회, 바닥 {connectedFloors.Count}개", true);
+             
+             if (iterations >= maxFloodFillIterations)
+             {
+                 DebugLog($"⚠️ 연결된 바닥 탐색에서 최대 반복 횟수 도달: {startPos}", true);
+             }
+             if (connectedFloors.Count >= maxRoomSize)
+             {
+                 DebugLog($"⚠️ 연결된 바닥 탐색에서 최대 방 크기 도달: {startPos}", true);
+             }
+         }
+        
+        /// <summary>
+        /// 바닥들 주변의 벽과 문 찾기
+        /// </summary>
+        private void FindWallsAroundFloors(HashSet<Vector3Int> floors, HashSet<Vector3Int> walls, HashSet<Vector3Int> doors)
+        {
+            Vector3Int[] directions = GetDirections();
+            
+            foreach (var floorPos in floors)
+            {
+                foreach (var dir in directions)
+                {
+                    Vector3Int neighbor = floorPos + dir;
+                    
+                    // Y축 오프셋을 고려하여 벽과 문 찾기
+                    for (int yOffset = 0; yOffset <= 2; yOffset++)
+                    {
+                        Vector3Int checkPos = new Vector3Int(neighbor.x, neighbor.y + yOffset, neighbor.z);
+                        
+                        if (roomGrid.TryGetValue(checkPos, out RoomCell cell))
+                        {
+                            if (cell.isWall && !walls.Contains(checkPos))
                             {
-                                foreach (var obj in sunbedCell.objects)
-                                {
-                                    if (!room.sunbeds.Contains(obj))
-                                    {
-                                        room.sunbeds.Add(obj);
-                                        DebugLog($"Sunbed 발견 (방 내부): {neighbor}");
-                                    }
-                                }
+                                walls.Add(checkPos);
+                                DebugLog($"바닥 {floorPos} 주변 벽 발견: {checkPos}", true);
                             }
-
-                            // 바닥이 있고 아직 방문하지 않은 경우에만 큐에 추가
-                            if (roomGrid.TryGetValue(neighbor, out RoomCell floorCell) && 
-                                floorCell.isFloor && 
-                                !visitedCells.Contains(neighbor))
+                            if (cell.isDoor && !doors.Contains(checkPos))
                             {
-                                queue.Enqueue(neighbor);
-                                visitedCells.Add(neighbor);
-                                roomCells.Add(neighbor);
-                                DebugLog($"다음 바닥 탐색: {neighbor}");
+                                doors.Add(checkPos);
+                                DebugLog($"바닥 {floorPos} 주변 문 발견: {checkPos}", true);
                             }
                         }
                     }
                 }
             }
-
-            if (room.floorCells.Count > 0)
+            
+            DebugLog($"바닥 주변 벽/문 탐색 완료 - 벽: {walls.Count}개, 문: {doors.Count}개", true);
+        }
+        
+        /// <summary>
+        /// 방이 완전히 닫힌 공간인지 검증 (벽으로 둘러싸인 정도 확인)
+        /// </summary>
+        private bool IsCompletelyEnclosedRoom(HashSet<Vector3Int> floors, HashSet<Vector3Int> walls, HashSet<Vector3Int> doors)
+        {
+            Vector3Int[] directions = GetDirections();
+            int totalBoundaries = 0;
+            int enclosedBoundaries = 0;
+            
+            foreach (var floorPos in floors)
             {
-                Vector3 worldMin = grid.GetCellCenterWorld(minBounds);
-                Vector3 worldMax = grid.GetCellCenterWorld(maxBounds);
-                room.bounds = new Bounds();
-                room.bounds.SetMinMax(worldMin, worldMax);
-                room.center = room.bounds.center;
-                room.roomId = $"Room_{room.center.x:F0}_{room.center.z:F0}";
-
-                DebugLog($"방 감지 완료:\n" +
-                         $"ID: {room.roomId}\n" +
-                         $"중심점: {room.center}\n" +
-                         $"바닥: {room.floorCells.Count}개\n" +
-                         $"벽: {room.walls.Count}개\n" +
-                         $"문: {room.doors.Count}개\n" +
-                         $"침대: {room.beds.Count}개\n" +
-                         $"유효성: {room.isValid(minWalls, minDoors, minBeds)}");
-
-                return room;
+                foreach (var dir in directions)
+                {
+                    Vector3Int neighbor = floorPos + dir;
+                    
+                    // 방 내부가 아닌 경계 위치인지 확인
+                    if (!floors.Contains(neighbor))
+                    {
+                        totalBoundaries++;
+                        
+                        // 이 경계에 벽이나 문이 있는지 확인 (Y축 오프셋 고려)
+                        bool hasWallOrDoor = false;
+                        for (int yOffset = 0; yOffset <= 2; yOffset++)
+                        {
+                            Vector3Int checkPos = new Vector3Int(neighbor.x, neighbor.y + yOffset, neighbor.z);
+                            if (walls.Contains(checkPos) || doors.Contains(checkPos))
+                            {
+                                hasWallOrDoor = true;
+                                break;
+                            }
+                        }
+                        
+                        if (hasWallOrDoor)
+                        {
+                            enclosedBoundaries++;
+                        }
+                        else
+                        {
+                            DebugLog($"열린 경계 발견: 바닥 {floorPos} -> {neighbor} (벽/문 없음)", true);
+                        }
+                    }
+                }
             }
+            
+            // 90% 이상이 벽이나 문으로 둘러싸여 있어야 닫힌 방으로 인정
+            float enclosureRatio = totalBoundaries > 0 ? (float)enclosedBoundaries / totalBoundaries : 0f;
+            bool isEnclosed = enclosureRatio >= 0.9f;
+            
+            DebugLog($"=== 방 폐쇄도 검증 ===\n" +
+                     $"총 경계: {totalBoundaries}개\n" +
+                     $"막힌 경계: {enclosedBoundaries}개\n" +
+                     $"폐쇄율: {enclosureRatio:P1} (요구: 90% 이상)\n" +
+                     $"결과: {(isEnclosed ? "닫힌 방" : "열린 공간")}\n" +
+                     $"====================", true);
+            
+            return isEnclosed;
+        }
+        
+        /// <summary>
+        /// 시작점 주변의 벽과 문을 찾기
+        /// </summary>
+        private void FindNearbyWalls(Vector3Int startPos, HashSet<Vector3Int> walls, HashSet<Vector3Int> doors, int maxRadius)
+        {
+            DebugLog($"시작점 {startPos} 주변 벽 탐색 (반경: {maxRadius})", true);
+            
+            int totalChecked = 0;
+            int wallsFound = 0;
+            int doorsFound = 0;
+            
+            for (int x = startPos.x - maxRadius; x <= startPos.x + maxRadius; x++)
+            {
+                for (int z = startPos.z - maxRadius; z <= startPos.z + maxRadius; z++)
+                {
+                    for (int yOffset = 0; yOffset <= 2; yOffset++) // Y축 오프셋 고려
+                    {
+                        Vector3Int checkPos = new Vector3Int(x, startPos.y + yOffset, z);
+                        totalChecked++;
+                        
+                        if (roomGrid.TryGetValue(checkPos, out RoomCell cell))
+                        {
+                            if (cell.isWall)
+                            {
+                                walls.Add(checkPos);
+                                wallsFound++;
+                                DebugLog($"벽 발견: {checkPos}", true);
+                            }
+                            if (cell.isDoor)
+                            {
+                                doors.Add(checkPos);
+                                doorsFound++;
+                                DebugLog($"문 발견: {checkPos}", true);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            DebugLog($"벽 탐색 완료 - 총 확인: {totalChecked}개 위치, 벽: {wallsFound}개, 문: {doorsFound}개 발견", true);
+        }
+        
+        /// <summary>
+        /// 벽들로 둘러싸인 바닥 영역 찾기
+        /// </summary>
+        private void FindFloorsWithinWalls(Vector3Int startPos, HashSet<Vector3Int> walls, HashSet<Vector3Int> doors, HashSet<Vector3Int> floors, HashSet<Vector3Int> globalVisited)
+        {
+            DebugLog($"벽 내부 바닥 탐색 시작: {startPos}");
+            
+            // 벽들의 경계 박스 계산
+            if (walls.Count == 0)
+            {
+                // 벽이 없으면 시작점만 포함
+                floors.Add(startPos);
+                globalVisited.Add(startPos);
+                return;
+            }
+            
+            int minX = int.MaxValue, maxX = int.MinValue;
+            int minZ = int.MaxValue, maxZ = int.MinValue;
+            
+            foreach (var wall in walls)
+            {
+                if (wall.x < minX) minX = wall.x;
+                if (wall.x > maxX) maxX = wall.x;
+                if (wall.z < minZ) minZ = wall.z;
+                if (wall.z > maxZ) maxZ = wall.z;
+            }
+            
+            minX -= 1;
+            maxX += 1;
+            minZ -= 1;
+            maxZ += 1;
+            
+            DebugLog($"벽 경계 박스: X({minX}~{maxX}), Z({minZ}~{maxZ})");
+            
+            // 경계 박스 내의 모든 바닥 셀 확인
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int z = minZ; z <= maxZ; z++)
+                {
+                    Vector3Int floorPos = new Vector3Int(x, startPos.y, z);
+                    
+                    // 이미 방문한 셀은 스킵
+                    if (globalVisited.Contains(floorPos))
+                    continue;
+                    
+                    // 바닥이 있는지 확인
+                    if (roomGrid.TryGetValue(floorPos, out RoomCell floorCell) && floorCell.isFloor)
+                    {
+                        // 이 바닥이 벽들로 둘러싸여 있는지 확인
+                        bool isEnclosed = IsFloorEnclosedByWalls(floorPos, walls, doors);
+                        DebugLog($"바닥 {floorPos} 둘러싸임 확인: {(isEnclosed ? "YES" : "NO")}", true);
+                        
+                        if (isEnclosed)
+                        {
+                            floors.Add(floorPos);
+                            globalVisited.Add(floorPos);
+                            DebugLog($"둘러싸인 바닥 발견: {floorPos}", true);
+                        }
+                    }
+                    else
+                    {
+                        if (roomGrid.ContainsKey(floorPos))
+                        {
+                            DebugLog($"위치 {floorPos}에 바닥 없음 (다른 오브젝트 있음)", true);
+                        }
+                        else
+                        {
+                            DebugLog($"위치 {floorPos}에 아무것도 없음", true);
+                        }
+                    }
+                }
+            }
+            
+            DebugLog($"벽 내부 바닥: {floors.Count}개 발견");
+        }
+        
+        /// <summary>
+        /// 바닥이 벽들로 둘러싸여 있는지 확인
+        /// </summary>
+                private bool IsFloorEnclosedByWalls(Vector3Int floorPos, HashSet<Vector3Int> walls, HashSet<Vector3Int> doors)
+        {
+            Vector3Int[] directions = GetDirections();
+            int enclosedSides = 0;
+            string[] dirNames = { "오른쪽", "왼쪽", "앞", "뒤" };
+            
+            for (int i = 0; i < directions.Length; i++)
+            {
+                Vector3Int checkPos = floorPos + directions[i];
+                
+                // 벽이나 문이 있는지 확인 (Y축 오프셋 고려)
+                bool hasWallOrDoor = false;
+                for (int yOffset = 0; yOffset <= 2; yOffset++)
+                {
+                    Vector3Int adjustedPos = new Vector3Int(checkPos.x, checkPos.y + yOffset, checkPos.z);
+                    if (walls.Contains(adjustedPos) || doors.Contains(adjustedPos))
+                    {
+                        hasWallOrDoor = true;
+                        DebugLog($"바닥 {floorPos} {dirNames[i]} 방향에 벽/문 발견: {adjustedPos}", true);
+                        break;
+                    }
+                }
+                
+                if (hasWallOrDoor)
+                {
+                    enclosedSides++;
+                }
+                else
+                {
+                    DebugLog($"바닥 {floorPos} {dirNames[i]} 방향에 벽/문 없음", true);
+                }
+            }
+            
+            bool isEnclosed = enclosedSides >= 2;
+            DebugLog($"바닥 {floorPos} 둘러싸임 결과: {enclosedSides}/4면 둘러싸임, 최소 2면 필요 → {(isEnclosed ? "성공" : "실패")}", true);
+            
+            return isEnclosed;
+        }
+        
+        /// <summary>
+        /// 방 오브젝트들 수집
+        /// </summary>
+        private void CollectRoomObjects(HashSet<Vector3Int> walls, HashSet<Vector3Int> doors, HashSet<Vector3Int> floors, RoomInfo room)
+        {
+            DebugLog("방 오브젝트 수집 시작");
+            
+            HashSet<GameObject> foundWalls = new HashSet<GameObject>();
+            HashSet<GameObject> foundDoors = new HashSet<GameObject>();
+            HashSet<GameObject> foundBeds = new HashSet<GameObject>();
+            HashSet<GameObject> foundSunbeds = new HashSet<GameObject>();
+            
+            // 벽 오브젝트 수집
+            foreach (var wallPos in walls)
+            {
+                if (roomGrid.TryGetValue(wallPos, out RoomCell wallCell))
+                {
+                    foreach (var obj in wallCell.objects)
+                    {
+                        foundWalls.Add(obj);
+                    }
+                }
+            }
+            
+            // 문 오브젝트 수집
+            foreach (var doorPos in doors)
+            {
+                if (roomGrid.TryGetValue(doorPos, out RoomCell doorCell))
+                {
+                    foreach (var obj in doorCell.objects)
+                    {
+                        foundDoors.Add(obj);
+                    }
+                }
+            }
+            
+            // 바닥 영역에서 침대와 선베드 찾기
+            foreach (var floorPos in floors)
+            {
+                for (int yOffset = -1; yOffset <= 2; yOffset++)
+                {
+                    Vector3Int checkPos = new Vector3Int(floorPos.x, floorPos.y + yOffset, floorPos.z);
+                    if (roomGrid.TryGetValue(checkPos, out RoomCell cell))
+                    {
+                        if (cell.isBed)
+                        {
+                            foreach (var obj in cell.objects)
+                            {
+                                foundBeds.Add(obj);
+                            }
+                        }
+                        if (cell.isSunbed)
+                        {
+                            foreach (var obj in cell.objects)
+                            {
+                                foundSunbeds.Add(obj);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 방 정보에 추가
+            room.walls.AddRange(foundWalls);
+            room.doors.AddRange(foundDoors);
+            room.beds.AddRange(foundBeds);
+            room.sunbeds.AddRange(foundSunbeds);
+            
+            DebugLog($"오브젝트 수집 완료 - 벽: {room.walls.Count}, 문: {room.doors.Count}, 침대: {room.beds.Count}, 선베드: {room.sunbeds.Count}");
+        }
+        
+        /// <summary>
+        /// 방 요소들(벽, 문, 침대) 찾기
+        /// </summary>
+        private void FindRoomElements(HashSet<Vector3Int> floorCells, RoomInfo room)
+        {
+            Vector3Int[] directions = GetDirections();
+            HashSet<GameObject> foundWalls = new HashSet<GameObject>();
+            HashSet<GameObject> foundDoors = new HashSet<GameObject>();
+            HashSet<GameObject> foundBeds = new HashSet<GameObject>();
+            HashSet<GameObject> foundSunbeds = new HashSet<GameObject>();
+            
+            foreach (var floorPos in floorCells)
+            {
+                // 각 바닥 셀 주변에서 방 요소 찾기
+                foreach (var dir in directions)
+                {
+                    Vector3Int neighbor = floorPos + dir;
+                    
+                    // 벽과 문 찾기 (Y축 오프셋 고려)
+                    for (int yOffset = 0; yOffset <= 2; yOffset++)
+                    {
+                        Vector3Int checkPos = new Vector3Int(neighbor.x, neighbor.y + yOffset, neighbor.z);
+                        if (roomGrid.TryGetValue(checkPos, out RoomCell cell))
+                        {
+                            if (cell.isWall)
+                            {
+                                foreach (var obj in cell.objects)
+                                {
+                                    foundWalls.Add(obj);
+                                }
+                            }
+                            
+                            if (cell.isDoor)
+                            {
+                                foreach (var obj in cell.objects)
+                                {
+                                    foundDoors.Add(obj);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 침대와 선베드 찾기 (같은 위치 또는 Y축 오프셋)
+                for (int yOffset = -1; yOffset <= 2; yOffset++)
+                {
+                    Vector3Int checkPos = new Vector3Int(floorPos.x, floorPos.y + yOffset, floorPos.z);
+                    if (roomGrid.TryGetValue(checkPos, out RoomCell cell))
+                    {
+                        if (cell.isBed)
+                        {
+                            foreach (var obj in cell.objects)
+                            {
+                                foundBeds.Add(obj);
+                            }
+                        }
+                        
+                        if (cell.isSunbed)
+                        {
+                            foreach (var obj in cell.objects)
+                            {
+                                foundSunbeds.Add(obj);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // HashSet을 List로 변환
+            room.walls.AddRange(foundWalls);
+            room.doors.AddRange(foundDoors);
+            room.beds.AddRange(foundBeds);
+            room.sunbeds.AddRange(foundSunbeds);
+            
+            DebugLog($"방 요소 수집 완료 - 벽: {room.walls.Count}, 문: {room.doors.Count}, 침대: {room.beds.Count}, 선베드: {room.sunbeds.Count}");
+        }
+        
+        /// <summary>
+        /// 특정 위치에 벽이 있는지 확인 (Y축 오프셋 고려)
+        /// </summary>
+        private bool HasWallAt(Vector3Int position)
+        {
+            // 기본 위치 확인
+            if (roomGrid.TryGetValue(position, out RoomCell cell) && cell.isWall)
+            {
+                return true;
+            }
+            
+            // Y축 위쪽 확인 (벽이 바닥보다 위에 있을 수 있음)
+            for (int yOffset = 1; yOffset <= 2; yOffset++)
+            {
+                Vector3Int upperPos = new Vector3Int(position.x, position.y + yOffset, position.z);
+                if (roomGrid.TryGetValue(upperPos, out RoomCell upperCell) && upperCell.isWall)
+                {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// 두 위치 사이에 벽이나 문이 있어서 방 확장이 차단되는지 확인
+        /// </summary>
+        private bool IsBlockedByWallOrDoor(Vector3Int from, Vector3Int to)
+        {
+            // 목표 위치 자체에 벽이 있는지 확인 (Y축 오프셋 고려)
+            if (HasWallAt(to))
+            {
+                return true;
+            }
+            
+            // 목표 위치에 문이 있는지도 확인 (문은 방 경계를 의미)
+            if (HasDoorAt(to))
+            {
+                return true;
+            }
+            
+            // 두 위치 사이의 중간 지점에서도 벽 확인 (대각선 이동 시)
+            if (Mathf.Abs(to.x - from.x) + Mathf.Abs(to.z - from.z) > 1)
+            {
+                // 대각선 이동인 경우 중간 경로 확인
+                Vector3Int midX = new Vector3Int(to.x, from.y, from.z);
+                Vector3Int midZ = new Vector3Int(from.x, from.y, to.z);
+                
+                if (HasWallAt(midX) || HasWallAt(midZ))
+                {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// 특정 위치에 문이 있는지 확인 (Y축 오프셋 고려)
+        /// </summary>
+        private bool HasDoorAt(Vector3Int position)
+        {
+            // 기본 위치 확인
+            if (roomGrid.TryGetValue(position, out RoomCell cell) && cell.isDoor)
+            {
+                return true;
+            }
+            
+            // Y축 위쪽 확인 (문이 바닥보다 위에 있을 수 있음)
+            for (int yOffset = 1; yOffset <= 2; yOffset++)
+            {
+                Vector3Int upperPos = new Vector3Int(position.x, position.y + yOffset, position.z);
+                if (roomGrid.TryGetValue(upperPos, out RoomCell upperCell) && upperCell.isDoor)
+                {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// 방향 벡터 반환
+        /// </summary>
+        private Vector3Int[] GetDirections()
+        {
+            return new Vector3Int[]
+            {
+                new Vector3Int(1, 0, 0),   // 오른쪽
+                new Vector3Int(-1, 0, 0),  // 왼쪽
+                new Vector3Int(0, 0, 1),   // 앞
+                new Vector3Int(0, 0, -1)   // 뒤
+            };
+        }
+        
+                 /// <summary>
+         /// 방 경계 및 ID 설정 (벽 경계면 기준으로 방 크기 계산)
+         /// </summary>
+         private void SetupRoomBounds(RoomInfo room)
+         {
+             if (room.walls.Count == 0 && room.doors.Count == 0)
+             {
+                 DebugLog("벽이나 문이 없어서 방 경계를 설정할 수 없습니다.", true);
+                 return;
+             }
+             
+             // 벽과 문의 위치를 기준으로 방 경계 계산
+             List<Vector3> boundaryPositions = new List<Vector3>();
+             
+             // 벽 위치 추가
+             foreach (var wall in room.walls)
+             {
+                 if (wall != null)
+                 {
+                     Vector3 wallPos = wall.transform.position;
+                     boundaryPositions.Add(wallPos);
+                     DebugLog($"🧱 벽 위치: {wall.name} at {wallPos} (Y={wallPos.y:F1})", true);
+                 }
+             }
+             
+             // 문 위치 추가
+             foreach (var door in room.doors)
+             {
+                 if (door != null)
+                 {
+                     Vector3 doorPos = door.transform.position;
+                     boundaryPositions.Add(doorPos);
+                     DebugLog($"🚪 문 위치: {door.name} at {doorPos} (Y={doorPos.y:F1})", true);
+                 }
+             }
+             
+             // 침대 위치도 고려 (방 크기 결정에 도움)
+             foreach (var bed in room.beds)
+             {
+                 if (bed != null)
+                 {
+                     Vector3 bedPos = bed.transform.position;
+                     boundaryPositions.Add(bedPos);
+                     DebugLog($"🛏️ 침대 위치: {bed.name} at {bedPos} (Y={bedPos.y:F1})", true);
+                 }
+             }
+             
+             if (boundaryPositions.Count == 0)
+             {
+                 DebugLog("유효한 벽이나 문 오브젝트가 없습니다.", true);
+                 return;
+             }
+             
+             // 벽 경계면 기준으로 최소/최대 좌표 계산
+             float minX = boundaryPositions.AsValueEnumerable().Min(p => p.x);
+             float maxX = boundaryPositions.AsValueEnumerable().Max(p => p.x);
+             float minZ = boundaryPositions.AsValueEnumerable().Min(p => p.z);
+             float maxZ = boundaryPositions.AsValueEnumerable().Max(p => p.z);
+             float baseY = boundaryPositions.AsValueEnumerable().Min(p => p.y);
+             
+             DebugLog($"📏 경계 계산: X({minX:F1}~{maxX:F1}), Z({minZ:F1}~{maxZ:F1}), baseY={baseY:F1}", true);
+             
+             // FloorConstants를 사용하여 정확한 층 계산
+             int floorLevel = FloorConstants.GetFloorLevel(baseY);
+             float floorBaseY = FloorConstants.GetFloorBaseY(floorLevel);
+             
+             DebugLog($"🏢 층 계산: baseY({baseY:F1}) → 층레벨({floorLevel}) → 기준Y({floorBaseY:F1})", true);
+             
+             // 벽 두께를 고려하여 내부 공간 계산 (벽 안쪽으로 약간 들어간 위치)
+             float wallThickness = 0.5f; // 벽 두께의 절반
+             float roomMinX = minX + wallThickness;
+             float roomMaxX = maxX - wallThickness;
+             float roomMinZ = minZ + wallThickness;
+             float roomMaxZ = maxZ - wallThickness;
+             
+             // 최소 방 크기 보장 (너무 작으면 확장)
+             float minRoomSize = 2.0f; // 최소 방 크기를 늘림
+             float roomWidth = roomMaxX - roomMinX;
+             float roomDepth = roomMaxZ - roomMinZ;
+             
+             if (roomWidth < minRoomSize)
+             {
+                 float centerX = (roomMinX + roomMaxX) / 2f;
+                 roomMinX = centerX - minRoomSize / 2f;
+                 roomMaxX = centerX + minRoomSize / 2f;
+                 roomWidth = minRoomSize;
+             }
+             
+             if (roomDepth < minRoomSize)
+             {
+                 float centerZ = (roomMinZ + roomMaxZ) / 2f;
+                 roomMinZ = centerZ - minRoomSize / 2f;
+                 roomMaxZ = centerZ + minRoomSize / 2f;
+                 roomDepth = minRoomSize;
+             }
+             
+             // 방 바운더리 설정 (층별 정확한 Y축 사용)
+             room.bounds = new Bounds();
+             Vector3 boundsMin = new Vector3(roomMinX, floorBaseY, roomMinZ);
+             Vector3 boundsMax = new Vector3(roomMaxX, floorBaseY + FloorConstants.ROOM_HEIGHT, roomMaxZ);
+             room.bounds.SetMinMax(boundsMin, boundsMax);
+             
+             room.center = room.bounds.center;
+             room.floorLevel = floorLevel;
+             room.roomId = $"Room_F{room.floorLevel}_{room.center.x:F0}_{room.center.z:F0}";
+             
+             DebugLog($"🎯 최종 바운더리: Min({boundsMin}) Max({boundsMax}) Center({room.center})", true);
+             
+             DebugLog($"벽 경계면 기준 방 경계 설정 완료:\n" +
+                      $"벽 경계 범위: X({minX:F1}~{maxX:F1}), Z({minZ:F1}~{maxZ:F1}), Y({baseY:F1})\n" +
+                      $"방 내부 범위: X({roomMinX:F1}~{roomMaxX:F1}), Z({roomMinZ:F1}~{roomMaxZ:F1})\n" +
+                      $"층 정보: {floorLevel}층 (기준 Y: {floorBaseY:F1}, 높이: {FloorConstants.ROOM_HEIGHT:F1})\n" +
+                      $"방 크기: {room.bounds.size} (W:{roomWidth:F1} x D:{roomDepth:F1} x H:{FloorConstants.ROOM_HEIGHT:F1})\n" +
+                      $"벽: {room.walls.Count}개, 문: {room.doors.Count}개, 침대: {room.beds.Count}개", true);
+         }
+        
+        /// <summary>
+        /// Y축 오프셋을 고려하여 침대와 선베드를 찾는 헬퍼 메서드
+        /// </summary>
+        private void CheckForBedsAndSunbeds(Vector3Int basePosition, RoomInfo room)
+        {
+            // 기본 위치에서 확인
+            if (roomGrid.TryGetValue(basePosition, out RoomCell baseCell))
+            {
+                if (baseCell.isBed)
+                {
+                    foreach (var obj in baseCell.objects)
+                    {
+                        if (!room.beds.Contains(obj))
+                        {
+                            room.beds.Add(obj);
+                            DebugLog($"침대 발견: {basePosition}");
+                        }
+                    }
+                }
+                
+                if (baseCell.isSunbed)
+                {
+                    foreach (var obj in baseCell.objects)
+                    {
+                        if (!room.sunbeds.Contains(obj))
+                        {
+                            room.sunbeds.Add(obj);
+                            DebugLog($"Sunbed 발견: {basePosition}");
+                        }
+                    }
+                }
+            }
+            
+            // Y축 위아래에서도 확인 (침대가 바닥과 다른 높이에 있을 수 있음)
+            for (int yOffset = -1; yOffset <= 2; yOffset++)
+            {
+                if (yOffset == 0) continue; // 기본 위치는 이미 확인했음
+                
+                Vector3Int adjustedPos = new Vector3Int(basePosition.x, basePosition.y + yOffset, basePosition.z);
+                if (roomGrid.TryGetValue(adjustedPos, out RoomCell adjustedCell))
+                {
+                    if (adjustedCell.isBed)
+                    {
+                        foreach (var obj in adjustedCell.objects)
+                        {
+                            if (!room.beds.Contains(obj))
+                            {
+                                room.beds.Add(obj);
+                                DebugLog($"침대 발견 (Y{yOffset:+0;-0}): {adjustedPos}");
+                            }
+                        }
+                    }
+                    
+                    if (adjustedCell.isSunbed)
+                    {
+                        foreach (var obj in adjustedCell.objects)
+                        {
+                            if (!room.sunbeds.Contains(obj))
+                            {
+                                room.sunbeds.Add(obj);
+                                DebugLog($"Sunbed 발견 (Y{yOffset:+0;-0}): {adjustedPos}");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 방 유효성 검증 (기본 검증만)
+        /// </summary>
+        private bool ValidateRoomSize(RoomInfo room)
+        {
+            // 크기 제한 없음 - 벽으로 구분되면 모든 크기 허용
+            return true;
+        }
+        
+        /// <summary>
+        /// 방이 벽으로 제대로 둘러싸여 있는지 검증 (완화된 기준)
+        /// </summary>
+        private bool ValidateRoomEnclosure(RoomInfo room, HashSet<Vector3Int> roomCells)
+        {
+            // 방의 경계를 따라 벽이나 문이 있는지 확인
+            HashSet<Vector3Int> boundaryPositions = new HashSet<Vector3Int>();
+            
+            Vector3Int[] directions = new Vector3Int[]
+            {
+                new Vector3Int(1, 0, 0), new Vector3Int(-1, 0, 0),
+                new Vector3Int(0, 0, 1), new Vector3Int(0, 0, -1)
+            };
+            
+            // 모든 바닥 셀의 인접한 위치 중 방 외부 위치를 찾음
+            foreach (var floorPos in roomCells)
+            {
+                foreach (var dir in directions)
+                {
+                    Vector3Int adjacentPos = floorPos + dir;
+                    
+                    // 방 내부가 아닌 위치
+                    if (!roomCells.Contains(adjacentPos))
+                    {
+                        boundaryPositions.Add(adjacentPos);
+                    }
+                }
+            }
+            
+            // 경계 위치 중 벽이나 문이 없는 빈 공간이 있는지 확인
+            int openBoundaries = 0;
+            int totalBoundaries = boundaryPositions.Count;
+            
+            foreach (var boundaryPos in boundaryPositions)
+            {
+                if (roomGrid.TryGetValue(boundaryPos, out RoomCell boundaryCell))
+                {
+                    // 벽이나 문이 있으면 올바른 경계
+                    if (!boundaryCell.isWall && !boundaryCell.isDoor)
+                    {
+                        openBoundaries++;
+                    }
+                }
+                else
+                {
+                    // 그리드에 없는 위치 = 빈 공간
+                    openBoundaries++;
+                }
+            }
+            
+            // 경계의 30% 이상이 벽이나 문으로 막혀있으면 유효한 방으로 인정 (기준 완화: 80% -> 30%)
+            float enclosureRatio = totalBoundaries > 0 ? (float)(totalBoundaries - openBoundaries) / totalBoundaries : 1f;
+            bool isEnclosed = enclosureRatio >= 0.3f || totalBoundaries == 0; // 경계가 없어도 허용
+            
+            DebugLog($"=== 방 경계 검증 (완화) ===\n" +
+                     $"방 바닥 셀 개수: {roomCells.Count}개\n" +
+                     $"총 경계 위치: {totalBoundaries}개\n" +
+                     $"열린 경계: {openBoundaries}개\n" +
+                     $"막힌 경계: {totalBoundaries - openBoundaries}개\n" +
+                     $"폐쇄율: {enclosureRatio:P1} (요구: 30% 이상)\n" +
+                     $"검증 결과: {(isEnclosed ? "✅ 통과" : "❌ 실패")}\n" +
+                     $"===================", true);
+            
+            return isEnclosed;
+        }
 
-            DebugLog("유효한 방이 감지되지 않음");
-            return null;
+        /// <summary>
+        /// 벽의 위치를 고려하여 방의 실제 경계를 계산
+        /// </summary>
+        private void CalculateRoomBoundsFromWalls(RoomInfo room, Vector3Int floorMinBounds, Vector3Int floorMaxBounds)
+        {
+            // 기본값은 바닥 영역으로 설정
+            Vector3 worldFloorMin = grid.GetCellCenterWorld(floorMinBounds);
+            Vector3 worldFloorMax = grid.GetCellCenterWorld(floorMaxBounds);
+            
+            Vector3 realMinBounds = worldFloorMin;
+            Vector3 realMaxBounds = worldFloorMax;
+            
+            if (room.walls.Count > 0)
+            {
+                // 벽의 위치를 기준으로 방 경계 재계산
+                Vector3 wallMinBounds = room.walls[0].transform.position;
+                Vector3 wallMaxBounds = room.walls[0].transform.position;
+                
+                foreach (var wall in room.walls)
+                {
+                    Vector3 wallPos = wall.transform.position;
+                    wallMinBounds = Vector3.Min(wallMinBounds, wallPos);
+                    wallMaxBounds = Vector3.Max(wallMaxBounds, wallPos);
+                }
+                
+                // 벽의 경계에서 약간 안쪽으로 방 영역 설정 (벽 두께 고려)
+                float wallThickness = 0.5f; // 벽 두께의 절반
+                realMinBounds = new Vector3(
+                    wallMinBounds.x + wallThickness, 
+                    worldFloorMin.y, 
+                    wallMinBounds.z + wallThickness
+                );
+                realMaxBounds = new Vector3(
+                    wallMaxBounds.x - wallThickness, 
+                    worldFloorMax.y + 3f, // 방 높이 
+                    wallMaxBounds.z - wallThickness
+                );
+                
+                // 바닥 영역을 넘지 않도록 제한
+                realMinBounds.x = Mathf.Max(realMinBounds.x, worldFloorMin.x - 0.5f);
+                realMinBounds.z = Mathf.Max(realMinBounds.z, worldFloorMin.z - 0.5f);
+                realMaxBounds.x = Mathf.Min(realMaxBounds.x, worldFloorMax.x + 0.5f);
+                realMaxBounds.z = Mathf.Min(realMaxBounds.z, worldFloorMax.z + 0.5f);
+                
+                DebugLog($"벽 기준 방 경계 계산:\n" +
+                         $"바닥 영역: {worldFloorMin} ~ {worldFloorMax}\n" +
+                         $"벽 영역: {wallMinBounds} ~ {wallMaxBounds}\n" +
+                         $"최종 방 영역: {realMinBounds} ~ {realMaxBounds}");
+            }
+            else
+            {
+                // 벽이 없는 경우 바닥 영역 그대로 사용하되 높이만 설정
+                realMaxBounds.y = worldFloorMin.y + 3f;
+                DebugLog($"벽 없음 - 바닥 기준 방 경계: {realMinBounds} ~ {realMaxBounds}");
+            }
+            
+            // 방 객체에 경계 설정
+            room.bounds = new Bounds();
+            room.bounds.SetMinMax(realMinBounds, realMaxBounds);
+            room.center = room.bounds.center;
         }
         
 
-        // 추가: 벽으로 둘러싸인 영역을 더 정확히 감지하는 헬퍼 메서드
+        // 추가: 벽으로 둘러싸인 영역을 더 정확히 감지하는 헬퍼 메서드 (완화된 기준)
         private bool IsEnclosedByWalls(Vector3Int position, HashSet<Vector3Int> roomCells)
         {
             Vector3Int[] directions = new Vector3Int[]
@@ -620,35 +2145,21 @@ namespace JY
                     if (neighborCell.isWall) wallCount++;
                     if (neighborCell.isDoor) doorCount++;
                 }
-                else
-                {
-                    // 그리드 외부도 벽으로 간주
-                    wallCount++;
-                }
             }
 
-            // 최소 3면이 벽으로 둘러싸여 있고, 문이 있으면 방으로 인정
-            return wallCount >= 2 && (wallCount + doorCount) >= 3;
+            // 최소 1면이 벽으로 둘러싸여 있거나 문이 있으면 방으로 인정 (기준 완화)
+            return wallCount >= 1 || doorCount >= 1;
         }
 
-        // 방 검증을 더 엄격하게 하는 메서드 추가
+        // 방 검증을 유연하게 하는 메서드 (크기 제한 없음)
         private bool ValidateRoomStructure(RoomInfo room)
         {
             if (room.floorCells.Count == 0) return false;
             
-            // 방의 최소 크기 확인 (예: 2x2 이상)
-            int minX = room.floorCells.AsValueEnumerable().Min(c => c.x);
-            int maxX = room.floorCells.AsValueEnumerable().Max(c => c.x);
-            int minZ = room.floorCells.AsValueEnumerable().Min(c => c.z);
-            int maxZ = room.floorCells.AsValueEnumerable().Max(c => c.z);
+            // 크기 제한 제거 - 모든 크기 허용
+            // 단지 유효한 바닥 셀이 있는지만 확인
             
-            int width = maxX - minX + 1;
-            int height = maxZ - minZ + 1;
-            
-            // 최소 크기 체크
-            if (width < 2 || height < 2) return false;
-            
-            // 벽으로 둘러싸인 정도 확인
+            // 벽으로 둘러싸인 정도 확인 (기준 완화)
             int enclosedCells = 0;
             foreach (var floorCell in room.floorCells)
             {
@@ -658,8 +2169,8 @@ namespace JY
                 }
             }
             
-            // 최소 50% 이상의 바닥이 벽으로 둘러싸여 있어야 함
-            return (float)enclosedCells / room.floorCells.Count >= 0.5f;
+            // 최소 30% 이상의 바닥이 벽으로 둘러싸여 있거나, 벽이 아예 없어도 허용 (기준 완화)
+            return room.floorCells.Count >= 1 && (enclosedCells == 0 || (float)enclosedCells / room.floorCells.Count >= 0.3f);
         }
 
         private bool AreRoomListsEqual(List<RoomInfo> list1, List<RoomInfo> list2)
@@ -752,6 +2263,11 @@ namespace JY
                         Gizmos.DrawLine(bed.transform.position, room.bounds.center);
                     }
                 }
+
+                /*UnityEditor.Handles.Label(room.bounds.center, 
+                    $"Room {room.roomId}\nWalls: {room.walls.Count}\n" +
+                    $"Doors: {room.doors.Count}\nBeds: {room.beds.Count}\n" +
+                    $"Valid: {room.isValid(minWalls, minDoors, minBeds)}");*/
             }
         }
 
@@ -786,8 +2302,8 @@ namespace JY
             }
 
             BoxCollider roomCollider = room.gameObject.AddComponent<BoxCollider>();
-            roomCollider.center = new Vector3(0, 1.5f, 0);
-            roomCollider.size = new Vector3(room.bounds.size.x, 3f, room.bounds.size.z);
+            roomCollider.center = new Vector3(0, FloorConstants.ROOM_HEIGHT / 2f, 0);
+            roomCollider.size = new Vector3(room.bounds.size.x, FloorConstants.ROOM_HEIGHT, room.bounds.size.z);
             roomCollider.isTrigger = true;
 
             DebugLog($"방 생성: {room.roomId}\n" +
@@ -877,24 +2393,30 @@ namespace JY
             room.floorCells.Add(gridPos);
             room.sunbeds.Add(sunbedObj.transform.parent?.gameObject ?? sunbedObj);
             
-            // 층 정보 계산
-            if (roomGrid.TryGetValue(gridPos, out RoomCell sunbedCell))
-            {
-                room.floorLevel = Mathf.RoundToInt(sunbedCell.worldHeight / 3f); // 3m당 1층으로 가정
-            }
+            // FloorConstants를 사용하여 정확한 층 정보 계산
+            float sunbedY = sunbedObj.transform.position.y;
+            room.floorLevel = FloorConstants.GetFloorLevel(sunbedY);
+            float floorBaseY = FloorConstants.GetFloorBaseY(room.floorLevel);
             
-            // 방 경계 설정 (sunbed 위치 기준)
+            // 방 경계 설정 (sunbed 위치 기준, 층별 정확한 Y축 사용)
             Vector3 worldPos = grid.GetCellCenterWorld(gridPos);
-            room.bounds = new Bounds(worldPos, new Vector3(2f, 1f, 2f)); // 2x2 크기
-            room.center = worldPos;
+            worldPos.y = floorBaseY; // 층 기준 Y축으로 조정
+            
+            room.bounds = new Bounds();
+            room.bounds.SetMinMax(
+                new Vector3(worldPos.x - 1f, floorBaseY, worldPos.z - 1f),
+                new Vector3(worldPos.x + 1f, floorBaseY + FloorConstants.ROOM_HEIGHT, worldPos.z + 1f)
+            );
+            room.center = room.bounds.center;
             
             string roomId = $"SunbedRoom_F{room.floorLevel}_{room.center.x:F0}_{room.center.z:F0}";
             room.roomId = roomId;
             
             DebugLog($"Sunbed 방 생성:\n" +
                      $"ID: {room.roomId}\n" +
-                     $"위치: {room.center}\n" +
-                     $"층: {room.floorLevel}\n" +
+                     $"위치: {room.center} (원래 Y: {sunbedY:F1}, 조정된 Y: {worldPos.y:F1})\n" +
+                     $"층: {room.floorLevel}층 (기준 Y: {floorBaseY:F1})\n" +
+                     $"방 크기: {room.bounds.size}\n" +
                      $"고정 가격: {room.fixedPrice}\n" +
                      $"고정 명성도: {room.fixedReputation}");
             
@@ -911,6 +2433,21 @@ namespace JY
             if (showImportantLogsOnly && !isImportant) return;
             
             Debug.Log($"[RoomDetector] {message}");
+        }
+        
+        /// <summary>
+        /// 셀 내용 설명을 반환하는 헬퍼 메서드
+        /// </summary>
+        private string GetCellContentDescription(RoomCell cell)
+        {
+            List<string> contents = new List<string>();
+            if (cell.isFloor) contents.Add("바닥");
+            if (cell.isWall) contents.Add("벽");
+            if (cell.isDoor) contents.Add("문");
+            if (cell.isBed) contents.Add("침대");
+            if (cell.isSunbed) contents.Add("선베드");
+            
+            return contents.Count > 0 ? string.Join(", ", contents) : "빈 셀";
         }
     }
 } 

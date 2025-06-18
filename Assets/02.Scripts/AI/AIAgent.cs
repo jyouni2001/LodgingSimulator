@@ -47,6 +47,13 @@ public class AIAgent : MonoBehaviour
     private TimeSystem timeSystem;                // 시간 시스템 참조
     private int lastBehaviorUpdateHour = -1;      // 마지막 행동 업데이트 시간
     private bool isScheduledForDespawn = false;   // 11시 디스폰 예정인지 여부
+    
+    [Header("UI 디버그")]
+    [Tooltip("모든 AI 머리 위에 행동 상태 텍스트 표시")]
+    [SerializeField] private bool debugUIEnabled = true;
+    
+    // 모든 AI가 공유하는 static 변수
+    private static bool globalShowDebugUI = true;
     #endregion
 
     #region 룸 정보 클래스
@@ -115,6 +122,10 @@ public class AIAgent : MonoBehaviour
         if (!InitializeComponents()) return;
         InitializeRoomsIfEmpty();
         timeSystem = TimeSystem.Instance;
+        
+        // Inspector 설정을 전역 설정에 반영
+        globalShowDebugUI = debugUIEnabled;
+        
         DetermineInitialBehavior();
     }
 
@@ -541,6 +552,12 @@ public class AIAgent : MonoBehaviour
             ReturnToPool();
             return;
         }
+        
+        // Inspector에서 설정이 변경되면 전역 설정 업데이트
+        if (globalShowDebugUI != debugUIEnabled)
+        {
+            globalShowDebugUI = debugUIEnabled;
+        }
 
         // 시간 기반 행동 갱신
         if (timeSystem != null)
@@ -934,8 +951,10 @@ public class AIAgent : MonoBehaviour
     #region 배회 동작
     private IEnumerator WanderingBehavior()
     {
-        float wanderingTime = Random.Range(15f, 30f);
+        float wanderingTime = Random.Range(20f, 40f); // 배회 시간 증가
         float elapsedTime = 0f;
+        
+        Debug.Log($"AI {gameObject.name}: 넓은 범위 배회 시작 (시간: {wanderingTime:F1}초)");
 
         while (currentState == AIState.Wandering && elapsedTime < wanderingTime)
         {
@@ -947,26 +966,88 @@ public class AIAgent : MonoBehaviour
                 yield break;
             }
 
-            WanderOnGround();
-            float waitTime = Random.Range(3f, 7f);
+            // 새로운 넓은 범위 배회
+            Vector3 currentPos = transform.position;
+            float wanderDistance = Random.Range(25f, 50f); // 더 넓은 범위
+            Vector3 randomDirection = Random.insideUnitSphere;
+            randomDirection.y = 0;
+            randomDirection.Normalize();
             
-            // 대기 시간을 쪼개서 17시 체크를 더 자주 함
-            float remainingWait = waitTime;
-            while (remainingWait > 0 && currentState == AIState.Wandering)
+            Vector3 targetPoint = currentPos + randomDirection * wanderDistance;
+            
+            int groundMask = NavMesh.GetAreaFromName("Ground");
+            if (groundMask == 0) groundMask = NavMesh.AllAreas;
+            
+            bool foundValidPosition = false;
+            
+            // 방을 피해서 배회 위치 찾기
+            if (TryGetWanderingPositionAvoidingRooms(targetPoint, 15f, groundMask, out Vector3 validPosition))
             {
-                yield return new WaitForSeconds(1f);
-                remainingWait -= 1f;
-                
-                // 대기 중에도 17시 체크
-                if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
-                {
-                    Debug.Log($"AI {gameObject.name}: 배회 대기 중 17시 감지, 즉시 강제 디스폰.");
-                    Handle17OClockForcedDespawn();
-                    yield break;
-                }
+                agent.SetDestination(validPosition);
+                foundValidPosition = true;
+                Debug.Log($"AI {gameObject.name}: 넓은 범위 배회 성공 - 거리: {Vector3.Distance(currentPos, validPosition):F1}");
+            }
+            else
+            {
+                // 방을 피하지 못한 경우 기본 방식으로 시도
+                WanderOnGround();
+                foundValidPosition = true;
+                Debug.Log($"AI {gameObject.name}: 기본 배회 사용");
             }
             
-            elapsedTime += waitTime;
+            if (foundValidPosition)
+            {
+                // 목적지까지 이동 대기 (타임아웃 추가)
+                float moveTimeout = 15f;
+                float moveTimer = 0f;
+                
+                while (agent.pathPending || agent.remainingDistance > arrivalDistance)
+                {
+                    if (moveTimer >= moveTimeout)
+                    {
+                        Debug.Log($"AI {gameObject.name}: 이동 타임아웃, 새로운 목적지 설정");
+                        break;
+                    }
+                    
+                    // 17시 체크
+                    if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
+                    {
+                        Debug.Log($"AI {gameObject.name}: 이동 중 17시 감지, 즉시 강제 디스폰.");
+                        Handle17OClockForcedDespawn();
+                        yield break;
+                    }
+                    
+                    yield return new WaitForSeconds(0.5f);
+                    moveTimer += 0.5f;
+                }
+                
+                // 도착 후 대기
+                float waitTime = Random.Range(5f, 12f);
+                
+                // 대기 시간을 쪼개서 17시 체크를 더 자주 함
+                float remainingWait = waitTime;
+                while (remainingWait > 0 && currentState == AIState.Wandering)
+                {
+                    yield return new WaitForSeconds(1f);
+                    remainingWait -= 1f;
+                    
+                    // 대기 중에도 17시 체크
+                    if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
+                    {
+                        Debug.Log($"AI {gameObject.name}: 배회 대기 중 17시 감지, 즉시 강제 디스폰.");
+                        Handle17OClockForcedDespawn();
+                        yield break;
+                    }
+                }
+                
+                elapsedTime += waitTime + moveTimer;
+            }
+            else
+            {
+                // 위치를 찾지 못한 경우 짧게 대기 후 재시도
+                yield return new WaitForSeconds(2f);
+                elapsedTime += 2f;
+            }
         }
 
         // 배회 완료 후에도 17시 체크
@@ -976,6 +1057,7 @@ public class AIAgent : MonoBehaviour
             yield break;
         }
 
+        Debug.Log($"AI {gameObject.name}: 배회 완료, 다음 행동 결정");
         DetermineBehaviorByTime();
     }
 
@@ -1048,17 +1130,39 @@ public class AIAgent : MonoBehaviour
             yield break;
         }
 
+        Debug.Log($"AI {gameObject.name}: 방 {currentRoomIndex + 1}번 외부 배회 시작");
+
         while (currentState == AIState.UseWandering && agent.isOnNavMesh)
         {
             // 17시 체크는 하지 않음 - 방 사용 중인 AI는 계속 작동
-            Vector3 roomCenter = roomList[currentRoomIndex].transform.position;
-            float roomSize = roomList[currentRoomIndex].size;
-            if (TryGetValidPosition(roomCenter, roomSize, NavMesh.AllAreas, out Vector3 targetPos))
+            
+            // 방을 피해서 외부 배회
+            Vector3 currentPos = transform.position;
+            float wanderDistance = Random.Range(15f, 25f);
+            Vector3 randomDirection = Random.insideUnitSphere;
+            randomDirection.y = 0;
+            randomDirection.Normalize();
+            
+            Vector3 targetPoint = currentPos + randomDirection * wanderDistance;
+            
+            int groundMask = NavMesh.GetAreaFromName("Ground");
+            if (groundMask == 0) groundMask = NavMesh.AllAreas;
+            
+            if (TryGetWanderingPositionAvoidingRooms(targetPoint, 10f, groundMask, out Vector3 validPosition))
             {
-                agent.SetDestination(targetPos);
+                agent.SetDestination(validPosition);
+                Debug.Log($"AI {gameObject.name}: 방 외부 배회 - 거리: {Vector3.Distance(currentPos, validPosition):F1}");
+                
+                // 목적지까지 이동 대기
+                yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance < arrivalDistance);
+            }
+            else
+            {
+                Debug.Log($"AI {gameObject.name}: 방 외부 배회 위치를 찾지 못함, 기본 배회 사용");
+                WanderOnGround();
             }
 
-            float waitTime = Random.Range(3f, 8f);
+            float waitTime = Random.Range(4f, 10f);
             yield return new WaitForSeconds(waitTime);
         }
     }
@@ -1074,28 +1178,52 @@ public class AIAgent : MonoBehaviour
 
         float wanderingTime = Random.Range(15f, 30f);
         float elapsedTime = 0f;
+        
+        Debug.Log($"AI {gameObject.name}: 방 {currentRoomIndex + 1}번 내부 배회 시작");
 
         while (currentState == AIState.RoomWandering && elapsedTime < wanderingTime && agent.isOnNavMesh)
         {
             // 17시 체크는 하지 않음 - 방 사용 중인 AI는 계속 작동
-            Vector3 roomCenter = roomList[currentRoomIndex].transform.position;
-            float roomSize = roomList[currentRoomIndex].size;
-            if (TryGetValidPosition(roomCenter, roomSize, NavMesh.AllAreas, out Vector3 targetPos))
+            
+            // 방 내부에서만 배회
+            if (TryGetRoomWanderingPosition(currentRoomIndex, out Vector3 roomPosition))
             {
-                agent.SetDestination(targetPos);
+                agent.SetDestination(roomPosition);
+                Debug.Log($"AI {gameObject.name}: 방 내부 배회 - 위치: {roomPosition}");
+                
+                // 목적지까지 이동 대기
+                yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance < arrivalDistance);
+            }
+            else
+            {
+                // 방 내부 위치를 찾지 못한 경우 기존 방식 사용
+                Vector3 roomCenter = roomList[currentRoomIndex].transform.position;
+                float roomSize = roomList[currentRoomIndex].size * 0.5f; // 방 크기를 줄여서 확실히 내부에 위치
+                if (TryGetValidPosition(roomCenter, roomSize, NavMesh.AllAreas, out Vector3 fallbackPos))
+                {
+                    agent.SetDestination(fallbackPos);
+                }
             }
 
-            float waitTime = Random.Range(2f, 5f);
+            float waitTime = Random.Range(3f, 6f);
             yield return new WaitForSeconds(waitTime);
             elapsedTime += waitTime;
         }
 
+        Debug.Log($"AI {gameObject.name}: 방 내부 배회 완료");
         DetermineBehaviorByTime();
     }
 
     private void WanderOnGround()
     {
-        Vector3 randomPoint = transform.position + Random.insideUnitSphere * 10f;
+        // 더 넓은 범위로 배회 (20-40 유닛 범위)
+        float wanderDistance = Random.Range(20f, 40f);
+        Vector3 randomDirection = Random.insideUnitSphere;
+        randomDirection.y = 0; // Y축 고정
+        randomDirection.Normalize();
+        
+        Vector3 randomPoint = transform.position + randomDirection * wanderDistance;
+        
         int groundMask = NavMesh.GetAreaFromName("Ground");
         if (groundMask == 0)
         {
@@ -1103,10 +1231,101 @@ public class AIAgent : MonoBehaviour
             return;
         }
 
-        if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 10f, groundMask))
+        // 방을 피해서 배회하도록 수정
+        if (TryGetWanderingPositionAvoidingRooms(randomPoint, 15f, groundMask, out Vector3 validPosition))
         {
-            agent.SetDestination(hit.position);
+            agent.SetDestination(validPosition);
+            Debug.Log($"AI {gameObject.name}: 넓은 범위 배회 - 거리: {Vector3.Distance(transform.position, validPosition):F1}");
         }
+        else
+        {
+            // 방을 피하지 못한 경우 기본 방식으로 시도
+            if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 15f, groundMask))
+            {
+                agent.SetDestination(hit.position);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 방들을 피해서 배회 위치를 찾는 메서드
+    /// </summary>
+    private bool TryGetWanderingPositionAvoidingRooms(Vector3 targetPoint, float searchRadius, int layerMask, out Vector3 result)
+    {
+        result = targetPoint;
+        
+        for (int i = 0; i < maxRetries * 2; i++) // 더 많이 시도
+        {
+            Vector3 testPoint = targetPoint + Random.insideUnitSphere * searchRadius;
+            testPoint.y = targetPoint.y; // Y축 고정
+            
+            if (NavMesh.SamplePosition(testPoint, out NavMeshHit hit, searchRadius, layerMask))
+            {
+                // 방과의 거리 체크
+                bool tooCloseToRoom = false;
+                foreach (var room in roomList)
+                {
+                    if (room != null && room.gameObject != null)
+                    {
+                        float distanceToRoom = Vector3.Distance(hit.position, room.transform.position);
+                        // 방 크기의 1.5배 이상 떨어져 있어야 함
+                        if (distanceToRoom < room.size * 1.5f)
+                        {
+                            tooCloseToRoom = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!tooCloseToRoom)
+                {
+                    result = hit.position;
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// 방 내부에서만 배회하는 위치를 찾는 메서드
+    /// </summary>
+    private bool TryGetRoomWanderingPosition(int roomIndex, out Vector3 result)
+    {
+        result = Vector3.zero;
+        
+        if (roomIndex < 0 || roomIndex >= roomList.Count)
+            return false;
+            
+        var room = roomList[roomIndex];
+        if (room == null || room.gameObject == null)
+            return false;
+            
+        Bounds roomBounds = room.bounds;
+        Vector3 roomCenter = roomBounds.center;
+        
+        for (int i = 0; i < maxRetries * 3; i++)
+        {
+            // 방 내부의 랜덤한 위치 생성
+            Vector3 randomPoint = new Vector3(
+                Random.Range(roomBounds.min.x + 1f, roomBounds.max.x - 1f),
+                roomCenter.y,
+                Random.Range(roomBounds.min.z + 1f, roomBounds.max.z - 1f)
+            );
+            
+            if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            {
+                // 방 경계 내부인지 확인
+                if (roomBounds.Contains(hit.position))
+                {
+                    result = hit.position;
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
     #endregion
 
@@ -1194,7 +1413,7 @@ public class AIAgent : MonoBehaviour
 
     private void CleanupResources()
     {
-        Debug.Log($"[AIAgent] {gameObject.name}: CleanupResources 시작");
+        //Debug.Log($"[AIAgent] {gameObject.name}: CleanupResources 시작");
         
         if (currentRoomIndex != -1)
         {
@@ -1203,7 +1422,7 @@ public class AIAgent : MonoBehaviour
                 if (currentRoomIndex >= 0 && currentRoomIndex < roomList.Count)
                 {
                     roomList[currentRoomIndex].isOccupied = false;
-                    Debug.Log($"AI {gameObject.name} 정리: 룸 {currentRoomIndex + 1}번 반환.");
+                    //Debug.Log($"AI {gameObject.name} 정리: 룸 {currentRoomIndex + 1}번 반환.");
                 }
                 currentRoomIndex = -1;
             }
@@ -1217,16 +1436,19 @@ public class AIAgent : MonoBehaviour
         if (counterManager != null)
         {
             counterManager.LeaveQueue(this);
-            Debug.Log($"[AIAgent] {gameObject.name}: 대기열에서 제거 완료");
+            //Debug.Log($"[AIAgent] {gameObject.name}: 대기열에서 제거 완료");
         }
         
-        Debug.Log($"[AIAgent] {gameObject.name}: CleanupResources 완료");
+        //Debug.Log($"[AIAgent] {gameObject.name}: CleanupResources 완료");
     }
     #endregion
 
     #region UI
     void OnGUI()
     {
+        // 디버그 UI가 활성화된 경우에만 표시
+        if (!globalShowDebugUI) return;
+        
         Vector3 screenPos = Camera.main.WorldToScreenPoint(transform.position);
         if (screenPos.z > 0)
         {
@@ -1278,5 +1500,5 @@ public class AIAgent : MonoBehaviour
         }
     }
     #endregion
-    }
+}
 }

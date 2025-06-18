@@ -62,7 +62,7 @@ Material:
     - _AO: 1.2
     - _Alpha: 1
     - _FoamDistance: 0
-    - _FoamScale: -0.23
+    - _FoamScale: -0.08
     - _FoamStrength: 0.7
     - _Metalic: 0
     - _Normal_Strength: 0.2

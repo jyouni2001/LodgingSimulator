@@ -255,13 +255,22 @@ namespace JY
             
             // 웨이포인트 도달 처리
             OnWaypointReached?.Invoke(this);
-            DebugLog($"웨이포인트 {currentWaypointIndex} 도달: {assignedRoute.waypoints[currentWaypointIndex].name}", showMovementLogs);
+            
+            // 현재 웨이포인트 인덱스가 유효한 범위 내인지 확인 후 로그 출력
+            if (currentWaypointIndex >= 0 && currentWaypointIndex < assignedRoute.waypoints.Count && assignedRoute.waypoints[currentWaypointIndex] != null)
+            {
+                DebugLog($"웨이포인트 {currentWaypointIndex} 도달: {assignedRoute.waypoints[currentWaypointIndex].name}", showMovementLogs);
+            }
+            else
+            {
+                DebugLog($"웨이포인트 {currentWaypointIndex} 도달 (정박지로 이동 중)", showMovementLogs);
+            }
             
             currentWaypointIndex++;
             
             // 다음 웨이포인트로 이동 또는 정박 시작
             yield return new WaitForSeconds(0.2f); // 짧은 대기
-                MoveToNextWaypoint();
+            MoveToNextWaypoint();
         }
         
         /// <summary>
@@ -312,19 +321,33 @@ namespace JY
             }
             
             float dockingDurationMinutes = 30f; // 30분 정박
-            float startTime = timeSystem.GetCurrentTimeInMinutes();
+            float startTime = (float)timeSystem.GetCurrentTimeInMinutes(); // int를 float로 변환
             float endTime = startTime + dockingDurationMinutes;
             
             DebugLog($"정박 대기 시작: {dockingDurationMinutes}분 (게임 시간)", true);
+            DebugLog($"시작 시간: {startTime}분, 종료 시간: {endTime}분, 시간 배속: {timeSystem.timeMultiplier}", true);
             
             // 게임 시간으로 대기
-            while (timeSystem.GetCurrentTimeInMinutes() < endTime)
+            float checkInterval = 1f; // 1초마다 체크
+            float lastCheckTime = Time.time;
+            
+            while ((float)timeSystem.GetCurrentTimeInMinutes() < endTime)
             {
                 // 게임이 일시정지되거나 시간 배속이 0이면 대기
                 if (timeSystem.timeMultiplier <= 0)
                 {
-                    yield return new WaitForSeconds(0.1f);
+                    DebugLog("시간이 정지되어 있어 대기 중...", false);
+                    yield return new WaitForSeconds(0.5f);
                     continue;
+                }
+                
+                // 주기적으로 진행 상황 로그
+                if (Time.time - lastCheckTime >= checkInterval)
+                {
+                    float currentTime = (float)timeSystem.GetCurrentTimeInMinutes();
+                    float remainingTime = endTime - currentTime;
+                    DebugLog($"정박 대기 중... 남은 시간: {remainingTime:F1}분", false);
+                    lastCheckTime = Time.time;
                 }
                 
                 yield return new WaitForSeconds(0.1f);
@@ -346,11 +369,32 @@ namespace JY
             // 출발 웨이포인트가 있는지 확인
             if (assignedRoute.departureWaypoints == null || assignedRoute.departureWaypoints.Count == 0)
             {
-                DebugLog("출발 웨이포인트가 설정되지 않았습니다.", true);
+                DebugLog("출발 웨이포인트가 설정되지 않았습니다. 기본 출발 처리를 진행합니다.", true);
                 
-                // 출발 웨이포인트가 없으면 바로 비활성화
+                // 출발 웨이포인트가 없으면 현재 위치에서 약간 멀리 이동 후 비활성화
+                Vector3 currentPos = transform.position;
+                Vector3 exitDirection = Vector3.forward; // 기본 출발 방향
+                
+                // 도착 경로의 반대 방향으로 설정 (가능한 경우)
+                if (assignedRoute.waypoints.Count >= 2)
+                {
+                    Vector3 lastDirection = (assignedRoute.waypoints[assignedRoute.waypoints.Count - 1].position - 
+                                           assignedRoute.waypoints[assignedRoute.waypoints.Count - 2].position).normalized;
+                    exitDirection = lastDirection;
+                }
+                
+                Vector3 exitPosition = currentPos + exitDirection * 10f; // 10 유닛 멀리
+                exitPosition.y = 0.5f;
+                
+                DebugLog($"기본 출발 지점으로 이동: {exitDirection}", true);
+                
+                // 출발 지점으로 이동
+                yield return StartCoroutine(MoveToPosition(exitPosition, Quaternion.LookRotation(exitDirection)));
+                
+                // 출발 완료
                 currentState = ShipState.Inactive;
                 hasCompletedRoute = true;
+                DebugLog("기본 출발 완료 - 배 비활성화", true);
                 yield break;
             }
             

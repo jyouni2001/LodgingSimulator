@@ -8,16 +8,16 @@ namespace JY
     public static class FloorConstants 
 {
     // 층간 높이 (건축 시스템과 동일하게 맞춤)
-    public const float FLOOR_HEIGHT = 3f;
+    public const float FLOOR_HEIGHT = 4.6f;
     
     // 방 내부 높이 (천장까지의 높이)
-    public const float ROOM_HEIGHT = 2.5f;
+    public const float ROOM_HEIGHT = 4.0f;
     
     // 층 구분 허용 오차 (Y축 좌표 비교 시 사용)
-    public const float FLOOR_TOLERANCE = 1.5f;
+    public const float FLOOR_TOLERANCE = 2.3f; // 층간 높이의 절반
     
     // 바닥 감지 오프셋
-    public const float FLOOR_DETECTION_OFFSET = -0.5f;
+    public const float FLOOR_DETECTION_OFFSET = 0f;
     
     /// <summary>
     /// Y 좌표를 기반으로 층 레벨을 계산합니다.

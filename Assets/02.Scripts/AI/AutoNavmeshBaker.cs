@@ -156,7 +156,7 @@ public class AutoNavMeshBaker : MonoBehaviour
             yield break;
         }
 
-        isBaking = true;
+        //isBaking = true;
         
         // NavMeshSurface의 설정을 동적으로 업데이트
         /*var agent = NavMesh.GetSettingsByID(0);
@@ -178,17 +178,19 @@ public class AutoNavMeshBaker : MonoBehaviour
             Debug.Log("NavMesh 업데이트 완료");
         }
         
-        isBaking = false;
+        //isBaking = false;       
     }
 
     // 수동으로 NavMesh를 다시 빌드하는 공개 메서드
     public void RebuildNavMesh()
-    {
-        if (!isBaking)
-        {
+    { // 드래그를 해서 여러개 설치, 여러번 반복해. 코루틴도 여러번 반복이야. 여기 코루틴에 isBaking이 false일때만 작동을 해
+            // 여러개가 한꺼번에 실행이 되니까, 이미 코루틴 하나가 실행중이라서 isBaking true 상태야.
+            // false가 되어야 코루틴이 실행이되는데, true인 상태에서 여러개가 실행이 안되니까 한번만 실행하고 끝내는거야
+        //if (!isBaking)
+        //{
             CacheTaggedObjects();
             StartCoroutine(BuildNavMeshAsync());
-        }
+        //}
     }
 
     // 특정 태그의 오브젝트들만 업데이트하는 메서드

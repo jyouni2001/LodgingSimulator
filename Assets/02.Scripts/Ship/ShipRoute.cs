@@ -48,11 +48,11 @@ namespace JY
                 return false;
             }
             
-            if (waypoints.Count < 2)
+            /*if (waypoints.Count < 2)
             {
                 Debug.LogWarning($"[ShipRoute] {routeId}: 최소 2개의 웨이포인트가 필요합니다.");
                 return false;
-            }
+            }*/
             
             if (dockingPoint == null)
             {

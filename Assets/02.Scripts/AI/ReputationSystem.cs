@@ -48,7 +48,11 @@ namespace JY
         // 공개 속성
         public int CurrentReputation => currentReputation;
         public string CurrentGrade => GetCurrentGrade();
-        
+
+        // 캐싱 변수 (성능 최적화)
+        private int lastReputation = -1; // 마지막으로 표시된 명성도
+        private string lastFormattedReputation = ""; // 마지막으로 포맷된 명성도 문자열
+
         private void Awake()
         {
             // 싱글톤 패턴 구현
@@ -230,13 +234,43 @@ namespace JY
         {
             if (reputationText != null)
             {
+                // 명성도 변경이 없으면 캐시된 텍스트 재사용
+                if (currentReputation != lastReputation)
+                {
+                    lastReputation = currentReputation;
+                    lastFormattedReputation = FormatReputation(currentReputation);
+                }
+
                 string grade = GetCurrentGrade();
-                reputationText.text = string.Format(textFormat, currentReputation, grade);
+                reputationText.text = string.Format(textFormat, lastFormattedReputation, grade);
             }
         }
-        
+
+        /// <summary>
+        /// 명성도를 k, m, 단위로 포맷팅
+        /// </summary>
+        private string FormatReputation(int amount)
+        {
+            if (amount >= 1_000_000_000) // 10억 이상
+            {
+                return $"{(amount / 1_000_000_000f):F1}b"; // 소수점
+            }
+            else if (amount >= 1_000_000) // 100만 이상
+            {
+                return $"{(amount / 1_000_000f):F1}m";
+            }
+            else if (amount >= 1_000) // 1000 이상
+            {
+                return $"{(amount / 1000f):F1}k";
+            }
+            else
+            {
+                return amount.ToString(); // 1000 미만은 그대로 표시
+            }
+        }
+
         #region 디버그 메서드
-        
+
         /// <summary>
         /// 디버그 로그 출력
         /// </summary>

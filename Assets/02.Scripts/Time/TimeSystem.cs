@@ -12,18 +12,7 @@ namespace JY
     public class TimeSystem : MonoBehaviour
     {
         #region Enums
-
-        /// <summary>
-        /// 하루의 단계 열거형
-        /// </summary>
-        public enum DayPhase
-        {
-            Morning,    // 아침 (06:00 - 11:59)
-            Afternoon,  // 오후 (12:00 - 17:59)
-            Evening,    // 저녁 (18:00 - 21:59)
-            Night       // 밤 (22:00 - 05:59)
-        }
-
+        // 현재 사용 중인 열거형 없음
         #endregion
 
         #region Fields & Properties
@@ -38,12 +27,14 @@ namespace JY
         [Header("시간 정보")]
         [SerializeField] private float currentTime; // 현재 시간 (초 단위)
         
-        [Header("이벤트 설정")]
-        [Tooltip("특정 시간에 이벤트 발생 여부")]
-        public bool useTimeEvents = false;
+        [Header("날짜 설정")]
+        [Tooltip("게임 시작 시 날짜 (1일부터 시작)")]
+        [SerializeField] private int startingDay = 1;
         
-        [Tooltip("이벤트를 발생시킬 시간 목록 (24시간제)")]
-        public List<float> eventTimes = new List<float>() { 6f, 12f, 18f, 0f }; // 기본 이벤트 시간
+        [Header("날짜 정보")]
+        [SerializeField] private int currentDay; // 현재 일차
+        
+
         
         [Header("디버그 설정")]
         [Tooltip("디버그 로그 표시 여부")]
@@ -57,7 +48,10 @@ namespace JY
         public int CurrentMinute { get; private set; }
         public int CurrentSecond { get; private set; }
         public string CurrentTimeString { get; private set; }
-        public DayPhase CurrentDayPhase { get; private set; }
+        
+        // 날짜 관련 속성들
+        public int CurrentDay { get; private set; }
+        public string CurrentDateString { get; private set; }
 
         // 싱글톤 인스턴스
         private static TimeSystem _instance;
@@ -71,21 +65,23 @@ namespace JY
         /// </summary>
         public delegate void TimeChangeHandler(int hour, int minute);
         
-        /// <summary>
-        /// 하루 단계 변경 이벤트 델리게이트
-        /// </summary>
-        public delegate void DayPhaseChangeHandler(DayPhase newPhase);
+
         
         /// <summary>
         /// 특정 시간 이벤트 델리게이트
         /// </summary>
         public delegate void TimeEventHandler(float eventTime);
         
+        /// <summary>
+        /// 일차 변경 이벤트 델리게이트
+        /// </summary>
+        public delegate void DayChangeHandler(int newDay);
+        
         // 이벤트 선언
         public event TimeChangeHandler OnHourChanged;
         public event TimeChangeHandler OnMinuteChanged; 
-        public event DayPhaseChangeHandler OnDayPhaseChanged;
         public event TimeEventHandler OnTimeEvent;
+        public event DayChangeHandler OnDayChanged;
 
         #endregion
 
@@ -122,8 +118,7 @@ namespace JY
         
         private void Start()
         {
-            // 초기 상태 설정
-            UpdateDayPhase();
+            // 초기 상태 설정 완료
         }
         
         private void Update()
@@ -150,11 +145,13 @@ namespace JY
             _instance = this;
             DontDestroyOnLoad(gameObject); // 씬 전환 시에도 유지
             
-            // 초기 시간 설정
+            // 초기 시간 및 날짜 설정
             currentTime = startingHour * 3600f; // 시간을 초 단위로 변환
+            currentDay = startingDay; // 초기 일차 설정
+            CurrentDay = currentDay;
             UpdateTimeValues(); // 시간 값 초기화
             
-            DebugLog("시간 시스템 초기화 완료", true);
+            DebugLog($"시간 시스템 초기화 완료 - {CurrentDay}일차 {CurrentTimeString}", true);
         }
 
         #endregion
@@ -169,23 +166,21 @@ namespace JY
             // 이전 시간 값 저장
             int prevHour = CurrentHour;
             int prevMinute = CurrentMinute;
-            DayPhase prevPhase = CurrentDayPhase;
+            int prevDay = CurrentDay;
             
             // 시간 업데이트
             currentTime += Time.deltaTime * timeMultiplier;
             if (currentTime >= 86400f) // 하루는 86400초 (24시간)
             {
                 currentTime -= 86400f;
+                currentDay++; // 하루가 지나면 일차 증가
+                CurrentDay = currentDay;
             }
             
             // 시간 값 업데이트
             UpdateTimeValues();
             
-            // 시간 이벤트 검사
-            if (useTimeEvents)
-            {
-                CheckTimeEvents();
-            }
+
             
             // 시간 변경 이벤트 발생
             if (CurrentHour != prevHour)
@@ -199,11 +194,12 @@ namespace JY
                 OnMinuteChanged?.Invoke(CurrentHour, CurrentMinute);
             }
             
-            // 하루 단계 업데이트
-            if (CurrentDayPhase != prevPhase)
+
+            
+            // 일차 변경 이벤트 발생
+            if (CurrentDay != prevDay)
             {
-                OnDayPhaseChanged?.Invoke(CurrentDayPhase);
-                DebugLog($"하루 단계 변경: {GetDayPhaseString(CurrentDayPhase)}", true);
+                OnDayChanged?.Invoke(CurrentDay);
             }
         }
         
@@ -218,69 +214,12 @@ namespace JY
             CurrentSecond = Mathf.FloorToInt((hourTime * 3600) % 60);
             
             CurrentTimeString = string.Format("{0:00}:{1:00}", CurrentHour, CurrentMinute);
-            
-            UpdateDayPhase();
+            CurrentDateString = string.Format("{0}일차", CurrentDay);
         }
         
-        /// <summary>
-        /// 하루 단계 업데이트
-        /// </summary>
-        private void UpdateDayPhase()
-        {
-            if (CurrentHour >= 6 && CurrentHour < 12)
-            {
-                CurrentDayPhase = DayPhase.Morning;
-            }
-            else if (CurrentHour >= 12 && CurrentHour < 18)
-            {
-                CurrentDayPhase = DayPhase.Afternoon;
-            }
-            else if (CurrentHour >= 18 && CurrentHour < 22)
-            {
-                CurrentDayPhase = DayPhase.Evening;
-            }
-            else
-            {
-                CurrentDayPhase = DayPhase.Night;
-            }
-        }
+
         
-        /// <summary>
-        /// 하루 단계를 문자열로 반환
-        /// </summary>
-        private string GetDayPhaseString(DayPhase phase)
-        {
-            switch (phase)
-            {
-                case DayPhase.Morning: return "아침";
-                case DayPhase.Afternoon: return "오후";
-                case DayPhase.Evening: return "저녁";
-                case DayPhase.Night: return "밤";
-                default: return "알 수 없음";
-            }
-        }
-        
-        /// <summary>
-        /// 시간 이벤트 체크
-        /// </summary>
-        private void CheckTimeEvents()
-        {
-            if (eventTimes == null || eventTimes.Count == 0)
-                return;
-            
-            float currentHourFloat = currentTime / 3600f % 24f;
-            
-            foreach (float eventTime in eventTimes)
-            {
-                // 분 단위로 약간의 여유를 두고 이벤트 발생 체크 (정확한 시간 ±0.5분)
-                if (Mathf.Abs(currentHourFloat - eventTime) < (0.5f / 60f))
-                {
-                    OnTimeEvent?.Invoke(eventTime);
-                    DebugLog($"시간 이벤트 발생: {eventTime}시", true);
-                    break;
-                }
-            }
-        }
+
 
         #endregion
 
@@ -299,41 +238,33 @@ namespace JY
         }
         
         /// <summary>
-        /// 시간 배속 설정
+        /// 일차 설정 메서드
         /// </summary>
-        /// <param name="multiplier">시간 배속 (0 이상)</param>
-        public void SetTimeMultiplier(float multiplier)
+        /// <param name="day">설정할 일차 (1 이상)</param>
+        public void SetDay(int day)
         {
-            timeMultiplier = Mathf.Max(0, multiplier);
-            DebugLog($"시간 배속 설정: {timeMultiplier}배", showImportantLogsOnly);
+            currentDay = Mathf.Max(1, day);
+            CurrentDay = currentDay;
+            UpdateTimeValues();
+            DebugLog($"일차 설정: {CurrentDay}일차", true);
         }
         
         /// <summary>
-        /// 시간 일시 정지
+        /// 시간과 일차를 동시에 설정
         /// </summary>
-        public void PauseTime()
+        /// <param name="day">일차 (1 이상)</param>
+        /// <param name="hour">시 (0-23)</param>
+        /// <param name="minute">분 (0-59)</param>
+        public void SetDateTime(int day, int hour, int minute = 0)
         {
-            timeMultiplier = 0;
-            DebugLog("시간 일시정지", true);
+            currentDay = Mathf.Max(1, day);
+            CurrentDay = currentDay;
+            currentTime = (hour * 3600f) + (minute * 60f);
+            UpdateTimeValues();
+            DebugLog($"날짜시간 설정: {CurrentDay}일차 {hour:00}:{minute:00}", true);
         }
         
-        /// <summary>
-        /// 시간 흐름 재개
-        /// </summary>
-        /// <param name="multiplier">재개할 시간 배속 (-1: 기본값)</param>
-        public void ResumeTime(float multiplier = -1)
-        {
-            if (multiplier < 0)
-            {
-                // 기본값으로 돌아가기
-                timeMultiplier = 60f;
-            }
-            else
-            {
-                timeMultiplier = multiplier;
-            }
-            DebugLog($"시간 재개: {timeMultiplier}배", true);
-        }
+
         
         /// <summary>
         /// 현재 시간을 분 단위로 반환 (0-1439, 하루는 1440분)

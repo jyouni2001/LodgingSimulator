@@ -168,19 +168,35 @@ namespace JY
                 // 배가 스폰되었지만 아직 활성 상태인지 확인
                 if (schedule.isShipSpawned && schedule.shipController != null)
                 {
+                    // GameObject가 파괴되었는지 확인
+                    if (schedule.shipController.gameObject == null)
+                    {
+                        DebugLog($"배 GameObject가 파괴됨 - 스케줄 리셋: {schedule.route.routeId}", true);
+                        ResetAndUpdateSchedule(schedule);
+                        continue;
+                    }
+                    
                     // 배가 비활성 상태가 되면 (출발 완료) 스케줄 리셋
-                    if (schedule.shipController.CurrentState == ShipState.Inactive)
+                    if (schedule.shipController.CurrentState == ShipState.Inactive && schedule.shipController.HasCompletedRoute)
                     {
                         DebugLog($"배 출발 완료 감지 - 풀로 반환: {schedule.route.routeId}", true);
                         
                         // 활성 배 목록에서 제거
-                        activeShips.Remove(schedule.shipController);
+                        if (activeShips.Contains(schedule.shipController))
+                        {
+                            activeShips.Remove(schedule.shipController);
+                        }
                         
                         // 풀로 반환
                         shipPool.ReturnShip(schedule.shipController.gameObject);
                         
                         // 스케줄 리셋 및 다음 AI 스폰 시간으로 업데이트
                         ResetAndUpdateSchedule(schedule);
+                    }
+                    else
+                    {
+                        // 현재 상태 로그 (디버그용)
+                        DebugLog($"배 상태 체크: {schedule.route.routeId} - {schedule.shipController.CurrentState}, 완료: {schedule.shipController.HasCompletedRoute}", false);
                     }
                 }
             }

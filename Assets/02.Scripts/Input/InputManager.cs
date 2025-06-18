@@ -276,5 +276,5 @@ public class InputManager : MonoBehaviour
     private void ChangeFloorForBuildMode()
     {
         if(placementSystem.GetFloorLock()) changeFloorSystem.OnBuildModeChanged();
-    }
+    }    
 }
