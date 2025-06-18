@@ -344,6 +344,7 @@ public class PlacementSystem : MonoBehaviour
         Vector3Int gridPosition = grid.WorldToCell(inputManager.GetSelectedMapPosition());
 
         bool placementValidity = CheckPlacementValidity(gridPosition, selectedObjectIndex, previewRotation);
+
         if (!placementValidity) return;
         
         Vector3 worldPosition = grid.GetCellCenterWorld(gridPosition);
@@ -809,11 +810,11 @@ public class PlacementSystem : MonoBehaviour
             previewObject.transform.position = grid.GetCellCenterWorld(gridPosition);
             previewObject.transform.rotation = previewRotation;
             Renderer[] renderers = previewObject.GetComponentsInChildren<Renderer>();
-            foreach (Renderer renderer in renderers)
+            // 나중에 수정 - 프리뷰 점유 시 색 변경
+            /*foreach (Renderer renderer in renderers)
             {
                 renderer.material.color = placementValidity ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0f, 0f, 0.5f);
-                Debug.Log($"재질 현재 상태 = {placementValidity}");
-            }
+            }*/
         }
         
         if (Input.GetKeyDown(KeyCode.R) && !isDragging)

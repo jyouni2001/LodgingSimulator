@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using ZLinq;
 
+#if UNITY_EDITOR
 [CustomEditor(typeof(ObjectsDatabaseSO))]
 public class ObjectDatabaseEditor : Editor
 {
@@ -119,3 +120,4 @@ public class ObjectDatabaseEditor : Editor
 
     }
 }
+#endif
