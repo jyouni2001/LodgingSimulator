@@ -11292,13 +11292,13 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1253383773}
         m_TargetAssemblyTypeName: TimeControlScript, Assembly-CSharp
-        m_MethodName: TimeFast
-        m_Mode: 1
+        m_MethodName: SetTimeScale
+        m_Mode: 4
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
-          m_FloatArgument: 0
+          m_FloatArgument: 30
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
@@ -15969,15 +15969,15 @@ MonoBehaviour:
     dockingPoint: {fileID: 910791990}
     dockingRotation: {x: 0, y: 0, z: 0}
     movementSpeed: 360
-    rotationSpeed: 5
+    rotationSpeed: 1
     speedCurve:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
         tangentMode: 34
         weightedMode: 0
         inWeight: 0
@@ -15985,8 +15985,8 @@ MonoBehaviour:
       - serializedVersion: 3
         time: 1
         value: 1
-        inSlope: 0
-        outSlope: 0
+        inSlope: 1
+        outSlope: 1
         tangentMode: 34
         weightedMode: 0
         inWeight: 0
@@ -21692,13 +21692,13 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1253383773}
         m_TargetAssemblyTypeName: TimeControlScript, Assembly-CSharp
-        m_MethodName: TimeNormal
-        m_Mode: 1
+        m_MethodName: SetTimeScale
+        m_Mode: 4
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
-          m_FloatArgument: 0
+          m_FloatArgument: 1
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
@@ -34270,8 +34270,8 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1253383773}
         m_TargetAssemblyTypeName: TimeControlScript, Assembly-CSharp
-        m_MethodName: TimePause
-        m_Mode: 1
+        m_MethodName: SetTimeScale
+        m_Mode: 4
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine

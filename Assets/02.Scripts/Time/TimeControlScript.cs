@@ -1,18 +1,10 @@
 using UnityEngine;
 
 public class TimeControlScript : MonoBehaviour
-{    public void TimeFast()
+{    
+    public void SetTimeScale(float timeScale)
     {
-        Time.timeScale = 30;
-    }
-
-    public void TimeNormal()
-    {
-        Time.timeScale = 1;
-    }
-
-    public void TimePause()
-    {
-        Time.timeScale = 0;
+        if (Mathf.Approximately(Time.timeScale, timeScale)) return;
+        Time.timeScale = timeScale;
     }
 }
