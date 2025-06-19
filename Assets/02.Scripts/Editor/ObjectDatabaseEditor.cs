@@ -15,9 +15,9 @@ public class ObjectDatabaseEditor : Editor
     private Vector2Int newObjectSize = Vector2Int.one;
     private GameObject newObjectPrefab = null;
     private int newObjectBuildPrice = 0;
-    private int newObjectBasePrice = 0;
+    private int newObjectBasePrice;
     private bool newObjectIsWall = false;
-    private int newObjectReputation = 1;
+    private int newObjectReputation;
     private Dictionary<ObjectData, bool> foldoutStates = new Dictionary<ObjectData, bool>();
 
     private void OnEnable()
