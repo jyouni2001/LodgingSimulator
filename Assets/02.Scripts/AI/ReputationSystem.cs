@@ -43,7 +43,7 @@ namespace JY
         [SerializeField] private List<string> reputationLogs = new List<string>();
         
         // 싱글톤 인스턴스
-        public static ReputationSystem Instance { get; private set; }
+        public static ReputationSystem Instance { get; set; }
         
         // 공개 속성
         public int CurrentReputation => currentReputation;
@@ -59,7 +59,6 @@ namespace JY
             if (Instance == null)
             {
                 Instance = this;
-                DontDestroyOnLoad(gameObject);
             }
             else
             {

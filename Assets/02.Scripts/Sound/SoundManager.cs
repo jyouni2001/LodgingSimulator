@@ -11,8 +11,8 @@ public enum SoundType
 }
 public class SoundManager : MonoBehaviour
 {
+    public static SoundManager Instance { get; private set; }
     [SerializeField] private AudioClip[] soundList;
-    private static SoundManager instance;
     private AudioSource audioSource;
 
     private static Dictionary<SoundType, float> lastPlayTime = new();
@@ -20,14 +20,15 @@ public class SoundManager : MonoBehaviour
     
     private void Awake()
     {
-        if (instance is not null && instance != this)
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
         {
             Debug.LogWarning("이미 SoundManager 인스턴스가 존재합니다. 이 인스턴스를 파괴합니다.");
             Destroy(gameObject);
-            return;
         }
-        
-        instance = this;
     }
 
     private void Start()
@@ -45,7 +46,7 @@ public class SoundManager : MonoBehaviour
                 return; // 쿨타임 내에는 재생하지 않음
         }
         lastPlayTime[sound] = now;
-        instance.audioSource.PlayOneShot(instance.soundList[(int)sound], volume);
+        Instance.audioSource.PlayOneShot(Instance.soundList[(int)sound], volume);
     }
 
     /*public static void PlaySound(SoundType sound, float volume = 1)

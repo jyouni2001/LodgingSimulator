@@ -1,12 +1,11 @@
+using UnityEditor.UIElements;
 using UnityEngine;
 
 public class PlayerWallet : MonoBehaviour
 {
-    public static PlayerWallet Instance { get; private set; }
+    public static PlayerWallet Instance { get; set; }
     
-    [SerializeField] private int money = 1000;
-
-    public int Money => money;
+    public int money = 1000;
 
     void Awake()
     {
@@ -19,7 +18,6 @@ public class PlayerWallet : MonoBehaviour
             Destroy(gameObject);
         }
     }
-
     public void AddMoney(int amount)
     {
         money += amount;

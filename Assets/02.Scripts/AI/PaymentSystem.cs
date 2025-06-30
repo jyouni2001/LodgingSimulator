@@ -24,7 +24,7 @@ namespace JY
         /// 결제 정보 클래스
         /// </summary>
         [System.Serializable]
-        private class PaymentInfo
+        public class PaymentInfo
         {
             public string aiName;
             public int amount;
@@ -43,11 +43,25 @@ namespace JY
         }
 
         [Header("결제 정보")]
-        [SerializeField] private List<PaymentInfo> paymentQueue = new List<PaymentInfo>();
+        [SerializeField] public List<PaymentInfo> paymentQueue = new List<PaymentInfo>();
         
         // 명성도 시스템 참조
         private ReputationSystem reputationSystem;
-        
+
+        public static PaymentSystem Instance { get; set; }
+        private void Awake()
+        {
+            // 싱글톤 설정
+            if (Instance == null)
+            {
+                Instance = this;
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
         void Start()
         {
             // 명성도 시스템 참조 찾기

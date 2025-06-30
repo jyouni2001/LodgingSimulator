@@ -25,7 +25,7 @@ namespace JY
         [Range(0, 24)] public float startingHour = 6f; // 게임 시작 시간 (06:00)
         
         [Header("시간 정보")]
-        [SerializeField] private float currentTime; // 현재 시간 (초 단위)
+        public float currentTime; // 현재 시간 (초 단위)
         
         [Header("날짜 설정")]
         [Tooltip("게임 시작 시 날짜 (1일부터 시작)")]
@@ -143,7 +143,6 @@ namespace JY
             }
             
             _instance = this;
-            DontDestroyOnLoad(gameObject); // 씬 전환 시에도 유지
             
             // 초기 시간 및 날짜 설정
             currentTime = startingHour * 3600f; // 시간을 초 단위로 변환

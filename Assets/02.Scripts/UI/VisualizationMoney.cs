@@ -11,7 +11,7 @@ public class VisualizationMoney : MonoBehaviour
 
     void Update()
     {
-        int currentMoney = PlayerWallet.Instance.Money;
+        int currentMoney = PlayerWallet.Instance.money;
 
         // 돈 값이 변경되지 않았다면 업데이트 생략 (성능 최적화)
         if (currentMoney != lastMoney)

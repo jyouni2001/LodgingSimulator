@@ -6,10 +6,8 @@ using UnityEngine.UI;
 
 public class PlacementSystem : MonoBehaviour
 {
-    // 싱글톤 인스턴스
-    private static PlacementSystem _instance;
-    public static PlacementSystem Instance => _instance;
-    
+    public static PlacementSystem Instance { get; set; }
+
     [Header("컴포넌트")]
     [SerializeField] private InputManager inputManager;
     [SerializeField] private ObjectPlacer objectPlacer;
@@ -31,8 +29,8 @@ public class PlacementSystem : MonoBehaviour
     [SerializeField] public GameObject cellIndicatorPrefab;
     private List<GameObject> cellIndicators = new List<GameObject>();
     private int selectedObjectIndex = -1;
-    private int currentPurchaseLevel = 1;
-    private bool FloorLock;
+    public int currentPurchaseLevel = 1;
+    public bool FloorLock;
     
     // 가구 레이어 마스크 설정
     private int furnitureLayerMask;
@@ -61,14 +59,14 @@ public class PlacementSystem : MonoBehaviour
 
     private void Awake()
     {
-        // 싱글톤 인스턴스 설정
-        if (_instance is not null && _instance != this)
+        if (Instance == null)
         {
-            Debug.LogWarning("이미 PlacementSystem 인스턴스가 존재합니다. 이 인스턴스를 파괴합니다.");
-            Destroy(gameObject);
-            return;
+            Instance = this;
         }
-        _instance = this;
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     private void Start()
@@ -228,7 +226,7 @@ public class PlacementSystem : MonoBehaviour
     /// <summary>
     /// 그리드 반경에 따라 건축 가능한 지역 바운드 설정
     /// </summary>
-    private void UpdateGridBounds()
+    public void UpdateGridBounds()
     {
         foreach (GameObject planeRend in plane1f)
         {
@@ -385,7 +383,7 @@ public class PlacementSystem : MonoBehaviour
 
         // 1. 소지금 체크
         int buildPrice = objectToPlace.BuildPrice;
-        if (PlayerWallet.Instance.Money < buildPrice)
+        if (PlayerWallet.Instance.money < buildPrice)
         {
             Debug.Log("배치 불가: 소지금 부족");
             return false; // 소지금 부족 시 배치 불가능
@@ -869,7 +867,7 @@ public class PlacementSystem : MonoBehaviour
     /// 플레인의 이름에서 뽑아낸 정수와 반환된 정수의 값이 같을 때, 그리드 플레인을 활성화한다. 
     /// </summary>
     /// <param name="level"></param>
-    private void ActivatePlanesByLevel(int level)
+    public void ActivatePlanesByLevel(int level)
     {
         foreach (GameObject planeObj in plane1f)
         {

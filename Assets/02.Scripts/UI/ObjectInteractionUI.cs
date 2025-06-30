@@ -686,7 +686,7 @@ public class ObjectInteractionUI : MonoBehaviour
             newPositions,
             originalPlacementData.ID,
             originalPlacementData.PlacedObjectIndex,
-            originalPlacementData.kindIndex,
+            originalPlacementData.KindIndex,
             originalPlacementData.Rotation
         );
 
@@ -727,7 +727,7 @@ public class ObjectInteractionUI : MonoBehaviour
             newPositions,
             originalPlacementData.ID,
             originalPlacementData.PlacedObjectIndex,
-            originalPlacementData.kindIndex,
+            originalPlacementData.KindIndex,
             newRotation
         );
 

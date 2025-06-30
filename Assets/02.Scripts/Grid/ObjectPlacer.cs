@@ -4,7 +4,21 @@ using UnityEngine;
 using JY;
 public class ObjectPlacer : MonoBehaviour
 {
-    [SerializeField] private List<GameObject> placedGameObjects = new();
+    public static ObjectPlacer Instance { get; set; }
+    private void Awake()
+    {
+        // 싱글톤 설정
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    [SerializeField] public List<GameObject> placedGameObjects = new();
     [SerializeField] private InputManager inputManager;
     [SerializeField] private ChangeFloorSystem changeFloorSystem;
 
