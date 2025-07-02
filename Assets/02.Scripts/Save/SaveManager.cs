@@ -266,7 +266,6 @@ public class SaveManager : MonoBehaviour
         }
 
         gridData.placedObjects = new Dictionary<Vector3Int, List<PlacementData>>();
-        //var processedKeys = new HashSet<Vector3Int>(); // 중복 키 추적
         var processedObjects = new HashSet<int>();
 
         foreach (var entry in saveData.placedObjects)
@@ -276,23 +275,6 @@ public class SaveManager : MonoBehaviour
                 Debug.LogWarning($"GridEntry의 value가 null 또는 비어 있습니다. key: {entry.key}");
                 continue;
             }
-
-            // 이미 처리된 키인지 확인 (Size를 고려한 인접 키도 체크)
-            /*bool isDuplicate = false;
-            foreach (var processedKey in processedKeys)
-            {
-                if (Vector3Int.Distance(entry.key, processedKey) < 2) // 인접 칸 체크 (Size에 따라 조정 가능)
-                {
-                    isDuplicate = true;
-                    break;
-                }
-            }*/
-
-            /*if (isDuplicate)
-            {
-                Debug.LogWarning($"중복 또는 인접 키 발견, 무시: {entry.key}");
-                continue;
-            }*/
 
             var placementData = entry.value[0]; // 첫 번째 PlacementData를 기준으로
             if (processedObjects.Contains(placementData.PlacedObjectIndex))
@@ -304,14 +286,38 @@ public class SaveManager : MonoBehaviour
             if (objectData != null)
             {
                 Vector3 worldPosition = PlacementSystem.Instance.grid.GetCellCenterWorld(entry.key);
-                Debug.Log($"배치 시도 - key: {entry.key}, ID: {placementData.ID}, Position: {worldPosition}, Rotation: {placementData.Rotation}, Size: {objectData.Size}");
-                int index = ObjectPlacer.Instance.PlaceObject(objectData.Prefab, worldPosition, placementData.Rotation);
+                Debug.Log($"현재 저장된 데이터의 월드 포지션 값 = {worldPosition}");
+
+                // ▼▼▼ [핵심 수정] ▼▼▼
+                // entry.key.y (정수 그리드 좌표)를 사용하여 정확한 층 번호를 계산합니다.
+                int floor = ConvertGridYToFloorNumber(entry.key.y);
+                Debug.Log($"현재 저장된 데이터의 y값 = {floor}와 기존 값 ={entry.key.y}");
+
+                // floor 가 1, 2, 3, 4 (층) 값이 나올때, worldPosition.y 의 값 변화
+                // 1층 0, 2층 4.8175, 3층 9.63405, 4층 14.45                
+
+                float floorheight = GetFloorHeight(floor);
+
+                worldPosition.y = floorheight;
+
+                // PlaceObject 호출 시 계산된 층 번호를 세 번째 인자로 전달합니다.
+                int index = ObjectPlacer.Instance.PlaceObject(objectData.Prefab, worldPosition, placementData.Rotation, floor);
+                // ▲▲▲ [핵심 수정] ▲▲▲
+
+                //int index = ObjectPlacer.Instance.PlaceObject(objectData.Prefab, worldPosition, placementData.Rotation);
+
                 if (index != -1)
                 {
+                    // ▼ [수정] 새로 생성된 오브젝트의 인덱스를 processedObjects에 추가합니다.
+                    processedObjects.Add(index);
+
+                    // 원본 PlacementData의 인덱스를 새로 받은 인덱스로 갱신합니다.
                     placementData.PlacedObjectIndex = index;
-                    // Size에 따라 점유 칸 복원
+
+                    // 오브젝트가 점유하는 모든 위치에 올바른 데이터를 다시 추가합니다.
                     List<Vector3Int> occupiedPositions = PlacementSystem.Instance.floorData.CalculatePosition(entry.key, objectData.Size, placementData.Rotation, PlacementSystem.Instance.grid);
                     PlacementData dataToAdd = new PlacementData(occupiedPositions, placementData.ID, index, placementData.KindIndex, placementData.Rotation);
+
                     foreach (var pos in occupiedPositions)
                     {
                         if (!gridData.placedObjects.ContainsKey(pos))
@@ -319,25 +325,14 @@ public class SaveManager : MonoBehaviour
                             gridData.placedObjects[pos] = new List<PlacementData>();
                         }
                         gridData.placedObjects[pos].Add(dataToAdd);
-                        /*if (!processedKeys.Contains(pos))
-                        {
-                            if (!gridData.placedObjects.ContainsKey(pos))
-                            {
-                                gridData.placedObjects[pos] = new List<PlacementData>();
-                            }
-                            gridData.placedObjects[pos].Add(dataToAdd);
-                            processedKeys.Add(pos);
-                        }*/
                     }
-                    processedObjects.Add(index);
-                    Debug.Log($"로드 성공 - Index: {index}, Occupied Positions: {string.Join(", ", occupiedPositions)}");
+                    Debug.Log($"로드 성공 - Index: {index}, ID: {placementData.ID}, Pos: {entry.key}");
                 }
                 else
                 {
                     Debug.LogError($"로드 실패 - key: {entry.key}, ID: {placementData.ID}");
                 }
-            }
-            gridData.placedObjects[entry.key] = new List<PlacementData> { placementData }; // 단일 PlacementData만 저장
+            }            
         }
     }
 
@@ -372,23 +367,44 @@ public class SaveManager : MonoBehaviour
         }
     }
 
-    private void SetPrivateField<T>(object obj, string fieldName, T value)
+    /// <summary>
+    /// 그리드의 Y좌표(정수)를 실제 층 번호로 변환합니다.
+    /// </summary>
+    /// <param name="gridY">GridData에 저장된 Vector3Int의 y값</param>
+    /// <returns>계산된 층 번호 (예: 1, 2, 3...)</returns>
+    private int ConvertGridYToFloorNumber(int gridY)
     {
-        if (obj == null)
+        switch(gridY) 
         {
-            Debug.LogError($"SetPrivateField: 대상 객체가 null입니다. 필드: {fieldName}");
-            return;
-        }
+            case 0:
+                return 1;
+            case 2:
+                return 2;
+            case 4:
+                return 3;
+            case 8:
+                return 4;
 
-        var field = obj.GetType().GetField(fieldName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (field != null)
-        {
-            field.SetValue(obj, value);
-            Debug.Log($"필드 {fieldName} 설정 완료: {value}");
+            default:
+                return 1;
         }
-        else
+    }
+
+    private float GetFloorHeight(int floor)
+    {
+        switch (floor)
         {
-            Debug.LogError($"{fieldName}를 {obj.GetType().Name}에서 찾을 수 없습니다.");
+            case 1:
+                return 0;
+            case 2:
+                return 4.8175f;
+            case 3:
+                return 9.63405f;
+            case 4:
+                return 14.45f;
+
+            default:
+                return 0;
         }
     }
 }

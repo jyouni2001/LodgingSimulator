@@ -263,12 +263,16 @@ public class InputManager : MonoBehaviour
         }
 
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, objectLayer))
+        if (Physics.Raycast(ray, out RaycastHit hit2, 100f, objectLayer))
         {
             // 클릭한 오브젝트의 루트 오브젝트 반환
-            GameObject clickedObject = hit.collider.gameObject;
+            GameObject clickedObject = hit2.collider.gameObject;
             Debug.Log($"선택된 오브젝트 : {clickedObject}");
             return clickedObject.transform.root.gameObject;
+        }
+        else
+        {
+            Debug.Log("레이 작동 안하는 중");
         }
         return null;
     }

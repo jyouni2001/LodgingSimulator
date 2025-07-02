@@ -31,18 +31,26 @@ public class ObjectPlacer : MonoBehaviour
     /// <param name="position"></param>
     /// <param name="rotation"></param>
     /// <returns></returns>
-    public int PlaceObject(GameObject prefab, Vector3 position, Quaternion rotation)
+    public int PlaceObject(GameObject prefab, Vector3 position, Quaternion rotation, int? floorOverride = null)
     {
         GameObject newObject = Instantiate(prefab); //, BatchedObj.transform, true);
         newObject.transform.position = position;
+
+        Debug.Log($"여기에 설치 {position}");
+
         newObject.transform.rotation = rotation;
-        SoundManager.PlaySound(SoundType.Build, 0.1f); 
-        
+        SoundManager.PlaySound(SoundType.Build, 0.1f);
+
         // 현재 층에 따라 레이어 설정
-        int currentFloor = changeFloorSystem.currentFloor;
-        string layerName = $"{currentFloor}F"; // 예: "1F", "2F", "3F", "4F"
+        int floorToSet = floorOverride ?? changeFloorSystem.currentFloor;
+        string layerName = $"{floorToSet}F";
+
+        //int currentFloor = changeFloorSystem.currentFloor;
+        //string layerName = $"{currentFloor}F"; // 예: "1F", "2F", "3F", "4F"
+
         int layer = LayerMask.NameToLayer(layerName);
         int stairColliderLayer = LayerMask.NameToLayer("StairCollider");
+
         if (layer == -1)
         {
             Debug.LogError($"Layer {layerName} not found!");

@@ -142,83 +142,22 @@ public class GridData
             offset = new Vector2Int(size.x - 1, 0); // 270도: X축으로 조정
         }
 
-        // 기준 위치 조정 (왼쪽 상단 코너 기준)
-        Vector3Int startPos = gridPosition - new Vector3Int(offset.x, 0, offset.y);
+        Vector3Int startPos = new Vector3Int(gridPosition.x - offset.x, gridPosition.y, gridPosition.z - offset.y);
 
         // 점유 셀 위치 계산
         for (int x = 0; x < size.x; x++)
         {
-            for (int y = 0; y < size.y; y++)
+            for (int z = 0; z < size.y; z++) // 루프 변수를 z로 변경하여 명확하게 합니다.
             {
-                Vector3Int cellPos = startPos + new Vector3Int(x, 0, y);
+                Vector3Int cellPos = new Vector3Int(startPos.x + x, startPos.y, startPos.z + z);
                 positions.Add(cellPos);
             }
         }
+
 
         return positions;
     }
-    /*public List<Vector3Int> CalculatePosition(Vector3Int gridPosition, Vector2Int objectSize, Quaternion rotation, Grid grid)
-    {
-        List<Vector3Int> positions = new List<Vector3Int>();
-
-        // 회전 각도 (0, 90, 180, 270 중 하나로 반올림)
-        float angle = Mathf.Round(rotation.eulerAngles.y / 90) * 90;
-
-        // 회전된 크기 계산
-        Vector2Int size = objectSize;
-        if (Mathf.Approximately(angle % 180, 90))
-        {
-            // 90도나 270도 회전 시 x와 y 교환
-            size = new Vector2Int(objectSize.y, objectSize.x);
-        }
-
-        // 회전 각도에 따른 방향 벡터 계산
-        Vector2Int dirX, dirY;
-
-        if (Mathf.Approximately(angle, 0))
-        {
-            // 0도 회전 - 기본 방향
-            dirX = new Vector2Int(1, 0);
-            dirY = new Vector2Int(0, 1);
-        }
-        else if (Mathf.Approximately(angle, 90))
-        {
-            // 90도 회전
-            dirX = new Vector2Int(0, 1);
-            dirY = new Vector2Int(0, -1);
-        }
-        else if (Mathf.Approximately(angle, 180))
-        {
-            // 180도 회전
-            dirX = new Vector2Int(-1, 0);
-            dirY = new Vector2Int(0, -1);
-        }
-        else // 270도
-        {
-            // 270도 회전
-            dirX = new Vector2Int(0, -1);
-            dirY = new Vector2Int(0, 1);
-        }
-
-        // 시작 위치 계산 (항상 왼쪽 상단 코너에서 시작)
-        Vector3Int startPos = gridPosition;
-
-        // 모든 셀 위치 계산
-        for (int x = 0; x < size.x; x++)
-        {
-            for (int y = 0; y < size.y; y++)
-            {
-                Vector3Int cellPos = new Vector3Int(
-                    startPos.x + dirX.x * x + dirY.x * y,
-                    0,
-                    startPos.z + dirX.y * x + dirY.y * y
-                );
-                positions.Add(cellPos);
-            }
-        }
-
-        return positions;
-    }*/
+   
     #endregion
 
     #region 점유 확인 여부 플래그

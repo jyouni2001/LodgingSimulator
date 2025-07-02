@@ -53,6 +53,11 @@ public class PlacementData
     public PlacementData(List<Vector3Int> occupiedPositions, int id, int placedObjectIndex, int kindOfIndex, Quaternion rotation)
     {
         this.occupiedPositions = occupiedPositions;
+        foreach(Vector3Int pos in occupiedPositions)
+        {
+            Debug.Log($"설치 = {pos}");
+        }
+        
         this.id = id;
         this.placedObjectIndex = placedObjectIndex;
         this.kindIndex = kindOfIndex;

@@ -16,7 +16,7 @@ public class SoundManager : MonoBehaviour
     private AudioSource audioSource;
 
     private static Dictionary<SoundType, float> lastPlayTime = new();
-    private static float soundCooldown = 0.1f; // 100ms 쿨타임
+    private static float soundCooldown = 0.01f; // 10ms 쿨타임
     
     private void Awake()
     {
@@ -35,11 +35,11 @@ public class SoundManager : MonoBehaviour
     {
         TryGetComponent(out audioSource);
     }
-    
 
+    /*
     public static void PlaySound(SoundType sound, float volume = 1)
     {
-        float now = Time.time;
+        float now = Time.unscaledDeltaTime;
         if (lastPlayTime.TryGetValue(sound, out float lastTime))
         {
             if (now - lastTime < soundCooldown)
@@ -48,9 +48,10 @@ public class SoundManager : MonoBehaviour
         lastPlayTime[sound] = now;
         Instance.audioSource.PlayOneShot(Instance.soundList[(int)sound], volume);
     }
+    */
 
-    /*public static void PlaySound(SoundType sound, float volume = 1)
+    public static void PlaySound(SoundType sound, float volume = 1)
     {
-        instance.audioSource.PlayOneShot(instance.soundList[(int)sound], volume);
-    }*/
+        Instance.audioSource.PlayOneShot(Instance.soundList[(int)sound], volume);
+    }
 }

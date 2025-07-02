@@ -48,7 +48,6 @@ public class CameraCon : MonoBehaviour
 
         //카메라 값 초기화
         offset = cam.transform.position;
-        Debug.Log($"{offset} 여기");
         offset.y = startHeight;
         
         //target.transform.position = offset;
@@ -160,6 +159,8 @@ public class CameraCon : MonoBehaviour
     
     public void SetOffset(int offsetY)
     {
+        Debug.Log("SetOffset 작동 ");
+
         // 기존 Tween이 있으면 종료
         if (smoothTweener != null)
         {
@@ -170,7 +171,7 @@ public class CameraCon : MonoBehaviour
         smoothTweener = DOVirtual.Float(offset.y, offsetY, duration, value =>
         {
             offset.y = value;
-        }).SetEase(Ease.InOutQuad).OnComplete(() =>
+        }).SetEase(Ease.InOutQuad).SetUpdate(true).OnComplete(() =>
         {
             smoothTweener = null; // 완료 시 Tween 정리
         });
