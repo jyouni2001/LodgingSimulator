@@ -15,8 +15,8 @@ public class SoundManager : MonoBehaviour
     [SerializeField] private AudioClip[] soundList;
     private AudioSource audioSource;
 
-    private static Dictionary<SoundType, float> lastPlayTime = new();
-    private static float soundCooldown = 0.01f; // 10ms 쿨타임
+    private Dictionary<SoundType, float> lastPlayTime = new();
+    private float soundCooldown = 0.01f; // 10ms 쿨타임
     
     private void Awake()
     {
@@ -52,6 +52,7 @@ public class SoundManager : MonoBehaviour
 
     public static void PlaySound(SoundType sound, float volume = 1)
     {
+        if(!Instance.audioSource.isPlaying)
         Instance.audioSource.PlayOneShot(Instance.soundList[(int)sound], volume);
     }
 }
