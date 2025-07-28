@@ -59,6 +59,9 @@ namespace JY
             if (Instance == null)
             {
                 Instance = this;
+                
+                // ServiceLocator에 자동 등록
+                ServiceLocator.RegisterService<ReputationSystem>(this);
             }
             else
             {
@@ -280,6 +283,37 @@ namespace JY
             if (showImportantLogsOnly && !isImportant) return;
             
             Debug.Log($"[ReputationSystem] {message}");
+        }
+        
+        #endregion
+        
+        #region 메모리 관리
+        
+        /// <summary>
+        /// 메모리 정리 (메모리 누수 방지)
+        /// </summary>
+        private void OnDestroy()
+        {
+            try
+            {
+                // 로그 리스트 정리
+                reputationLogs?.Clear();
+                
+                // 싱글톤 인스턴스 정리
+                if (Instance == this)
+                {
+                    Instance = null;
+                }
+                
+                // UI 참조 정리
+                reputationText = null;
+                
+                DebugLog("ReputationSystem 메모리 정리 완료", true);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"ReputationSystem 정리 중 오류: {ex.Message}");
+            }
         }
         
         #endregion

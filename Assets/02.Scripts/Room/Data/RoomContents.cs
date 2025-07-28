@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace JY
+namespace JY.Room
 {
     /// <summary>
     /// 방 내용물 관리 클래스

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-namespace JY
+namespace JY.Room
 {
     /// <summary>
     /// 방 관리 및 요금 청구를 담당하는 매니저 클래스
@@ -58,7 +58,7 @@ namespace JY
                 reputationSystem = ReputationSystem.Instance;
                 if (reputationSystem == null)
                 {
-                    reputationSystem = FindObjectOfType<ReputationSystem>();
+                    reputationSystem = ServiceLocator.ReputationSystem;
                 }
             }
             

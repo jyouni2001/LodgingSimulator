@@ -25,6 +25,9 @@ public class CounterManager : MonoBehaviour
         counterTransform = transform;
         // 카운터 정면 위치 계산 (카운터의 forward 방향으로 2유닛)
         counterFront = counterTransform.position + counterTransform.forward * counterServiceDistance;
+        
+        // ServiceLocator에 자동 등록
+        ServiceLocator.RegisterService<CounterManager>(this);
     }
 
     // 대기열에 합류 요청 (방 배정/방 사용완료 보고 모두 동일 대기열 사용)
@@ -274,6 +277,33 @@ public class CounterManager : MonoBehaviour
                 Gizmos.DrawLine(queuePos, nextPos);
             }
             }
+        }
+    }
+    
+    /// <summary>
+    /// 메모리 정리 (메모리 누수 방지)
+    /// </summary>
+    private void OnDestroy()
+    {
+        try
+        {
+            // 대기열 완전 정리
+            if (waitingQueue != null)
+            {
+                waitingQueue.Clear();
+            }
+            
+            // 현재 서비스 중인 AI 정리
+            currentServingAgent = null;
+            
+            // 참조 정리
+            counterTransform = null;
+            
+            Debug.Log("[CounterManager] 메모리 정리 완료");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"CounterManager 정리 중 오류: {ex.Message}");
         }
     }
 }

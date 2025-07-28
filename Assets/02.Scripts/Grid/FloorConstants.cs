@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace JY
+namespace JY.Grid
 {
     /// <summary>
     /// 다층 건물 시스템을 위한 층 관련 상수 정의

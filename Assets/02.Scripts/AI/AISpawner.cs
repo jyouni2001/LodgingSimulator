@@ -54,6 +54,9 @@ namespace JY
             if (Instance == null)
             {
                 Instance = this;
+                
+                // ServiceLocator에 자동 등록
+                ServiceLocator.RegisterService<AISpawner>(this);
             }
             else
             {
@@ -332,6 +335,63 @@ namespace JY
             if (showImportantLogsOnly && !isImportant) return;
             
             Debug.Log($"[AISpawner] {message}");
+        }
+        
+        #endregion
+        
+        #region 메모리 관리
+        
+        /// <summary>
+        /// 메모리 정리 (메모리 누수 방지)
+        /// </summary>
+        private void OnDestroy()
+        {
+            try
+            {
+                // 모든 활성 AI 디스폰
+                if (activeAIs != null)
+                {
+                    foreach (var ai in activeAIs.ToArray())
+                    {
+                        if (ai != null)
+                        {
+                            DespawnAI(ai);
+                        }
+                    }
+                    activeAIs.Clear();
+                }
+                
+                // 풀 정리
+                if (aiPool != null)
+                {
+                    while (aiPool.Count > 0)
+                    {
+                        var ai = aiPool.Dequeue();
+                        if (ai != null)
+                        {
+                            Destroy(ai);
+                        }
+                    }
+                }
+                
+                // 스폰 시간 리스트 정리
+                spawnTimes?.Clear();
+                
+                // 싱글톤 인스턴스 정리
+                if (Instance == this)
+                {
+                    Instance = null;
+                }
+                
+                // 참조 정리
+                timeSystem = null;
+                
+                DebugLog("AISpawner 메모리 정리 완료", true);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"AISpawner 정리 중 오류: {ex.Message}");
+            }
         }
         
         #endregion

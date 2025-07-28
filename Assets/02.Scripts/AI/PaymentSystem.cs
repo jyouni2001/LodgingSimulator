@@ -49,16 +49,47 @@ namespace JY
         private ReputationSystem reputationSystem;
 
         public static PaymentSystem Instance { get; set; }
+        
         private void Awake()
         {
             // 싱글톤 설정
             if (Instance == null)
             {
                 Instance = this;
+                
+                // ServiceLocator에 자동 등록
+                ServiceLocator.RegisterService<PaymentSystem>(this);
             }
             else
             {
                 Destroy(gameObject);
+            }
+        }
+        
+        /// <summary>
+        /// 메모리 정리 (메모리 누수 방지)
+        /// </summary>
+        private void OnDestroy()
+        {
+            try
+            {
+                // 결제 대기열 정리
+                paymentQueue?.Clear();
+                
+                // 싱글톤 인스턴스 정리
+                if (Instance == this)
+                {
+                    Instance = null;
+                }
+                
+                // 참조 정리
+                reputationSystem = null;
+                
+                DebugLog("PaymentSystem 메모리 정리 완료", true);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"PaymentSystem 정리 중 오류: {ex.Message}");
             }
         }
 
@@ -68,7 +99,7 @@ namespace JY
             reputationSystem = ReputationSystem.Instance;
             if (reputationSystem == null)
             {
-                reputationSystem = FindObjectOfType<ReputationSystem>();
+                reputationSystem = ServiceLocator.ReputationSystem;
             }
             
             DebugLog("결제 시스템 초기화 완료", true);

@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using ZLinq;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using JY;
 
-public class PlacementSystem : MonoBehaviour
+public class PlacementSystem : MonoBehaviour, IPlacementSystem
 {
     public static PlacementSystem Instance { get; set; }
 
@@ -1408,5 +1410,52 @@ public class PlacementSystem : MonoBehaviour
             renderer.material.color = Color.white; // 기본 색상으로 복원
         }
     }
+    #endregion
+    
+    #region Room 시스템 연동 메서드
+    
+    /// <summary>
+    /// FloorLock 상태 반환 (Room 시스템 연동용)
+    /// </summary>
+    public bool GetFloorLock()
+    {
+        return FloorLock;
+    }
+    
+    /// <summary>
+    /// 현재 활성화된 층 반환
+    /// </summary>
+    public int GetCurrentActiveFloor()
+    {
+        // 4층부터 역순으로 확인하여 가장 높은 활성 층 반환
+        if (plane4f != null && plane4f.Any(plane => plane != null && plane.activeSelf))
+            return 4;
+        if (plane3f != null && plane3f.Any(plane => plane != null && plane.activeSelf))
+            return 3;
+        if (plane2f != null && plane2f.Any(plane => plane != null && plane.activeSelf))
+            return 2;
+        
+        return 1; // 기본값
+    }
+    
+    /// <summary>
+    /// 특정 층의 활성화 상태 확인
+    /// </summary>
+    public bool IsFloorActive(int floor)
+    {
+        List<GameObject> planes = floor switch
+        {
+            1 => plane1f,
+            2 => plane2f,
+            3 => plane3f,
+            4 => plane4f,
+            _ => null
+        };
+        
+        if (planes == null) return false;
+        
+        return planes.Any(plane => plane != null && plane.activeSelf);
+    }
+    
     #endregion
 }
