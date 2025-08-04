@@ -1,7 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ZLinq;
-
+// 이것은 옛날 룸 감지 코드 입니다. 참고용으로 남겨둡니다.
+    
 namespace JY
 {
     /// <summary>

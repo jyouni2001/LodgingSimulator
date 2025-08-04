@@ -6,6 +6,9 @@ using System.Linq;
 using JY;
 using UnityEngine.Animations;
 
+
+// 이것은 옛날 ai 코드 입니다. 참고용으로 남겨둡니다.
+
 namespace JY
 {
 public interface IRoomDetector
