@@ -97,6 +97,9 @@ namespace JY
                 return;
             }
             
+            // 일차 변경 이벤트 구독
+            timeSystem.OnDayChanged += OnDayChanged;
+            
             DebugLog("TimeSystem 연결 완료", true);
         }
 
@@ -263,6 +266,45 @@ namespace JY
         }
         
         /// <summary>
+        /// 일차 변경 이벤트 핸들러
+        /// </summary>
+        private void OnDayChanged(int newDay)
+        {
+            DebugLog($"일차 변경 감지: {newDay}일차 - 배 스케줄 재생성", true);
+            
+            // 기존 활성 배들 정리
+            ClearActiveShips();
+            
+            // 스케줄 재생성
+            GenerateShipSchedules();
+        }
+        
+        /// <summary>
+        /// 활성 배들 정리
+        /// </summary>
+        private void ClearActiveShips()
+        {
+            foreach (var ship in activeShips)
+            {
+                if (ship != null && ship.gameObject != null)
+                {
+                    shipPool.ReturnShip(ship.gameObject);
+                }
+            }
+            activeShips.Clear();
+            
+            // 모든 스케줄 리셋
+            foreach (var schedule in shipSchedules.Values)
+            {
+                schedule.Reset();
+            }
+            
+            DebugLog("활성 배 정리 완료", showImportantLogsOnly);
+        }
+        
+
+        
+        /// <summary>
         /// 활성 배 상태 업데이트
         /// </summary>
         private void UpdateActiveShips()
@@ -342,8 +384,20 @@ namespace JY
         
         #endregion
         
+        /// <summary>
+        /// 컴포넌트 파괴 시 정리
+        /// </summary>
         private void OnDestroy()
         {
+            // 이벤트 구독 해제
+            if (timeSystem != null)
+            {
+                timeSystem.OnDayChanged -= OnDayChanged;
+            }
+            
+            // 활성 배들 정리
+            ClearActiveShips();
+            
             // 이벤트 정리
             OnShipSpawned = null;
             OnShipDocked = null;

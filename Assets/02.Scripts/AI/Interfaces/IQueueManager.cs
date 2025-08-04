@@ -53,28 +53,28 @@ namespace JY.AI.Interfaces
 
         public bool TryJoinQueue(object agent)
         {
-            if (counterManager == null || !(agent is AIAgent aiAgent))
+            if (counterManager == null || !(agent is AIAgentRefactored aiAgent))
                 return false;
             return counterManager.TryJoinQueue(aiAgent);
         }
 
         public void LeaveQueue(object agent)
         {
-            if (counterManager == null || !(agent is AIAgent aiAgent))
+            if (counterManager == null || !(agent is AIAgentRefactored aiAgent))
                 return;
             counterManager.LeaveQueue(aiAgent);
         }
 
         public bool CanReceiveService(object agent)
         {
-            if (counterManager == null || !(agent is AIAgent aiAgent))
+            if (counterManager == null || !(agent is AIAgentRefactored aiAgent))
                 return false;
             return counterManager.CanReceiveService(aiAgent);
         }
 
         public void StartService(object agent)
         {
-            if (counterManager == null || !(agent is AIAgent aiAgent))
+            if (counterManager == null || !(agent is AIAgentRefactored aiAgent))
                 return;
             counterManager.StartService(aiAgent);
         }

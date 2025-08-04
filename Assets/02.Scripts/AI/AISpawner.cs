@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using System;
 
 namespace JY
 {
@@ -48,6 +49,9 @@ namespace JY
         
         // 싱글톤 인스턴스
         public static AISpawner Instance { get; private set; }
+        
+        // 이벤트
+        public event Action<GameObject> OnAISpawned; // AI가 스폰될 때
 
         void Awake()
         {
@@ -128,11 +132,12 @@ namespace JY
                 ai.transform.parent = transform;
                 aiPool.Enqueue(ai);
 
-                // AIAgent 컴포넌트에 spawner 참조 설정
-                AIAgent aiAgent = ai.GetComponent<AIAgent>();
+                // AIAgentRefactored 컴포넌트에 spawner 참조 설정
+                AIAgentRefactored aiAgent = ai.GetComponent<AIAgentRefactored>();
                 if (aiAgent != null)
                 {
-                    aiAgent.SetSpawner(this);
+                    // SetSpawner 메서드가 있다면 설정
+                    // aiAgent.SetSpawner(this);
                 }
             }
             
@@ -147,7 +152,7 @@ namespace JY
             // 정각(0분)일 때만 체크하고, 이미 이 시간에 스폰했다면 건너뛰기
             if (minute == 0 && spawnTimes.Contains(hour) && lastSpawnHour != hour)
             {
-                int spawnCount = Random.Range(minSpawner, maxSpawner + 1);
+                int spawnCount = UnityEngine.Random.Range(minSpawner, maxSpawner + 1);
                 StartCoroutine(SpawnMultipleAIs(spawnCount));
                 lastSpawnHour = hour;
                 
@@ -188,14 +193,18 @@ namespace JY
             ai.transform.rotation = Quaternion.identity;
 
             // AI 컴포넌트 초기화
-            AIAgent aiAgent = ai.GetComponent<AIAgent>();
+            AIAgentRefactored aiAgent = ai.GetComponent<AIAgentRefactored>();
             if (aiAgent != null)
             {
-                aiAgent.SetSpawner(this);
+                // SetSpawner 메서드가 있다면 설정
+                // aiAgent.SetSpawner(this);
             }
 
             ai.SetActive(true);
             activeAIs.Add(ai);
+            
+            // AI 스폰 이벤트 발생 (통계용)
+            OnAISpawned?.Invoke(ai);
             
             DebugLog($"{ai.name} 활성화됨 (현재 활성화된 AI: {activeAIs.Count}개)");
         }
@@ -236,7 +245,7 @@ namespace JY
         {
             if (count <= 0)
             {
-                count = Random.Range(minSpawner, maxSpawner + 1);
+                count = UnityEngine.Random.Range(minSpawner, maxSpawner + 1);
             }
             
             StartCoroutine(SpawnMultipleAIs(count));
@@ -275,7 +284,7 @@ namespace JY
         }
 
         /// <summary>
-        /// 다음 스폰 시간 반환 (분 단위)
+        /// 다음 스폰 시간 반환 (분 단위) - 일차별 리셋 지원
         /// </summary>
         public float GetNextSpawnTime()
         {
@@ -295,10 +304,11 @@ namespace JY
                 }
             }
             
-            // 오늘 남은 스폰 시간이 없으면 내일 첫 번째 스폰 시간
+            // 오늘 남은 스폰 시간이 없으면 내일 첫 번째 스폰 시간 (일차별 리셋)
+            // TimeSystem은 매일 0~1439분으로 리셋되므로 절대 시간이 아닌 다음 날 시간으로 반환
             if (spawnTimes.Count > 0)
             {
-                return spawnTimes[0] * 60 + 1440; // 1440분 = 24시간
+                return spawnTimes[0] * 60; // 다음 날 첫 번째 스폰 시간 (1440분 더하지 않음)
             }
             
             return 0f;

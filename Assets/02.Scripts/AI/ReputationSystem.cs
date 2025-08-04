@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
+using System;
 
 namespace JY
 {
@@ -45,6 +46,9 @@ namespace JY
         // 싱글톤 인스턴스
         public static ReputationSystem Instance { get; set; }
         
+        // 이벤트
+        public event Action<int, int> OnReputationChanged; // 이전값, 새값
+        
         // 공개 속성
         public int CurrentReputation => currentReputation;
         public string CurrentGrade => GetCurrentGrade();
@@ -82,9 +86,13 @@ namespace JY
         {
             if (amount <= 0) return;
             
+            int oldReputation = currentReputation;
             string prevGrade = GetCurrentGrade();
             currentReputation += amount;
             string newGrade = GetCurrentGrade();
+            
+            // 명성도 변경 이벤트 발생
+            OnReputationChanged?.Invoke(oldReputation, currentReputation);
             
             // 등급이 변경되었는지 확인
             bool gradeChanged = prevGrade != newGrade;
@@ -125,9 +133,13 @@ namespace JY
         {
             if (amount <= 0) return;
             
+            int oldReputation = currentReputation;
             string prevGrade = GetCurrentGrade();
             currentReputation = Mathf.Max(0, currentReputation - amount);
             string newGrade = GetCurrentGrade();
+            
+            // 명성도 변경 이벤트 발생
+            OnReputationChanged?.Invoke(oldReputation, currentReputation);
             
             // 등급이 변경되었는지 확인
             bool gradeChanged = prevGrade != newGrade;
@@ -165,9 +177,13 @@ namespace JY
         /// <param name="amount">설정할 명성도</param>
         public void SetReputation(int amount)
         {
+            int oldReputation = currentReputation;
             string prevGrade = GetCurrentGrade();
             currentReputation = Mathf.Max(0, amount);
             string newGrade = GetCurrentGrade();
+            
+            // 명성도 변경 이벤트 발생
+            OnReputationChanged?.Invoke(oldReputation, currentReputation);
             
             bool gradeChanged = prevGrade != newGrade;
             

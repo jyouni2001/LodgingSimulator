@@ -635,6 +635,74 @@ namespace JY
         /// 외부에서 방 관련 상태 확인용
         /// </summary>
         public bool IsInRoomRelatedState() => stateMachine?.IsInRoomRelatedState() ?? false;
+        
+        /// <summary>
+        /// 대기열 위치 설정 (CounterManager 호환성용)
+        /// </summary>
+        public void SetQueueDestination(Vector3 destination)
+        {
+            if (movementController != null)
+            {
+                movementController.SetDestination(destination);
+                AIDebugLogger.Log(AIName, $"대기열 위치로 이동: {destination}", LogCategory.Movement);
+            }
+            else
+            {
+                AIDebugLogger.LogWarning(AIName, "MovementController가 없어 대기열 위치 설정 불가");
+            }
+        }
+        
+        /// <summary>
+        /// 서비스 완료 알림 (CounterManager 호환성용)
+        /// </summary>
+        public void OnServiceComplete()
+        {
+            AIDebugLogger.Log(AIName, "서비스 완료 알림 받음", LogCategory.General, true);
+            
+            // AIQueueBehavior가 있다면 서비스 완료 처리
+            if (queueBehavior != null)
+            {
+                queueBehavior.OnServiceCompleted();
+            }
+            
+            // 상태머신을 통해 다음 행동 결정
+            if (stateMachine != null)
+            {
+                // 서비스 완료 후 다음 행동 결정
+                DetermineNextBehaviorAfterService();
+            }
+        }
+        
+        /// <summary>
+        /// 서비스 완료 후 다음 행동 결정
+        /// </summary>
+        private void DetermineNextBehaviorAfterService()
+        {
+            var currentHour = timeProvider?.CurrentHour ?? 12;
+            
+            if (HasAssignedRoom)
+            {
+                // 방이 있으면 방으로 이동
+                stateMachine?.TransitionToState(AIStateMachine.AIState.MovingToRoom);
+                StartRoomUsage();
+            }
+            else
+            {
+                // 방이 없으면 시간에 따라 행동 결정
+                if (currentHour >= 17)
+                {
+                    // 17시 이후면 디스폰
+                    stateMachine?.TransitionToState(AIStateMachine.AIState.ReturningToSpawn);
+                    ReturnToPool();
+                }
+                else
+                {
+                    // 배회 상태로 전환
+                    stateMachine?.TransitionToState(AIStateMachine.AIState.Wandering);
+                    TransitionToWandering();
+                }
+            }
+        }
         #endregion
     }
 }

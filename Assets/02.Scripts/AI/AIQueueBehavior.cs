@@ -42,7 +42,7 @@ namespace JY
         /// <summary>
         /// 대기열 행동 시작
         /// </summary>
-        public void StartQueueBehavior(AIAgent agent, AIStateMachine.AIState currentState)
+        public void StartQueueBehavior(AIAgentRefactored agent, AIStateMachine.AIState currentState)
         {
             if (queueCoroutine != null)
             {
@@ -64,7 +64,7 @@ namespace JY
             
             if (isInQueue && counterManager != null)
             {
-                counterManager.LeaveQueue(GetComponent<AIAgent>());
+                counterManager.LeaveQueue(GetComponent<AIAgentRefactored>());
             }
             
             isInQueue = false;
@@ -74,7 +74,7 @@ namespace JY
         /// <summary>
         /// 대기열 행동 코루틴
         /// </summary>
-        private IEnumerator QueueBehaviorCoroutine(AIAgent agent, AIStateMachine.AIState initialState)
+        private IEnumerator QueueBehaviorCoroutine(AIAgentRefactored agent, AIStateMachine.AIState initialState)
         {
             AIDebugLogger.Log(aiName, $"QueueBehavior 시작 - 상태: {initialState}", LogCategory.Queue);
 
@@ -104,7 +104,7 @@ namespace JY
         /// <summary>
         /// 대기열 진입 실패 처리
         /// </summary>
-        private IEnumerator HandleQueueJoinFailure(AIAgent agent, AIStateMachine.AIState currentState)
+        private IEnumerator HandleQueueJoinFailure(AIAgentRefactored agent, AIStateMachine.AIState currentState)
         {
             // ReportingRoomQueue 상태인 경우 재시도
             if (currentState == AIStateMachine.AIState.ReportingRoomQueue)
@@ -123,7 +123,7 @@ namespace JY
         /// <summary>
         /// 서비스 대기
         /// </summary>
-        private IEnumerator WaitForService(AIAgent agent, AIStateMachine.AIState initialState)
+        private IEnumerator WaitForService(AIAgentRefactored agent, AIStateMachine.AIState initialState)
         {
             while (isInQueue)
             {
@@ -132,7 +132,7 @@ namespace JY
                 if (hour == 17 && minute == 0)
                 {
                     AIDebugLogger.LogTimeEvent(aiName, "대기열 대기 중 17시 감지, 즉시 강제 디스폰");
-                    // 강제 디스폰 이벤트 발생 - AIAgent에서 처리
+                    // 강제 디스폰 이벤트 발생 - AIAgentRefactored에서 처리
                     yield break;
                 }
 
@@ -158,7 +158,7 @@ namespace JY
         /// <summary>
         /// 서비스 완료 대기
         /// </summary>
-        private IEnumerator WaitForServiceCompletion(AIAgent agent, AIStateMachine.AIState initialState)
+        private IEnumerator WaitForServiceCompletion(AIAgentRefactored agent, AIStateMachine.AIState initialState)
         {
             while (isWaitingForService)
             {
@@ -173,7 +173,7 @@ namespace JY
                 yield return new WaitForSeconds(serviceWaitCheckInterval);
             }
 
-            // 서비스 완료 후 처리는 AIAgent에서 담당
+            // 서비스 완료 후 처리는 AIAgentRefactored에서 담당
             AIDebugLogger.Log(aiName, "서비스 완료", LogCategory.Queue);
         }
 

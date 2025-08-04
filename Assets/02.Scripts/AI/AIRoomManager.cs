@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using JY.RoomDetection;
 
 namespace JY
 {
@@ -65,10 +66,10 @@ namespace JY
                     roomList.Clear();
                     Debug.Log($"AI {ownerName}: 룸 초기화 시작");
 
-                    var roomDetectors = GameObject.FindObjectsByType<RoomDetector>(FindObjectsSortMode.None);
-                    if (roomDetectors.Length > 0)
-                    {
-                        foreach (var detector in roomDetectors)
+                                var roomDetectors = GameObject.FindObjectsByType<JY.RoomDetection.RoomDetectorSimplified>(FindObjectsSortMode.None);
+            if (roomDetectors.Length > 0)
+            {
+                foreach (var detector in roomDetectors)
                         {
                             detector.ScanForRooms();
                             detector.OnRoomsUpdated += rooms =>

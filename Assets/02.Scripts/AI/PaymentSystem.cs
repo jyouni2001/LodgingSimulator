@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using ZLinq;
+using System;
 
 namespace JY
 {
@@ -47,6 +48,9 @@ namespace JY
         
         // 명성도 시스템 참조
         private ReputationSystem reputationSystem;
+        
+        // 이벤트
+        public event Action<string, int, string> OnPaymentProcessed; // AI이름, 금액, 방ID
 
         public static PaymentSystem Instance { get; set; }
         private void Awake()
@@ -109,6 +113,9 @@ namespace JY
                 totalAmount += payment.amount;
                 payment.isPaid = true;
                 DebugLog($"결제 처리: {payment.aiName}, 방 {payment.roomID}, {payment.amount}원, 명성도: {payment.roomReputation}", showPaymentLogs);
+                
+                // 개별 결제 이벤트 발생
+                OnPaymentProcessed?.Invoke(payment.aiName, payment.amount, payment.roomID);
             }
             
             // 결제된 금액을 플레이어 소지금에 추가

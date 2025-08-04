@@ -67,19 +67,13 @@ namespace JY
         /// </summary>
         private void CheckOldSystemStatus()
         {
-            // 기존 AIAgent 개수 확인
-            var oldAgents = FindObjectsOfType<AIAgent>();
-            oldAICount = oldAgents.Length;
-            Debug.Log($"기존 AIAgent 개수: {oldAICount}개");
+            // 기존 AIAgent 개수 확인 (삭제됨)
+            oldAICount = 0;
+            Debug.Log($"기존 AIAgent 개수: {oldAICount}개 (마이그레이션 완료)");
 
-            // 기존 RoomDetector 확인
-            var oldRoomDetectors = FindObjectsOfType<RoomDetector>();
-            Debug.Log($"기존 RoomDetector 개수: {oldRoomDetectors.Length}개");
-
-            if (oldRoomDetectors.Length > 0)
-            {
-                Debug.Log("⚠️ 기존 RoomDetector가 발견되었습니다. 나중에 비활성화해야 합니다.");
-            }
+            // 기존 RoomDetector 확인 (삭제됨)
+            Debug.Log($"기존 RoomDetector 개수: 0개 (마이그레이션 완료)");
+            Debug.Log("✅ 기존 시스템 정리 완료");
         }
 
         /// <summary>
@@ -137,13 +131,8 @@ namespace JY
         {
             Debug.Log("=== 2단계: 새 RoomDetector 설정 시작 ===");
 
-            // 기존 RoomDetector 비활성화 (삭제하지는 않음)
-            var oldDetectors = FindObjectsOfType<RoomDetector>();
-            foreach (var detector in oldDetectors)
-            {
-                detector.gameObject.SetActive(false);
-                Debug.Log($"기존 RoomDetector '{detector.name}' 비활성화됨");
-            }
+            // 기존 RoomDetector 이미 삭제됨
+            Debug.Log("기존 RoomDetector는 이미 삭제되어 정리 완료");
 
             // 새 RoomDetectorSimplified 생성
             var existing = FindObjectOfType<JY.RoomDetection.RoomDetectorSimplified>();
@@ -169,8 +158,8 @@ namespace JY
         {
             Debug.Log("=== 3단계: AI 프리팹 업데이트 가이드 ===");
             Debug.Log("수동으로 해야 할 작업들:");
-            Debug.Log("1. AI 프리팹을 열어서 AIAgent 컴포넌트를 제거");
-            Debug.Log("2. AIAgentRefactored 컴포넌트를 추가");
+            Debug.Log("1. AI 프리팹에 이미 AIAgentRefactored 컴포넌트가 설정됨");
+            Debug.Log("2. 마이그레이션 완료 상태");
             Debug.Log("3. 필요한 설정값들을 복사");
             Debug.Log("4. AISpawner의 aiPrefab 참조를 업데이트된 프리팹으로 변경");
             Debug.Log("=================================");

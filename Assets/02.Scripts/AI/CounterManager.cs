@@ -14,11 +14,13 @@ public class CounterManager : MonoBehaviour
     public float serviceTime = 5f;            // 서비스 처리 시간
 
     // 통합 대기열 - 방 배정과 방 사용완료 보고를 모두 처리
-    private Queue<AIAgent> waitingQueue = new Queue<AIAgent>();
-    private AIAgent currentServingAgent = null;
+    private Queue<AIAgentRefactored> waitingQueue = new Queue<AIAgentRefactored>();
+    private AIAgentRefactored currentServingAgent = null;
     private Vector3 counterFront;
     private Transform counterTransform;
     private bool isProcessingService = false;
+    
+
 
     void Start()
     {
@@ -28,7 +30,7 @@ public class CounterManager : MonoBehaviour
     }
 
     // 대기열에 합류 요청 (방 배정/방 사용완료 보고 모두 동일 대기열 사용)
-    public bool TryJoinQueue(AIAgent agent)
+    public bool TryJoinQueue(AIAgentRefactored agent)
     {
         Debug.Log($"[CounterManager] 대기열 진입 요청 - AI: {agent.gameObject.name}, 현재 대기 인원: {waitingQueue.Count}/{maxQueueLength}");
         
@@ -45,7 +47,7 @@ public class CounterManager : MonoBehaviour
     }
 
     // AI가 대기열에서 나가기 요청
-    public void LeaveQueue(AIAgent agent)
+    public void LeaveQueue(AIAgentRefactored agent)
     {
         Debug.Log($"[CounterManager] 대기열 나가기 요청 - AI: {agent.gameObject.name}");
         
@@ -61,10 +63,10 @@ public class CounterManager : MonoBehaviour
         Debug.Log($"[CounterManager] AI {agent.gameObject.name}이(가) 대기열에서 나갔습니다. (남은 인원: {waitingQueue.Count}명)");
     }
 
-    private void RemoveFromQueue(Queue<AIAgent> queue, AIAgent agent)
+    private void RemoveFromQueue(Queue<AIAgentRefactored> queue, AIAgentRefactored agent)
     {
         int originalCount = queue.Count;
-        var tempQueue = new Queue<AIAgent>();
+        var tempQueue = new Queue<AIAgentRefactored>();
         bool removed = false;
         
         while (queue.Count > 0)
@@ -115,7 +117,7 @@ public class CounterManager : MonoBehaviour
     }
 
     // 현재 서비스 받을 수 있는지 확인
-    public bool CanReceiveService(AIAgent agent)
+    public bool CanReceiveService(AIAgentRefactored agent)
     {
         bool canReceive = waitingQueue.Count > 0 && waitingQueue.Peek() == agent && !isProcessingService;
         Debug.Log($"[CounterManager] 서비스 가능 확인 - AI: {agent.gameObject.name}, 결과: {canReceive}, 대기열 첫번째: {(waitingQueue.Count > 0 ? waitingQueue.Peek().gameObject.name : "없음")}, 처리 중: {isProcessingService}");
@@ -123,7 +125,7 @@ public class CounterManager : MonoBehaviour
     }
 
     // 서비스 시작
-    public void StartService(AIAgent agent)
+    public void StartService(AIAgentRefactored agent)
     {
         Debug.Log($"[CounterManager] StartService 호출 - AI: {agent.gameObject.name}");
         
@@ -134,6 +136,7 @@ public class CounterManager : MonoBehaviour
             agent.SetQueueDestination(counterFront);
             UpdateQueuePositions();
             StartCoroutine(ServiceCoroutine(agent));
+            
             Debug.Log($"[CounterManager] AI {agent.gameObject.name} 서비스가 시작되었습니다.");
         }
         else
@@ -143,7 +146,7 @@ public class CounterManager : MonoBehaviour
     }
 
     // 서비스 처리 코루틴
-    private IEnumerator ServiceCoroutine(AIAgent agent)
+    private IEnumerator ServiceCoroutine(AIAgentRefactored agent)
     {
         Debug.Log($"[CounterManager] 서비스 시작 - AI: {agent.gameObject.name}, 서비스 시간: {serviceTime}초");
         yield return new WaitForSeconds(serviceTime);
@@ -189,7 +192,7 @@ public class CounterManager : MonoBehaviour
         Debug.Log($"[CounterManager] 강제 대기열 정리 시작 - 정리 전: {waitingQueue.Count}명");
         
         int originalCount = waitingQueue.Count;
-        var cleanQueue = new Queue<AIAgent>();
+        var cleanQueue = new Queue<AIAgentRefactored>();
         
         while (waitingQueue.Count > 0)
         {

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using JY.RoomDetection;
 
 namespace JY
 {
@@ -127,9 +128,9 @@ namespace JY
         }
         
         /// <summary>
-        /// RoomDetector에서 방 정보를 받아 RoomContents를 생성하는 메서드
+        /// RoomDetection 시스템에서 방 정보를 받아 RoomContents를 생성하는 메서드
         /// </summary>
-        public void RegisterRoomFromDetector(RoomDetector.RoomInfo roomInfo, GameObject roomGameObject)
+        public void RegisterRoomFromDetector(RoomInfo roomInfo, GameObject roomGameObject)
         {
             RoomContents roomContents = roomGameObject.GetComponent<RoomContents>();
             if (roomContents == null)
