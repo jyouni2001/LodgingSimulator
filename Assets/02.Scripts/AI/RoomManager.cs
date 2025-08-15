@@ -7,12 +7,26 @@ namespace JY
     /// <summary>
     /// 방 관리 및 요금 청구를 담당하는 매니저 클래스
     /// AI의 방 사용, 결제 처리, 명성도 관리를 통합적으로 처리
+    /// 싱글톤 패턴으로 구현하여 중앙 집중식 방 관리
     /// </summary>
     public class RoomManager : MonoBehaviour
     {
+        // 싱글톤 인스턴스
+        public static RoomManager Instance { get; private set; }
+        
         [Header("방 관리 설정")]
         [Tooltip("모든 방 내용물 관리 컴포넌트")]
         public List<RoomContents> allRooms = new List<RoomContents>();
+        
+        [Header("AI 방 배정 관리")]
+        [Tooltip("AI별 방 배정 정보")]
+        private Dictionary<string, int> aiRoomAssignments = new Dictionary<string, int>();
+        
+        [Tooltip("방별 사용 상태")]
+        private Dictionary<int, bool> roomOccupancy = new Dictionary<int, bool>();
+        
+        // 스레드 안전성을 위한 락 객체
+        private readonly object roomLock = new object();
         
         [Tooltip("방 결제 시스템 참조")]
         public PaymentSystem paymentSystem;
@@ -46,11 +60,27 @@ namespace JY
         [SerializeField] private List<string> paymentLogs = new List<string>();
         
         /// <summary>
+        /// 싱글톤 초기화
+        /// </summary>
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        
+        /// <summary>
         /// 시스템 초기화 및 방 자동 검색
         /// </summary>
         private void Start()
         {
             FindAllRooms();
+            InitializeRoomOccupancy();
             
             // 명성도 시스템이 참조되지 않았다면 자동으로 찾기
             if (reputationSystem == null)
@@ -251,6 +281,156 @@ namespace JY
             return allRooms.Where(r => r.TotalRoomPrice >= minPrice && r.TotalRoomPrice <= maxPrice).ToList();
         }
 
+        /// <summary>
+        /// 방 사용 상태 초기화
+        /// </summary>
+        private void InitializeRoomOccupancy()
+        {
+            lock (roomLock)
+            {
+                roomOccupancy.Clear();
+                for (int i = 0; i < allRooms.Count; i++)
+                {
+                    roomOccupancy[i] = false;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// AI에게 방을 배정합니다 (Thread-Safe)
+        /// </summary>
+        public int TryAssignRoom(string aiName)
+        {
+            lock (roomLock)
+            {
+                // 이미 방이 배정된 AI인지 확인
+                if (aiRoomAssignments.ContainsKey(aiName))
+                {
+                    return aiRoomAssignments[aiName];
+                }
+                
+                // 사용 가능한 방 찾기
+                for (int i = 0; i < allRooms.Count; i++)
+                {
+                    if (!roomOccupancy.ContainsKey(i) || !roomOccupancy[i])
+                    {
+                        // 방 배정
+                        roomOccupancy[i] = true;
+                        aiRoomAssignments[aiName] = i;
+                        
+                        DebugLog($"AI {aiName}에게 방 {i} 배정 완료", true);
+                        return i;
+                    }
+                }
+                
+                // 사용 가능한 방이 없음
+                return -1;
+            }
+        }
+        
+        /// <summary>
+        /// AI의 방 사용을 해제합니다 (Thread-Safe)
+        /// </summary>
+        public void ReleaseRoom(string aiName)
+        {
+            lock (roomLock)
+            {
+                if (aiRoomAssignments.ContainsKey(aiName))
+                {
+                    int roomIndex = aiRoomAssignments[aiName];
+                    roomOccupancy[roomIndex] = false;
+                    aiRoomAssignments.Remove(aiName);
+                    
+                    DebugLog($"AI {aiName}의 방 {roomIndex} 해제 완료", true);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// AI가 현재 배정받은 방 인덱스를 반환합니다
+        /// </summary>
+        public int GetAssignedRoom(string aiName)
+        {
+            lock (roomLock)
+            {
+                return aiRoomAssignments.ContainsKey(aiName) ? aiRoomAssignments[aiName] : -1;
+            }
+        }
+        
+        /// <summary>
+        /// 방이 사용 중인지 확인합니다
+        /// </summary>
+        public bool IsRoomOccupied(int roomIndex)
+        {
+            lock (roomLock)
+            {
+                return roomOccupancy.ContainsKey(roomIndex) && roomOccupancy[roomIndex];
+            }
+        }
+        
+        /// <summary>
+        /// 방 GameObject를 반환합니다
+        /// </summary>
+        public GameObject GetRoomGameObject(int roomIndex)
+        {
+            if (roomIndex >= 0 && roomIndex < allRooms.Count)
+            {
+                return allRooms[roomIndex].gameObject;
+            }
+            return null;
+        }
+        
+        /// <summary>
+        /// 방 Transform을 반환합니다
+        /// </summary>
+        public Transform GetRoomTransform(int roomIndex)
+        {
+            if (roomIndex >= 0 && roomIndex < allRooms.Count)
+            {
+                return allRooms[roomIndex].transform;
+            }
+            return null;
+        }
+        
+        /// <summary>
+        /// 방 Bounds를 반환합니다
+        /// </summary>
+        public Bounds GetRoomBounds(int roomIndex)
+        {
+            if (roomIndex >= 0 && roomIndex < allRooms.Count)
+            {
+                return allRooms[roomIndex].roomBounds;
+            }
+            return new Bounds();
+        }
+        
+        /// <summary>
+        /// 모든 AI 방 배정을 강제로 해제합니다 (17시 디스폰 등에 사용)
+        /// </summary>
+        public void ForceReleaseAllRooms()
+        {
+            lock (roomLock)
+            {
+                aiRoomAssignments.Clear();
+                for (int i = 0; i < allRooms.Count; i++)
+                {
+                    roomOccupancy[i] = false;
+                }
+                DebugLog("모든 방 배정 강제 해제 완료", true);
+            }
+        }
+        
+        /// <summary>
+        /// 정리 메서드
+        /// </summary>
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+        
         /// <summary>
         /// 사용 가능한 방 목록 반환
         /// </summary>

@@ -206,7 +206,7 @@ public class SaveManager : MonoBehaviour
         {
             // 데이터 복원
             if (PlayerWallet.Instance == null) throw new System.Exception("PlayerWallet.Instance is null");
-            PlayerWallet.Instance.money = loadedSaveData.playerMoney;
+            PlayerWallet.Instance.SetMoney(loadedSaveData.playerMoney);
 
             if (PlacementSystem.Instance == null) throw new System.Exception("PlacementSystem.Instance is null");
             PlacementSystem.Instance.currentPurchaseLevel = loadedSaveData.currentPurchaseLevel;

@@ -20,7 +20,6 @@ public class AIAgent : MonoBehaviour
     private NavMeshAgent agent;                    // AI 이동 제어를 위한 네비메시 에이전트
     private RoomManager roomManager;               // 룸 매니저 참조
     private Transform counterPosition;             // 카운터 위치
-    private static List<RoomInfo> roomList = new List<RoomInfo>();  // 동적 룸 정보 리스트
     private Transform spawnPoint;                  // AI 생성/소멸 지점
     private int currentRoomIndex = -1;            // 현재 사용 중인 방 인덱스 (-1은 미사용)
     private AISpawner spawner;                    // AI 스포너 참조
@@ -35,12 +34,13 @@ public class AIAgent : MonoBehaviour
     private string currentDestination = "대기열로 이동 중";  // 현재 목적지 (UI 표시용)
     private bool isBeingServed = false;           // 서비스 받고 있는지 여부
 
-    private static readonly object lockObject = new object();  // 스레드 동기화용 잠금 객체
+    // 코루틴 관리
     private Coroutine wanderingCoroutine;         // 배회 코루틴 참조
     private Coroutine roomUseCoroutine;           // 방 사용 코루틴 참조
     private Coroutine roomWanderingCoroutine;     // 방 내부 배회 코루틴 참조
-
-    private Coroutine useWanderingCoroutine;  // 방 외부 배회 코루틴 참조
+    private Coroutine useWanderingCoroutine;      // 방 외부 배회 코루틴 참조
+    private Coroutine queueBehaviorCoroutine;     // 대기열 행동 코루틴 참조
+    
     private int maxRetries = 3;                   // 위치 찾기 최대 시도 횟수
 
     [SerializeField] private CounterManager counterManager; // CounterManager 참조
@@ -48,44 +48,15 @@ public class AIAgent : MonoBehaviour
     private int lastBehaviorUpdateHour = -1;      // 마지막 행동 업데이트 시간
     private bool isScheduledForDespawn = false;   // 11시 디스폰 예정인지 여부
     
+    // 체크아웃 시간 분산을 위한 개인별 체크아웃 시간
+    private float personalCheckoutTime = -1f;     // 개인별 체크아웃 시간 (9:00-10:00 사이)
+    
     [Header("UI 디버그")]
     [Tooltip("모든 AI 머리 위에 행동 상태 텍스트 표시")]
     [SerializeField] private bool debugUIEnabled = true;
     
-    // 모든 AI가 공유하는 static 변수
-    private static bool globalShowDebugUI = true;
-    #endregion
-
-    #region 룸 정보 클래스
-    private class RoomInfo
-    {
-        public Transform transform;               // 룸의 Transform
-        public bool isOccupied;                   // 룸 사용 여부
-        public float size;                        // 룸 크기
-        public GameObject gameObject;             // 룸 게임 오브젝트
-        public string roomId;                     // 룸 고유 ID
-        public Bounds bounds;                     // 룸의 Bounds
-
-        public RoomInfo(GameObject roomObj)
-        {
-            gameObject = roomObj;
-            transform = roomObj.transform;
-            isOccupied = false;
-
-            var collider = roomObj.GetComponent<Collider>();
-            size = collider != null ? collider.bounds.size.magnitude * 0.3f : 2f;
-            var roomContents = roomObj.GetComponent<RoomContents>();
-            bounds = roomContents != null ? roomContents.roomBounds : (collider != null ? collider.bounds : new Bounds(transform.position, Vector3.one * 2f));
-            if (collider == null)
-            {
-                Debug.LogWarning($"룸 {roomObj.name}에 Collider가 없습니다. 기본 크기(2) 사용.");
-            }
-
-            Vector3 pos = roomObj.transform.position;
-            roomId = $"Room_{pos.x:F0}_{pos.z:F0}";
-            Debug.Log($"룸 ID 생성: {roomId} at {pos}, Bounds: {bounds}");
-        }
-    }
+    // 디버그 UI 표시 여부
+    private bool globalShowDebugUI = true;
     #endregion
 
     #region AI 상태 열거형
@@ -104,27 +75,18 @@ public class AIAgent : MonoBehaviour
     }
     #endregion
 
-    #region 이벤트
-    public delegate void RoomsUpdatedHandler(GameObject[] rooms);
-    private static event RoomsUpdatedHandler OnRoomsUpdated;
-    #endregion
-
     #region 초기화
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void InitializeStatics()
-    {
-        roomList.Clear();
-        OnRoomsUpdated = null;
-    }
 
     void Start()
     {
         if (!InitializeComponents()) return;
-        InitializeRoomsIfEmpty();
         timeSystem = TimeSystem.Instance;
         
         // Inspector 설정을 전역 설정에 반영
         globalShowDebugUI = debugUIEnabled;
+        
+        // 개인별 체크아웃 시간 초기화 (9:00-10:00 사이 랜덤)
+        InitializePersonalCheckoutTime();
         
         DetermineInitialBehavior();
     }
@@ -147,21 +109,19 @@ public class AIAgent : MonoBehaviour
             return false;
         }
 
-        roomManager = FindObjectOfType<RoomManager>();
+        roomManager = RoomManager.Instance;
+        if (roomManager == null)
+        {
+            Debug.LogError($"AI {gameObject.name}: RoomManager.Instance를 찾을 수 없습니다.");
+            Destroy(gameObject);
+            return false;
+        }
+        
         spawnPoint = spawn.transform;
 
-        GameObject counter = GameObject.FindGameObjectWithTag("Counter");
-        counterPosition = counter != null ? counter.transform : null;
-
-        if (counterManager == null)
-        {
-            counterManager = FindObjectOfType<CounterManager>();
-            if (counterManager == null)
-            {
-                Debug.LogWarning($"AI {gameObject.name}: CounterManager를 찾을 수 없습니다.");
-                counterPosition = null;
-            }
-        }
+        // 동적으로 카운터 찾기 - 런타임에 설치된 카운터 감지
+        FindNearestCounter();
+        Debug.Log($"AI {gameObject.name}: InitializeComponents 완료");
 
         if (NavMesh.GetAreaFromName("Ground") == 0)
         {
@@ -170,117 +130,81 @@ public class AIAgent : MonoBehaviour
 
         return true;
     }
-
-    private void InitializeRoomsIfEmpty()
+    
+    /// <summary>
+    /// 가장 가까운 카운터를 찾는 메서드 (동적으로 설치된 카운터 감지)
+    /// </summary>
+    private void FindNearestCounter()
     {
-        lock (lockObject)
+        // Counter 태그를 가진 모든 GameObject 찾기
+        GameObject[] counters = GameObject.FindGameObjectsWithTag("Counter");
+        
+        Debug.Log($"AI {gameObject.name}: Counter 태그 오브젝트 {counters.Length}개 발견");
+        
+        if (counters.Length == 0)
         {
-            if (roomList.Count == 0)
+            Debug.LogWarning($"AI {gameObject.name}: Counter 태그를 가진 오브젝트를 찾을 수 없습니다.");
+            counterPosition = null;
+            return;
+        }
+        
+        // 가장 가까운 카운터 찾기
+        GameObject nearestCounter = null;
+        float minDistance = float.MaxValue;
+        
+        foreach (GameObject counter in counters)
+        {
+            // CounterManager 컴포넌트가 있는지 확인
+            CounterManager counterMgr = counter.GetComponent<CounterManager>();
+            if (counterMgr == null) continue;
+            
+            float distance = Vector3.Distance(transform.position, counter.transform.position);
+            if (distance < minDistance)
             {
-                InitializeRooms();
-                if (OnRoomsUpdated == null)
-                {
-                    OnRoomsUpdated += UpdateRoomList;
-                }
+                minDistance = distance;
+                nearestCounter = counter;
             }
         }
+        
+        if (nearestCounter != null)
+        {
+            counterPosition = nearestCounter.transform;
+            counterManager = nearestCounter.GetComponent<CounterManager>();
+            Debug.Log($"AI {gameObject.name}: 가장 가까운 카운터 발견 - {nearestCounter.name} (거리: {minDistance:F1})");
+            Debug.Log($"AI {gameObject.name}: 카운터 설정 완료 - Position: {counterPosition != null}, Manager: {counterManager != null}");
+        }
+        else
+        {
+            Debug.LogWarning($"AI {gameObject.name}: 유효한 CounterManager를 가진 카운터를 찾을 수 없습니다.");
+            counterPosition = null;
+        }
+    }
+    
+    /// <summary>
+    /// 개인별 체크아웃 시간을 초기화합니다 (9:00-10:00 사이 랜덤)
+    /// </summary>
+    private void InitializePersonalCheckoutTime()
+    {
+        // 9:00(540분)부터 10:00(600분) 사이의 랜덤한 시간
+        float randomMinutes = Random.Range(0f, 60f);
+        personalCheckoutTime = 540f + randomMinutes; // 9시 + 랜덤 분
+    }
+    
+    /// <summary>
+    /// 현재 시간이 개인별 체크아웃 시간인지 확인합니다
+    /// </summary>
+    private bool IsPersonalCheckoutTime()
+    {
+        if (timeSystem == null || personalCheckoutTime < 0) return false;
+        
+        float currentTimeInMinutes = timeSystem.CurrentHour * 60f + timeSystem.CurrentMinute;
+        return Mathf.Abs(currentTimeInMinutes - personalCheckoutTime) < 1f; // 1분 오차 허용
     }
 
     private void DetermineInitialBehavior()
     {
+        Debug.Log($"AI {gameObject.name}: 초기 행동 결정 시작");
         DetermineBehaviorByTime();
-    }
-    #endregion
-
-    #region 룸 관리
-    private void InitializeRooms()
-    {
-        roomList.Clear();
-        Debug.Log($"AI {gameObject.name}: 룸 초기화 시작");
-
-        var roomDetectors = GameObject.FindObjectsByType<RoomDetector>(FindObjectsSortMode.None);
-        if (roomDetectors.Length > 0)
-        {
-            foreach (var detector in roomDetectors)
-            {
-                detector.ScanForRooms();
-                detector.OnRoomsUpdated += rooms =>
-                {
-                    if (rooms != null && rooms.Length > 0)
-                    {
-                        UpdateRoomList(rooms);
-                    }
-                };
-            }
-            Debug.Log($"AI {gameObject.name}: RoomDetector로 룸 감지 시작.");
-        }
-        else
-        {
-            GameObject[] taggedRooms = GameObject.FindGameObjectsWithTag("Room");
-            foreach (GameObject room in taggedRooms)
-            {
-                if (!roomList.Any(r => r.gameObject == room))
-                {
-                    roomList.Add(new RoomInfo(room));
-                }
-            }
-            Debug.Log($"AI {gameObject.name}: 태그로 {roomList.Count}개 룸 발견.");
-        }
-
-        if (roomList.Count == 0)
-        {
-            Debug.LogWarning($"AI {gameObject.name}: 룸을 찾을 수 없습니다!");
-        }
-        else
-        {
-            Debug.Log($"AI {gameObject.name}: {roomList.Count}개 룸 초기화 완료.");
-        }
-    }
-
-    public static void UpdateRoomList(GameObject[] newRooms)
-    {
-        if (newRooms == null || newRooms.Length == 0) return;
-
-        lock (lockObject)
-        {
-            bool isUpdated = false;
-            HashSet<string> processedRoomIds = new HashSet<string>();
-            List<RoomInfo> updatedRoomList = new List<RoomInfo>();
-
-            foreach (GameObject room in newRooms)
-            {
-                if (room != null)
-                {
-                    RoomInfo newRoom = new RoomInfo(room);
-                    if (!processedRoomIds.Contains(newRoom.roomId))
-                    {
-                        processedRoomIds.Add(newRoom.roomId);
-                        var existingRoom = roomList.FirstOrDefault(r => r.roomId == newRoom.roomId);
-                        if (existingRoom != null)
-                        {
-                            newRoom.isOccupied = existingRoom.isOccupied;
-                            updatedRoomList.Add(newRoom);
-                        }
-                        else
-                        {
-                            updatedRoomList.Add(newRoom);
-                            isUpdated = true;
-                        }
-                    }
-                }
-            }
-
-            if (updatedRoomList.Count > 0)
-            {
-                roomList = updatedRoomList;
-                Debug.Log($"룸 리스트 업데이트 완료. 총 룸 수: {roomList.Count}");
-            }
-        }
-    }
-
-    public static void NotifyRoomsUpdated(GameObject[] rooms)
-    {
-        OnRoomsUpdated?.Invoke(rooms);
     }
     #endregion
 
@@ -293,6 +217,8 @@ public class AIAgent : MonoBehaviour
             FallbackBehavior();
             return;
         }
+        
+        Debug.Log($"AI {gameObject.name}: 시간 기반 행동 결정 - {timeSystem.CurrentHour}시 {timeSystem.CurrentMinute}분");
 
         int hour = timeSystem.CurrentHour;
         int minute = timeSystem.CurrentMinute;
@@ -310,7 +236,6 @@ public class AIAgent : MonoBehaviour
             if (currentRoomIndex != -1)
             {
                 TransitionToState(AIState.RoomWandering);
-                Debug.Log($"AI {gameObject.name}: 0~9시, 방 내부 배회.");
             }
             else
             {
@@ -319,11 +244,19 @@ public class AIAgent : MonoBehaviour
         }
         else if (hour >= 9 && hour < 11)
         {
-            // 9:00 ~ 11:00
+            // 9:00 ~ 11:00 - 개인별 체크아웃 시간 적용
             if (currentRoomIndex != -1)
             {
-                TransitionToState(AIState.ReportingRoomQueue);
-                Debug.Log($"AI {gameObject.name}: 9~11시, 방 사용 완료 보고 대기열로 이동.");
+                // 개인별 체크아웃 시간이 되었는지 확인
+                if (IsPersonalCheckoutTime())
+                {
+                    TransitionToState(AIState.ReportingRoomQueue);
+                }
+                else
+                {
+                    // 아직 체크아웃 시간이 아니므로 방에서 대기
+                    TransitionToState(AIState.RoomWandering);
+                }
             }
             else
             {
@@ -339,17 +272,14 @@ public class AIAgent : MonoBehaviour
                 if (randomValue < 0.2f)
                 {
                     TransitionToState(AIState.MovingToQueue);
-                    Debug.Log($"AI {gameObject.name}: 11~17시, 방 없음, 대기열로 이동 (20%).");
                 }
                 else if (randomValue < 0.8f)
                 {
                     TransitionToState(AIState.Wandering);
-                    Debug.Log($"AI {gameObject.name}: 11~17시, 방 없음, 외부 배회 (60%).");
                 }
                 else
                 {
                     TransitionToState(AIState.ReturningToSpawn);
-                    Debug.Log($"AI {gameObject.name}: 11~17시, 방 없음, 디스폰 (20%).");
                 }
             }
             else
@@ -358,12 +288,10 @@ public class AIAgent : MonoBehaviour
                 if (randomValue < 0.5f)
                 {
                     TransitionToState(AIState.UseWandering);
-                    Debug.Log($"AI {gameObject.name}: 11~17시, 방 있음, 방 외부 배회 (50%).");
                 }
                 else
                 {
                     TransitionToState(AIState.RoomWandering);
-                    Debug.Log($"AI {gameObject.name}: 11~17시, 방 있음, 방 내부 배회 (50%).");
                 }
             }
         }
@@ -376,12 +304,10 @@ public class AIAgent : MonoBehaviour
                 if (randomValue < 0.5f)
                 {
                     TransitionToState(AIState.UseWandering);
-                    Debug.Log($"AI {gameObject.name}: 17~0시, 방 있음, 외부 배회 (50%).");
                 }
                 else
                 {
                     TransitionToState(AIState.RoomWandering);
-                    Debug.Log($"AI {gameObject.name}: 17~0시, 방 있음, 방 내부 배회 (50%).");
                 }
             }
             else
@@ -401,11 +327,11 @@ public class AIAgent : MonoBehaviour
         // 방 사용 중인 AI는 디스폰하지 않음
         if (IsInRoomRelatedState())
         {
-            Debug.Log($"AI {gameObject.name}: 17:00, 방 사용 중이므로 디스폰하지 않음 (상태: {currentState}).");
+            // 방 사용 중이므로 디스폰하지 않음
             return;
         }
 
-        Debug.Log($"AI {gameObject.name}: 17:00, 강제 디스폰 시작 (현재 상태: {currentState}).");
+        // 17:00 강제 디스폰 시작
 
         // 모든 코루틴 강제 종료
         CleanupCoroutines();
@@ -416,7 +342,7 @@ public class AIAgent : MonoBehaviour
             counterManager.LeaveQueue(this);
             isInQueue = false;
             isWaitingForService = false;
-            Debug.Log($"AI {gameObject.name}: 17:00, 대기열에서 강제 제거됨.");
+            // 대기열에서 제거
             
             // 대기열 강제 정리는 마지막에 한 번만 호출 (중복 호출 방지)
             counterManager.ForceCleanupQueue();
@@ -425,7 +351,7 @@ public class AIAgent : MonoBehaviour
         // 강제 디스폰
         TransitionToState(AIState.ReturningToSpawn);
         agent.SetDestination(spawnPoint.position);
-        Debug.Log($"AI {gameObject.name}: 17:00, 강제 디스폰 실행.");
+        // 강제 디스폰 실행
     }
 
     /// <summary>
@@ -448,7 +374,7 @@ public class AIAgent : MonoBehaviour
         // 방이 없고 배회 중인 AI들을 11시에 디스폰
         if (currentState == AIState.Wandering && currentRoomIndex == -1)
         {
-            Debug.Log($"AI {gameObject.name}: 11시, 체크아웃 완료 후 디스폰.");
+            // 11시 체크아웃 완료 후 디스폰
             TransitionToState(AIState.ReturningToSpawn);
             agent.SetDestination(spawnPoint.position);
         }
@@ -483,7 +409,7 @@ public class AIAgent : MonoBehaviour
         {
             if (currentState == AIState.UseWandering)
             {
-                Debug.Log($"AI {gameObject.name}: 0시, 방 내부 배회로 전환.");
+                // 0시 방 내부 배회로 전환
                 TransitionToState(AIState.RoomWandering);
             }
         }
@@ -495,7 +421,7 @@ public class AIAgent : MonoBehaviour
             {
                 if (currentState != AIState.UseWandering)
                 {
-                    Debug.Log($"AI {gameObject.name}: {hour}시, 방 외부 배회로 전환 (50%).");
+                    // 방 외부 배회로 전환
                     TransitionToState(AIState.UseWandering);
                 }
             }
@@ -503,7 +429,7 @@ public class AIAgent : MonoBehaviour
             {
                 if (currentState != AIState.RoomWandering)
                 {
-                    Debug.Log($"AI {gameObject.name}: {hour}시, 방 내부 배회로 전환 (50%).");
+                    // 방 내부 배회로 전환
                     TransitionToState(AIState.RoomWandering);
                 }
             }
@@ -512,32 +438,41 @@ public class AIAgent : MonoBehaviour
 
     private void FallbackBehavior()
     {
+        Debug.Log($"AI {gameObject.name}: FallbackBehavior 시작");
+        
+        // 카운터 재검색 시도
         if (counterPosition == null || counterManager == null)
         {
+            Debug.Log($"AI {gameObject.name}: 카운터 재검색 시도");
+            FindNearestCounter();
+        }
+        
+        if (counterPosition == null || counterManager == null)
+        {
+            // 카운터가 없으면 배회 위주 행동
+            Debug.Log($"AI {gameObject.name}: 카운터 없음 - 배회/복귀 선택");
             float randomValue = Random.value;
-            if (randomValue < 0.5f)
+            if (randomValue < 0.7f)
             {
                 TransitionToState(AIState.Wandering);
-                Debug.Log($"AI {gameObject.name}: 카운터 없음, 배회 (50%).");
             }
             else
             {
                 TransitionToState(AIState.ReturningToSpawn);
-                Debug.Log($"AI {gameObject.name}: 카운터 없음, 디스폰 (50%).");
             }
         }
         else
         {
+            // 카운터가 있으면 체크인 시도
+            Debug.Log($"AI {gameObject.name}: 카운터 있음 - 대기열/배회 선택");
             float randomValue = Random.value;
-            if (randomValue < 0.4f)
+            if (randomValue < 0.6f)
             {
-                TransitionToState(AIState.Wandering);
-                Debug.Log($"AI {gameObject.name}: 기본 행동, 배회 (40%).");
+                TransitionToState(AIState.MovingToQueue);
             }
             else
             {
-                TransitionToState(AIState.MovingToQueue);
-                Debug.Log($"AI {gameObject.name}: 기본 행동, 대기열로 이동 (60%).");
+                TransitionToState(AIState.Wandering);
             }
         }
     }
@@ -586,26 +521,26 @@ public class AIAgent : MonoBehaviour
                 // 디스폰 예정 AI는 행동 재결정하지 않음
                 if (isScheduledForDespawn)
                 {
-                    Debug.Log($"[AIAgent] {gameObject.name}: 11시 디스폰 예정이므로 행동 재결정 생략");
+                    // 11시 디스폰 예정이므로 행동 재결정 생략
                     lastBehaviorUpdateHour = hour;
                 }
                 // 중요한 상태가 아닌 경우에만 행동 재결정
                 else if (!IsInCriticalState())
                 {
-                    Debug.Log($"[AIAgent] {gameObject.name}: {hour}시 행동 재결정 시작");
+                    // 행동 재결정 시작
                     DetermineBehaviorByTime();
                     lastBehaviorUpdateHour = hour;
                 }
                 // 방 사용 중인 AI도 매시간 내부/외부 배회 재결정
                 else if (IsInRoomRelatedState())
                 {
-                    Debug.Log($"[AIAgent] {gameObject.name}: {hour}시 방 배회 재결정");
+                    // 방 배회 재결정
                     RedetermineRoomBehavior();
                     lastBehaviorUpdateHour = hour;
                 }
                 else
                 {
-                    Debug.Log($"[AIAgent] {gameObject.name}: {hour}시 중요한 상태로 행동 재결정 생략 (상태: {currentState})");
+                    // 중요한 상태로 행동 재결정 생략
                     lastBehaviorUpdateHour = hour;
                 }
             }
@@ -620,12 +555,12 @@ public class AIAgent : MonoBehaviour
             case AIState.ReportingRoomQueue:
                 break;
             case AIState.MovingToRoom:
-                if (currentRoomIndex != -1 && currentRoomIndex < roomList.Count)
+                if (currentRoomIndex != -1 && roomManager != null)
                 {
-                    Bounds roomBounds = roomList[currentRoomIndex].bounds;
+                    Bounds roomBounds = roomManager.GetRoomBounds(currentRoomIndex);
                     if (!agent.pathPending && agent.remainingDistance < arrivalDistance && roomBounds.Contains(transform.position))
                     {
-                        Debug.Log($"AI {gameObject.name}: 룸 {currentRoomIndex + 1}번 도착.");
+                        // 룸 도착
                         StartCoroutine(UseRoom());
                     }
                 }
@@ -638,7 +573,7 @@ public class AIAgent : MonoBehaviour
             case AIState.ReturningToSpawn:
                 if (!agent.pathPending && agent.remainingDistance < arrivalDistance)
                 {
-                    Debug.Log($"AI {gameObject.name}: 스폰 지점 도착, 디스폰.");
+                    // 스폰 지점 도착, 디스폰
                     ReturnToPool();
                 }
                 break;
@@ -649,7 +584,7 @@ public class AIAgent : MonoBehaviour
     #region 대기열 동작
     private IEnumerator QueueBehavior()
     {
-        Debug.Log($"[AIAgent] {gameObject.name}: QueueBehavior 시작 - 상태: {currentState}, 방 인덱스: {currentRoomIndex}");
+        Debug.Log($"[AIAgent] {gameObject.name}: QueueBehavior 시작");
         
         if (counterManager == null || counterPosition == null)
         {
@@ -668,15 +603,15 @@ public class AIAgent : MonoBehaviour
             yield break;
         }
 
-        Debug.Log($"[AIAgent] {gameObject.name}: 대기열 진입 시도");
+        // 대기열 진입 시도
         if (!counterManager.TryJoinQueue(this))
         {
-            Debug.Log($"[AIAgent] {gameObject.name}: 대기열 진입 실패 - 상태: {currentState}");
+            Debug.Log($"[AIAgent] {gameObject.name}: 대기열 진입 실패");
             
             // ReportingRoomQueue 상태인 경우 재시도
             if (currentState == AIState.ReportingRoomQueue)
             {
-                Debug.Log($"[AIAgent] {gameObject.name}: ReportingRoomQueue 상태이므로 재시도");
+                Debug.Log($"[AIAgent] {gameObject.name}: ReportingRoomQueue 재시도 대기");
                 yield return new WaitForSeconds(Random.Range(2f, 5f));
                 StartCoroutine(QueueBehavior());
                 yield break;
@@ -684,6 +619,7 @@ public class AIAgent : MonoBehaviour
             
             if (currentRoomIndex == -1)
             {
+                // 방 없음, 대안 행동 선택
                 Debug.Log($"[AIAgent] {gameObject.name}: 방 없음, 대안 행동 선택");
                 float randomValue = Random.value;
                 if (randomValue < 0.5f)
@@ -699,68 +635,123 @@ public class AIAgent : MonoBehaviour
             }
             else
             {
-                Debug.Log($"[AIAgent] {gameObject.name}: 방 있음, 재시도");
+                // 방 있음, 재시도
+                Debug.Log($"[AIAgent] {gameObject.name}: 방 있음, 재시도 대기");
                 yield return new WaitForSeconds(Random.Range(1f, 3f));
                 StartCoroutine(QueueBehavior());
             }
             yield break;
         }
 
-        Debug.Log($"[AIAgent] {gameObject.name}: 대기열 진입 성공");
+        // 대기열 진입 성공
         isInQueue = true;
         TransitionToState(currentState == AIState.ReportingRoomQueue ? AIState.ReportingRoomQueue : AIState.WaitingInQueue);
+        Debug.Log($"[AIAgent] {gameObject.name}: 대기열 진입 성공, 상태: {currentState}");
 
-        while (isInQueue)
+        // 대기열 타임아웃 설정 (최대 30초)
+        float queueTimeout = 30f;
+        float queueTimer = 0f;
+        float lastProgressTime = Time.time;
+        
+        while (isInQueue && queueTimer < queueTimeout)
         {
             // 17시 체크 - 대기열에서도 즉시 디스폰
             if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
             {
-                Debug.Log($"AI {gameObject.name}: 대기열 대기 중 17시 감지, 즉시 강제 디스폰.");
+                Debug.Log($"[AIAgent] {gameObject.name}: 17시 감지, 대기열에서 강제 디스폰");
                 Handle17OClockForcedDespawn();
                 yield break;
             }
 
-            if (!agent.pathPending && agent.remainingDistance < arrivalDistance)
+            // 카운터 도착 판정 (단순화)
+            float distanceToTarget = Vector3.Distance(transform.position, targetQueuePosition);
+            bool arrivedAtQueue = distanceToTarget < arrivalDistance;
+            
+            if (arrivedAtQueue)
             {
+                Debug.Log($"[AIAgent] {gameObject.name}: 대기열 위치 도착 (거리: {distanceToTarget:F2})");
+                
                 if (counterManager.CanReceiveService(this))
                 {
-                    Debug.Log($"[AIAgent] {gameObject.name}: 서비스 시작");
+                    Debug.Log($"[AIAgent] {gameObject.name}: 서비스 시작 가능");
+                    // 서비스 시작
                     counterManager.StartService(this);
                     isWaitingForService = true;
+                    lastProgressTime = Time.time; // 진행 시간 업데이트
 
-                    while (isWaitingForService)
+                    // 서비스 대기 타임아웃 설정 (최대 10초)
+                    float serviceWaitTimeout = 10f;
+                    float serviceWaitTimer = 0f;
+
+                    while (isWaitingForService && serviceWaitTimer < serviceWaitTimeout)
                     {
                         // 서비스 대기 중에도 17시 체크
                         if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
                         {
-                            Debug.Log($"AI {gameObject.name}: 서비스 대기 중 17시 감지, 즉시 강제 디스폰.");
+                            Debug.Log($"[AIAgent] {gameObject.name}: 서비스 중 17시 감지, 강제 디스폰");
                             Handle17OClockForcedDespawn();
                             yield break;
                         }
                         yield return new WaitForSeconds(0.1f);
+                        serviceWaitTimer += 0.1f;
                     }
+
+                    // 서비스 대기 타임아웃 처리
+                    if (serviceWaitTimer >= serviceWaitTimeout && isWaitingForService)
+                    {
+                        Debug.LogWarning($"[AIAgent] {gameObject.name}: 서비스 대기 타임아웃 ({serviceWaitTimeout}초), 대기열에서 나감");
+                        isWaitingForService = false;
+                        
+                        // 대기열에서 강제로 나가기
+                        if (counterManager != null)
+                        {
+                            counterManager.LeaveQueue(this);
+                        }
+                        isInQueue = false;
+                        
+                        // 배회 상태로 전환
+                        TransitionToState(AIState.Wandering);
+                        wanderingCoroutine = StartCoroutine(WanderingBehavior());
+                        yield break;
+                    }
+
+                    Debug.Log($"[AIAgent] {gameObject.name}: 서비스 완료, 상태: {currentState}");
 
                     if (currentState == AIState.ReportingRoomQueue)
                     {
-                        Debug.Log($"[AIAgent] {gameObject.name}: ReportingRoomQueue 서비스 완료, ReportRoomVacancy 시작");
+                        // ReportingRoomQueue 서비스 완료
                         StartCoroutine(ReportRoomVacancy());
                     }
-                    else if (currentRoomIndex != -1)
+                    else if (currentRoomIndex >= 0)
                     {
-                        roomList[currentRoomIndex].isOccupied = false;
+                        // RoomManager를 통해 방 해제
+                        if (roomManager != null)
+                        {
+                            roomManager.ReleaseRoom(gameObject.name);
+                        }
                         currentRoomIndex = -1;
                         TransitionToState(AIState.ReturningToSpawn);
                         agent.SetDestination(spawnPoint.position);
                     }
                     else
                     {
+                        // 방 배정 시도
                         if (TryAssignRoom())
                         {
+                            Debug.Log($"[AIAgent] {gameObject.name}: 방 배정 성공, 방 {currentRoomIndex}번으로 이동");
                             TransitionToState(AIState.MovingToRoom);
-                            agent.SetDestination(roomList[currentRoomIndex].transform.position);
+                            if (roomManager != null)
+                            {
+                                Transform roomTransform = roomManager.GetRoomTransform(currentRoomIndex);
+                                if (roomTransform != null)
+                                {
+                                    agent.SetDestination(roomTransform.position);
+                                }
+                            }
                         }
                         else
                         {
+                            Debug.Log($"[AIAgent] {gameObject.name}: 방 배정 실패, 대안 행동 선택");
                             float randomValue = Random.value;
                             if (randomValue < 0.5f)
                             {
@@ -776,38 +767,78 @@ public class AIAgent : MonoBehaviour
                     }
                     break;
                 }
+                else
+                {
+                    // 서비스 받을 수 없음 - 올바른 위치 확인 및 재배치
+                    int queuePosition = counterManager.GetQueuePosition(this);
+                    Debug.Log($"[AIAgent] {gameObject.name}: 대기열에서 대기 중 (위치: {queuePosition})");
+                    
+                    // 내 순서에 맞는 올바른 위치 확인
+                    if (queuePosition > 0)
+                    {
+                        Vector3 correctPosition = counterManager.GetCorrectQueuePosition(queuePosition);
+                        float distanceToCorrectPos = Vector3.Distance(transform.position, correctPosition);
+                        
+                        // 올바른 위치에서 너무 멀리 떨어져 있으면 재배치
+                        if (distanceToCorrectPos > arrivalDistance * 1.5f)
+                        {
+                            Debug.Log($"[AIAgent] {gameObject.name}: 올바른 대기열 위치로 재배치 (현재 거리: {distanceToCorrectPos:F2})");
+                            agent.SetDestination(correctPosition);
+                            targetQueuePosition = correctPosition;
+                            lastProgressTime = Time.time; // 진행 시간 리셋
+                        }
+                    }
+                }
             }
+            else
+            {
+                // 아직 대기열 위치에 도착하지 못함
+                Debug.Log($"[AIAgent] {gameObject.name}: 대기열 위치로 이동 중 (거리: {distanceToTarget:F2}, remaining: {agent.remainingDistance:F2})");
+                
+                // 경로가 막혔거나 너무 오래 걸리는 경우 재설정
+                if (Time.time - lastProgressTime > 10f)
+                {
+                    Debug.LogWarning($"[AIAgent] {gameObject.name}: 대기열 이동 시간 초과, 경로 재설정");
+                    agent.SetDestination(targetQueuePosition);
+                    lastProgressTime = Time.time;
+                }
+            }
+            
             yield return new WaitForSeconds(0.1f);
+            queueTimer += 0.1f;
+        }
+        
+        // 타임아웃 발생 시 대기열에서 나가고 배회
+        if (queueTimer >= queueTimeout)
+        {
+            Debug.LogWarning($"[AIAgent] {gameObject.name}: 대기열 타임아웃 ({queueTimeout}초), 배회로 전환");
+            
+            // 대기열에서 강제로 나가기
+            if (counterManager != null)
+            {
+                counterManager.LeaveQueue(this);
+            }
+            isInQueue = false;
+            isWaitingForService = false;
+            
+            // 배회 상태로 전환
+            TransitionToState(AIState.Wandering);
+            wanderingCoroutine = StartCoroutine(WanderingBehavior());
         }
     }
 
     private bool TryAssignRoom()
     {
-        lock (lockObject)
+        if (roomManager == null) return false;
+        
+        int assignedRoomIndex = roomManager.TryAssignRoom(gameObject.name);
+        if (assignedRoomIndex >= 0)
         {
-            var availableRooms = roomList.Select((room, index) => new { room, index })
-                                         .Where(r => !r.room.isOccupied)
-                                         .Select(r => r.index)
-                                         .ToList();
-
-            if (availableRooms.Count == 0)
-            {
-                Debug.Log($"AI {gameObject.name}: 사용 가능한 룸 없음.");
-                return false;
-            }
-
-            int selectedRoomIndex = availableRooms[Random.Range(0, availableRooms.Count)];
-            if (!roomList[selectedRoomIndex].isOccupied)
-            {
-                roomList[selectedRoomIndex].isOccupied = true;
-                currentRoomIndex = selectedRoomIndex;
-                Debug.Log($"AI {gameObject.name}: 룸 {selectedRoomIndex + 1}번 배정됨.");
-                return true;
-            }
-
-            Debug.Log($"AI {gameObject.name}: 룸 {selectedRoomIndex + 1}번 이미 사용 중.");
-            return false;
+            currentRoomIndex = assignedRoomIndex;
+            return true;
         }
+        
+        return false;
     }
     #endregion
 
@@ -822,7 +853,6 @@ public class AIAgent : MonoBehaviour
 
         currentState = newState;
         currentDestination = GetStateDescription(newState);
-        Debug.Log($"AI {gameObject.name}: 상태 변경: {newState}");
 
         switch (newState)
         {
@@ -831,12 +861,16 @@ public class AIAgent : MonoBehaviour
                 break;
             case AIState.MovingToQueue:
             case AIState.ReportingRoomQueue:
-                StartCoroutine(QueueBehavior());
+                queueBehaviorCoroutine = StartCoroutine(QueueBehavior());
                 break;
             case AIState.MovingToRoom:
-                if (currentRoomIndex != -1)
+                if (currentRoomIndex != -1 && roomManager != null)
                 {
-                    agent.SetDestination(roomList[currentRoomIndex].transform.position);
+                    Transform roomTransform = roomManager.GetRoomTransform(currentRoomIndex);
+                    if (roomTransform != null)
+                    {
+                        agent.SetDestination(roomTransform.position);
+                    }
                 }
                 break;
             case AIState.ReturningToSpawn:
@@ -876,65 +910,56 @@ public class AIAgent : MonoBehaviour
         float roomUseTime = Random.Range(25f, 35f);
         float elapsedTime = 0f;
 
-        if (currentRoomIndex < 0 || currentRoomIndex >= roomList.Count)
+        if (currentRoomIndex < 0 || roomManager == null)
         {
-            Debug.LogError($"AI {gameObject.name}: 잘못된 룸 인덱스 {currentRoomIndex}.");
+            Debug.LogError($"AI {gameObject.name}: 잘못된 룸 인덱스 {currentRoomIndex} 또는 RoomManager 없음.");
             StartCoroutine(ReportRoomVacancy());
             yield break;
         }
 
-        var room = roomList[currentRoomIndex].gameObject.GetComponent<RoomContents>();
-        if (roomManager != null && room != null)
+        GameObject roomGameObject = roomManager.GetRoomGameObject(currentRoomIndex);
+        if (roomGameObject != null)
         {
-            roomManager.ReportRoomUsage(gameObject.name, room);
+            var room = roomGameObject.GetComponent<RoomContents>();
+            if (room != null)
+            {
+                roomManager.ReportRoomUsage(gameObject.name, room);
+            }
         }
 
         // TransitionToState(AIState.UsingRoom);
         TransitionToState(AIState.UseWandering);
 
-        Debug.Log($"AI {gameObject.name}: 룸 {currentRoomIndex + 1}번 사용 시작.");
+        // 룸 사용 시작
         while (elapsedTime < roomUseTime && agent.isOnNavMesh)
         {
             yield return new WaitForSeconds(Random.Range(2f, 5f));
             elapsedTime += Random.Range(2f, 5f);
         }
 
-        Debug.Log($"AI {gameObject.name}: 룸 {currentRoomIndex + 1}번 사용 완료.");
+        // 룸 사용 완료
         DetermineBehaviorByTime();
     }
 
     private IEnumerator ReportRoomVacancy()
     {
         TransitionToState(AIState.ReportingRoom);
-        int reportingRoomIndex = currentRoomIndex;
-        Debug.Log($"[AIAgent] AI {gameObject.name}: 룸 {reportingRoomIndex + 1}번 사용 완료 보고 시작.");
-
-        lock (lockObject)
+        
+        // RoomManager를 통해 방 해제
+        if (roomManager != null && currentRoomIndex >= 0)
         {
-            if (reportingRoomIndex >= 0 && reportingRoomIndex < roomList.Count)
-            {
-                roomList[reportingRoomIndex].isOccupied = false;
-                currentRoomIndex = -1;
-                Debug.Log($"[AIAgent] 룸 {reportingRoomIndex + 1}번 비워짐.");
-            }
-        }
-
-        var roomManager = FindObjectOfType<RoomManager>();
-        if (roomManager != null)
-        {
-            Debug.Log($"[AIAgent] RoomManager 발견. ProcessRoomPayment 호출 - AI: {gameObject.name}");
+            roomManager.ReleaseRoom(gameObject.name);
             int amount = roomManager.ProcessRoomPayment(gameObject.name);
-            Debug.Log($"[AIAgent] AI {gameObject.name}: 룸 결제 완료, 금액: {amount}원");
+            currentRoomIndex = -1;
         }
         else
         {
-            Debug.LogError($"[AIAgent] AI {gameObject.name}: RoomManager를 찾을 수 없습니다!");
+            Debug.LogError($"[AIAgent] AI {gameObject.name}: RoomManager를 찾을 수 없거나 잘못된 방 인덱스입니다!");
         }
 
         if (timeSystem.CurrentHour >= 9 && timeSystem.CurrentHour < 11)
         {
             // 9-11시 체크아웃 후에는 배회하다가 11시에 디스폰 예정
-            Debug.Log($"AI {gameObject.name}: 9-11시 체크아웃 완료, 11시 디스폰 예정으로 설정.");
             isScheduledForDespawn = true; // 디스폰 예정 플래그 설정
             TransitionToState(AIState.Wandering);
             wanderingCoroutine = StartCoroutine(WanderingBehaviorWithDespawn());
@@ -954,14 +979,13 @@ public class AIAgent : MonoBehaviour
         float wanderingTime = Random.Range(20f, 40f); // 배회 시간 증가
         float elapsedTime = 0f;
         
-        Debug.Log($"AI {gameObject.name}: 넓은 범위 배회 시작 (시간: {wanderingTime:F1}초)");
+        // 넓은 범위 배회 시작
 
         while (currentState == AIState.Wandering && elapsedTime < wanderingTime)
         {
             // 17시 체크 - 배회 중에도 즉시 디스폰
             if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
             {
-                Debug.Log($"AI {gameObject.name}: 배회 중 17시 감지, 즉시 강제 디스폰.");
                 Handle17OClockForcedDespawn();
                 yield break;
             }
@@ -985,14 +1009,14 @@ public class AIAgent : MonoBehaviour
             {
                 agent.SetDestination(validPosition);
                 foundValidPosition = true;
-                Debug.Log($"AI {gameObject.name}: 넓은 범위 배회 성공 - 거리: {Vector3.Distance(currentPos, validPosition):F1}");
+                // 넓은 범위 배회 성공
             }
             else
             {
                 // 방을 피하지 못한 경우 기본 방식으로 시도
                 WanderOnGround();
                 foundValidPosition = true;
-                Debug.Log($"AI {gameObject.name}: 기본 배회 사용");
+                // 기본 배회 사용
             }
             
             if (foundValidPosition)
@@ -1005,14 +1029,14 @@ public class AIAgent : MonoBehaviour
                 {
                     if (moveTimer >= moveTimeout)
                     {
-                        Debug.Log($"AI {gameObject.name}: 이동 타임아웃, 새로운 목적지 설정");
+                        // 이동 타임아웃, 새로운 목적지 설정
                         break;
                     }
                     
                     // 17시 체크
                     if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
                     {
-                        Debug.Log($"AI {gameObject.name}: 이동 중 17시 감지, 즉시 강제 디스폰.");
+                        // 17시 감지, 즉시 강제 디스폰
                         Handle17OClockForcedDespawn();
                         yield break;
                     }
@@ -1034,7 +1058,7 @@ public class AIAgent : MonoBehaviour
                     // 대기 중에도 17시 체크
                     if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
                     {
-                        Debug.Log($"AI {gameObject.name}: 배회 대기 중 17시 감지, 즉시 강제 디스폰.");
+                        // 17시 감지, 즉시 강제 디스폰
                         Handle17OClockForcedDespawn();
                         yield break;
                     }
@@ -1057,7 +1081,7 @@ public class AIAgent : MonoBehaviour
             yield break;
         }
 
-        Debug.Log($"AI {gameObject.name}: 배회 완료, 다음 행동 결정");
+        // 배회 완료, 다음 행동 결정
         DetermineBehaviorByTime();
     }
 
@@ -1066,14 +1090,14 @@ public class AIAgent : MonoBehaviour
     /// </summary>
     private IEnumerator WanderingBehaviorWithDespawn()
     {
-        Debug.Log($"AI {gameObject.name}: 9-11시 체크아웃 후 배회 시작, 11시에 디스폰 예정.");
+        // 9-11시 체크아웃 후 배회 시작
         
         while (currentState == AIState.Wandering)
         {
             // 11시가 되면 즉시 디스폰
             if (timeSystem != null && timeSystem.CurrentHour >= 11)
             {
-                Debug.Log($"AI {gameObject.name}: 11시 도달, 체크아웃 완료 AI 디스폰.");
+                // 11시 도달, 체크아웃 완료 AI 디스폰
                 isScheduledForDespawn = false; // 플래그 리셋
                 TransitionToState(AIState.ReturningToSpawn);
                 agent.SetDestination(spawnPoint.position);
@@ -1083,7 +1107,7 @@ public class AIAgent : MonoBehaviour
             // 17시 체크도 유지
             if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
             {
-                Debug.Log($"AI {gameObject.name}: 배회 중 17시 감지, 즉시 강제 디스폰.");
+                // 17시 감지, 즉시 강제 디스폰
                 isScheduledForDespawn = false; // 플래그 리셋
                 Handle17OClockForcedDespawn();
                 yield break;
@@ -1102,7 +1126,7 @@ public class AIAgent : MonoBehaviour
                 // 11시 체크
                 if (timeSystem != null && timeSystem.CurrentHour >= 11)
                 {
-                    Debug.Log($"AI {gameObject.name}: 대기 중 11시 도달, 체크아웃 완료 AI 디스폰.");
+                    // 11시 도달, 체크아웃 완료 AI 디스폰
                     isScheduledForDespawn = false; // 플래그 리셋
                     TransitionToState(AIState.ReturningToSpawn);
                     agent.SetDestination(spawnPoint.position);
@@ -1112,7 +1136,7 @@ public class AIAgent : MonoBehaviour
                 // 17시 체크
                 if (timeSystem != null && timeSystem.CurrentHour == 17 && timeSystem.CurrentMinute == 0)
                 {
-                    Debug.Log($"AI {gameObject.name}: 대기 중 17시 감지, 즉시 강제 디스폰.");
+                    // 17시 감지, 즉시 강제 디스폰
                     isScheduledForDespawn = false; // 플래그 리셋
                     Handle17OClockForcedDespawn();
                     yield break;
@@ -1123,14 +1147,14 @@ public class AIAgent : MonoBehaviour
 
     private IEnumerator UseWanderingBehavior()
     {
-        if (currentRoomIndex < 0 || currentRoomIndex >= roomList.Count)
+        if (currentRoomIndex < 0 || roomManager == null)
         {
-            Debug.LogError($"AI {gameObject.name}: 잘못된 룸 인덱스 {currentRoomIndex}.");
+            Debug.LogError($"AI {gameObject.name}: 잘못된 룸 인덱스 {currentRoomIndex} 또는 RoomManager 없음.");
             DetermineBehaviorByTime();
             yield break;
         }
 
-        Debug.Log($"AI {gameObject.name}: 방 {currentRoomIndex + 1}번 외부 배회 시작");
+        // 방 외부 배회 시작
 
         while (currentState == AIState.UseWandering && agent.isOnNavMesh)
         {
@@ -1151,14 +1175,14 @@ public class AIAgent : MonoBehaviour
             if (TryGetWanderingPositionAvoidingRooms(targetPoint, 10f, groundMask, out Vector3 validPosition))
             {
                 agent.SetDestination(validPosition);
-                Debug.Log($"AI {gameObject.name}: 방 외부 배회 - 거리: {Vector3.Distance(currentPos, validPosition):F1}");
+                // 방 외부 배회
                 
                 // 목적지까지 이동 대기
                 yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance < arrivalDistance);
             }
             else
             {
-                Debug.Log($"AI {gameObject.name}: 방 외부 배회 위치를 찾지 못함, 기본 배회 사용");
+                // 방 외부 배회 위치를 찾지 못함, 기본 배회 사용
                 WanderOnGround();
             }
 
@@ -1169,9 +1193,9 @@ public class AIAgent : MonoBehaviour
 
     private IEnumerator RoomWanderingBehavior()
     {
-        if (currentRoomIndex < 0 || currentRoomIndex >= roomList.Count)
+        if (currentRoomIndex < 0 || roomManager == null)
         {
-            Debug.LogError($"AI {gameObject.name}: 잘못된 룸 인덱스 {currentRoomIndex}.");
+            Debug.LogError($"AI {gameObject.name}: 잘못된 룸 인덱스 {currentRoomIndex} 또는 RoomManager 없음.");
             DetermineBehaviorByTime();
             yield break;
         }
@@ -1179,7 +1203,7 @@ public class AIAgent : MonoBehaviour
         float wanderingTime = Random.Range(15f, 30f);
         float elapsedTime = 0f;
         
-        Debug.Log($"AI {gameObject.name}: 방 {currentRoomIndex + 1}번 내부 배회 시작");
+        // 방 내부 배회 시작
 
         while (currentState == AIState.RoomWandering && elapsedTime < wanderingTime && agent.isOnNavMesh)
         {
@@ -1189,7 +1213,7 @@ public class AIAgent : MonoBehaviour
             if (TryGetRoomWanderingPosition(currentRoomIndex, out Vector3 roomPosition))
             {
                 agent.SetDestination(roomPosition);
-                Debug.Log($"AI {gameObject.name}: 방 내부 배회 - 위치: {roomPosition}");
+                // 방 내부 배회
                 
                 // 목적지까지 이동 대기
                 yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance < arrivalDistance);
@@ -1197,11 +1221,15 @@ public class AIAgent : MonoBehaviour
             else
             {
                 // 방 내부 위치를 찾지 못한 경우 기존 방식 사용
-                Vector3 roomCenter = roomList[currentRoomIndex].transform.position;
-                float roomSize = roomList[currentRoomIndex].size * 0.5f; // 방 크기를 줄여서 확실히 내부에 위치
-                if (TryGetValidPosition(roomCenter, roomSize, NavMesh.AllAreas, out Vector3 fallbackPos))
+                Transform roomTransform = roomManager.GetRoomTransform(currentRoomIndex);
+                if (roomTransform != null)
                 {
-                    agent.SetDestination(fallbackPos);
+                    Vector3 roomCenter = roomTransform.position;
+                    float roomSize = 2f; // 기본 크기 사용
+                    if (TryGetValidPosition(roomCenter, roomSize, NavMesh.AllAreas, out Vector3 fallbackPos))
+                    {
+                        agent.SetDestination(fallbackPos);
+                    }
                 }
             }
 
@@ -1210,7 +1238,7 @@ public class AIAgent : MonoBehaviour
             elapsedTime += waitTime;
         }
 
-        Debug.Log($"AI {gameObject.name}: 방 내부 배회 완료");
+        // 방 내부 배회 완룼
         DetermineBehaviorByTime();
     }
 
@@ -1235,7 +1263,7 @@ public class AIAgent : MonoBehaviour
         if (TryGetWanderingPositionAvoidingRooms(randomPoint, 15f, groundMask, out Vector3 validPosition))
         {
             agent.SetDestination(validPosition);
-            Debug.Log($"AI {gameObject.name}: 넓은 범위 배회 - 거리: {Vector3.Distance(transform.position, validPosition):F1}");
+            // 넓은 범위 배회
         }
         else
         {
@@ -1261,18 +1289,22 @@ public class AIAgent : MonoBehaviour
             
             if (NavMesh.SamplePosition(testPoint, out NavMeshHit hit, searchRadius, layerMask))
             {
-                // 방과의 거리 체크
+                // 방과의 거리 체크 (RoomManager를 통해)
                 bool tooCloseToRoom = false;
-                foreach (var room in roomList)
+                if (roomManager != null)
                 {
-                    if (room != null && room.gameObject != null)
+                    var availableRooms = roomManager.GetAvailableRooms();
+                    foreach (var room in availableRooms)
                     {
-                        float distanceToRoom = Vector3.Distance(hit.position, room.transform.position);
-                        // 방 크기의 1.5배 이상 떨어져 있어야 함
-                        if (distanceToRoom < room.size * 1.5f)
+                        if (room != null && room.gameObject != null)
                         {
-                            tooCloseToRoom = true;
-                            break;
+                            float distanceToRoom = Vector3.Distance(hit.position, room.transform.position);
+                            // 기본 거리 3유닛 이상 떨어져 있어야 함
+                            if (distanceToRoom < 3f)
+                            {
+                                tooCloseToRoom = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -1295,14 +1327,12 @@ public class AIAgent : MonoBehaviour
     {
         result = Vector3.zero;
         
-        if (roomIndex < 0 || roomIndex >= roomList.Count)
+        if (roomIndex < 0 || roomManager == null)
             return false;
             
-        var room = roomList[roomIndex];
-        if (room == null || room.gameObject == null)
+        Bounds roomBounds = roomManager.GetRoomBounds(roomIndex);
+        if (roomBounds.size == Vector3.zero)
             return false;
-            
-        Bounds roomBounds = room.bounds;
         Vector3 roomCenter = roomBounds.center;
         
         for (int i = 0; i < maxRetries * 3; i++)
@@ -1389,57 +1419,78 @@ public class AIAgent : MonoBehaviour
 
     private void CleanupCoroutines()
     {
-        if (wanderingCoroutine != null)
+        // 모든 코루틴을 안전하게 정리
+        try
         {
-            StopCoroutine(wanderingCoroutine);
-            wanderingCoroutine = null;
+            if (wanderingCoroutine != null)
+            {
+                StopCoroutine(wanderingCoroutine);
+                wanderingCoroutine = null;
+            }
+            if (roomUseCoroutine != null)
+            {
+                StopCoroutine(roomUseCoroutine);
+                roomUseCoroutine = null;
+            }
+            if (roomWanderingCoroutine != null)
+            {
+                StopCoroutine(roomWanderingCoroutine);
+                roomWanderingCoroutine = null;
+            }
+            if (useWanderingCoroutine != null)
+            {
+                StopCoroutine(useWanderingCoroutine);
+                useWanderingCoroutine = null;
+            }
+            if (queueBehaviorCoroutine != null)
+            {
+                StopCoroutine(queueBehaviorCoroutine);
+                queueBehaviorCoroutine = null;
+            }
         }
-        if (roomUseCoroutine != null)
+        catch (System.Exception e)
         {
-            StopCoroutine(roomUseCoroutine);
-            roomUseCoroutine = null;
+            Debug.LogWarning($"AI {gameObject.name}: 코루틴 정리 중 오류 발생: {e.Message}");
         }
-        if (roomWanderingCoroutine != null)
-        {
-            StopCoroutine(roomWanderingCoroutine);
-            roomWanderingCoroutine = null;
-        }
-        if (useWanderingCoroutine != null) // 새로 추가
-        {
-            StopCoroutine(useWanderingCoroutine);
-            useWanderingCoroutine = null;
-        }
+        
+        // 추가 안전 조치: 모든 코루틴 강제 정지
+        StopAllCoroutines();
     }
 
     private void CleanupResources()
     {
-        //Debug.Log($"[AIAgent] {gameObject.name}: CleanupResources 시작");
-        
-        if (currentRoomIndex != -1)
+        try
         {
-            lock (lockObject)
+            // RoomManager를 통해 방 해제
+            if (currentRoomIndex != -1 && roomManager != null)
             {
-                if (currentRoomIndex >= 0 && currentRoomIndex < roomList.Count)
-                {
-                    roomList[currentRoomIndex].isOccupied = false;
-                    //Debug.Log($"AI {gameObject.name} 정리: 룸 {currentRoomIndex + 1}번 반환.");
-                }
+                roomManager.ReleaseRoom(gameObject.name);
                 currentRoomIndex = -1;
             }
+
+            // 상태 초기화
+            isBeingServed = false;
+            isInQueue = false;
+            isWaitingForService = false;
+            isScheduledForDespawn = false;
+            personalCheckoutTime = -1f; // 개인별 체크아웃 시간 리셋
+
+            // 대기열에서 제거
+            if (counterManager != null)
+            {
+                counterManager.LeaveQueue(this);
+            }
+            
+            // NavMeshAgent 경로 초기화
+            if (agent != null && agent.isOnNavMesh)
+            {
+                agent.ResetPath();
+            }
         }
-
-        isBeingServed = false;
-        isInQueue = false;
-        isWaitingForService = false;
-        isScheduledForDespawn = false; // 디스폰 예정 플래그 리셋
-
-        if (counterManager != null)
+        catch (System.Exception e)
         {
-            counterManager.LeaveQueue(this);
-            //Debug.Log($"[AIAgent] {gameObject.name}: 대기열에서 제거 완료");
+            Debug.LogWarning($"AI {gameObject.name}: 리소스 정리 중 오류 발생: {e.Message}");
         }
-        
-        //Debug.Log($"[AIAgent] {gameObject.name}: CleanupResources 완료");
     }
     #endregion
 
@@ -1468,6 +1519,10 @@ public class AIAgent : MonoBehaviour
         isWaitingForService = false;
         currentRoomIndex = -1;
         lastBehaviorUpdateHour = -1;
+        isScheduledForDespawn = false;
+        
+        // 개인별 체크아웃 시간 재초기화
+        InitializePersonalCheckoutTime();
 
         if (agent != null)
         {
