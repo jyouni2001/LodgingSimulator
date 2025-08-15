@@ -97,9 +97,6 @@ namespace JY
                 return;
             }
             
-            // 날짜 변경 이벤트 구독
-            timeSystem.OnDayChanged += OnDayChanged;
-            
             DebugLog("TimeSystem 연결 완료", true);
         }
 
@@ -345,41 +342,8 @@ namespace JY
         
         #endregion
         
-        /// <summary>
-        /// 날짜 변경 시 호출되는 메서드
-        /// </summary>
-        private void OnDayChanged(int newDay)
-        {
-            DebugLog($"새로운 날 시작: {newDay}일차 - 배 스케줄 재생성", true);
-            
-            // 모든 활성 배를 풀로 반환
-            var shipsToReturn = new List<ShipController>(activeShips);
-            foreach (var ship in shipsToReturn)
-            {
-                if (ship != null && ship.gameObject != null)
-                {
-                    DebugLog($"날짜 변경으로 배 반환: {ship.ShipId}", true);
-                    
-                    // 활성 배 목록에서 제거
-                    activeShips.Remove(ship);
-                    
-                    // 풀로 반환
-                    shipPool.ReturnShip(ship.gameObject);
-                }
-            }
-            
-            // 배 스케줄 재생성
-            GenerateShipSchedules();
-        }
-        
         private void OnDestroy()
         {
-            // TimeSystem 이벤트 구독 해제
-            if (timeSystem != null)
-            {
-                timeSystem.OnDayChanged -= OnDayChanged;
-            }
-            
             // 이벤트 정리
             OnShipSpawned = null;
             OnShipDocked = null;
