@@ -7,10 +7,12 @@ public class GraphicSetting : MonoBehaviour
 {
     public TMP_Dropdown resolutionDropdown;
     public Toggle fullscreenBtn;
+    public Toggle vSyncBtn;
 
     private const string FULLSCREEN_KEY = "FullscreenMode";
     private const string RESOLUTION_WIDTH_KEY = "ResolutionWidth";
     private const string RESOLUTION_HEIGHT_KEY = "ResolutionHeight";
+    private const string VSYNC_KEY = "VSync";
 
     List<Resolution> resolutions = new List<Resolution>();
     int resolutionNum;
@@ -18,6 +20,7 @@ public class GraphicSetting : MonoBehaviour
     {
         InitUI();
         InitFullScreen();
+        InitVSync();
         InitCurrentResolution();
     }
 
@@ -38,6 +41,17 @@ public class GraphicSetting : MonoBehaviour
 
         // 스크린 해상도와 모드 적용
         Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, savedMode);
+    }
+
+    /// <summary>
+    /// 시작 시 저장된 V-Sync 설정 불러오기
+    /// </summary>
+    void InitVSync()
+    {
+        // PlayerPrefs에서 V-Sync 설정 불러오기 (기본값: 0, 비활성화)
+        int savedVSync = PlayerPrefs.GetInt(VSYNC_KEY, 0);
+        QualitySettings.vSyncCount = savedVSync;
+        vSyncBtn.isOn = (savedVSync == 1); // 토글 상태 설정
     }
 
     /// <summary>
@@ -135,8 +149,12 @@ public class GraphicSetting : MonoBehaviour
     /// </summary>
     public void Btn_ChangeResolution()
     {
-        // Toggle의 현재 상태에 따라 화면 모드 결정
+        // 화면 상태 확인
         FullScreenMode mode = fullscreenBtn.isOn ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+
+        // 수직동기화 상태 저장
+        int vSyncValue = vSyncBtn.isOn ? 1 : 0;
+        QualitySettings.vSyncCount = vSyncValue;
 
         // 해상도와 화면 모드 적용
         Screen.SetResolution(resolutions[resolutionNum].width, resolutions[resolutionNum].height, mode);
@@ -145,6 +163,7 @@ public class GraphicSetting : MonoBehaviour
         PlayerPrefs.SetInt(RESOLUTION_WIDTH_KEY, resolutions[resolutionNum].width);
         PlayerPrefs.SetInt(RESOLUTION_HEIGHT_KEY, resolutions[resolutionNum].height);
         PlayerPrefs.SetInt(FULLSCREEN_KEY, (int)mode);
+        PlayerPrefs.SetInt(VSYNC_KEY, vSyncValue);
         PlayerPrefs.Save();
     }
 }

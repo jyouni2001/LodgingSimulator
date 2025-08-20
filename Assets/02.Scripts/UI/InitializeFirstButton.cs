@@ -27,7 +27,6 @@ public class InitializeFirstButton : MonoBehaviour
         if (m_WallButton != null && m_WallButton.transition == Selectable.Transition.SpriteSwap)
         {
             m_WallButton.image.sprite = m_WallButton.spriteState.disabledSprite;
-
         }
     }
 }

@@ -63,14 +63,6 @@ public class SaveManager : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    private void Update()
-    {
-        if(Input.GetKeyDown(KeyCode.P)) 
-        {
-            SaveGame();
-        }
-    }
-
     public async void SaveGame()
     {
         SaveData saveData = new SaveData
