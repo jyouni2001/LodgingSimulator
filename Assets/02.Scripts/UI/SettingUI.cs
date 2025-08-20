@@ -9,7 +9,6 @@ public class SettingUI : MonoBehaviour
     [SerializeField] private GameObject m_VSyne;
     [SerializeField] private GameObject m_FrameRate;
     [SerializeField] private GameObject m_Resolution;
-    [SerializeField] private GameObject m_Gamma;
 
     [Header("Sound")]
     [SerializeField] private GameObject m_BGM;

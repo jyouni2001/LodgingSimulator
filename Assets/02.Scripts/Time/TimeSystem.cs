@@ -50,7 +50,7 @@ namespace JY
         public string CurrentTimeString { get; private set; }
         
         // 날짜 관련 속성들
-        public int CurrentDay { get; private set; }
+        public int CurrentDay { get; set; }
         public string CurrentDateString { get; private set; }
 
         // 싱글톤 인스턴스
@@ -113,6 +113,7 @@ namespace JY
         
         private void Awake()
         {
+            Debug.Log("TimeSystem 초기화 시작");
             InitializeSingleton();
         }
         
@@ -241,7 +242,7 @@ namespace JY
         /// </summary>
         /// <param name="day">설정할 일차 (1 이상)</param>
         public void SetDay(int day)
-        {
+        {            
             currentDay = Mathf.Max(1, day);
             CurrentDay = currentDay;
             UpdateTimeValues();
@@ -256,6 +257,7 @@ namespace JY
         /// <param name="minute">분 (0-59)</param>
         public void SetDateTime(int day, int hour, int minute = 0)
         {
+            Debug.Log($"현재 상태 = {day}");
             currentDay = Mathf.Max(1, day);
             CurrentDay = currentDay;
             currentTime = (hour * 3600f) + (minute * 60f);
