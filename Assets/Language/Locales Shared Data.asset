@@ -83,6 +83,18 @@ MonoBehaviour:
     m_Key: Ingame_DayCounter
     m_Metadata:
       m_Items: []
+  - m_Id: 1495444737396736
+    m_Key: Btn_Yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1495486500081664
+    m_Key: Btn_No
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1495647217422336
+    m_Key: Text_BeforeExit
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

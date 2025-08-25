@@ -4,6 +4,7 @@ using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
+    [SerializeField] private GameObject m_SettingUI;
     [SerializeField] private LoadingSystem loadingSystem;
     private bool isLoading = false;
 
@@ -14,6 +15,11 @@ public class UIController : MonoBehaviour
             isLoading = true;
             loadingSystem.LoadScene("MainScene");            
         }
+    }
+
+    public void Btn_SettingUI()
+    {
+        if (m_SettingUI != null) m_SettingUI.SetActive(!m_SettingUI.activeSelf);
     }
 
     public async void OnLoadGame()

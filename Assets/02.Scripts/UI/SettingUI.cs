@@ -3,8 +3,6 @@ using UnityEngine;
 
 public class SettingUI : MonoBehaviour
 {
-    [SerializeField] private GameObject m_SettingUI;
-
     [Header("Graphic")]
     [SerializeField] private GameObject m_VSyne;
     [SerializeField] private GameObject m_FrameRate;
@@ -23,7 +21,7 @@ public class SettingUI : MonoBehaviour
 
     private void Start()
     {
-        m_SettingUI.SetActive(false);
+        this.gameObject.SetActive(false);
 
         foreach (GameObject obj in m_UIObject)
         {
@@ -37,12 +35,7 @@ public class SettingUI : MonoBehaviour
                 obj.SetActive(true);
             }
         }
-    }
-
-    public void Btn_SettingUI()
-    {
-        if(m_SettingUI != null) m_SettingUI.SetActive(!m_SettingUI.activeSelf);
-    }
+    }    
 
     public void Btn_Graphic()
     {

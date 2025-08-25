@@ -27,9 +27,10 @@ public class InputManager : MonoBehaviour
     [SerializeField] private LayerMask objectLayer;
     public event Action OnClicked, OnExit;
 
-    public GameObject   BuildUI;
-    public GameObject   SettingUI;
-    public Button SettingBtn;
+    public GameObject BuildUI;
+    public GameObject SettingUI;
+    public GameObject SettingUI2;
+    public Button     SettingBtn;
 
     public RaycastHit   hit;
     public RaycastHit   hit2; 
@@ -111,6 +112,7 @@ public class InputManager : MonoBehaviour
     private void OnOffSettingUI()
     {
         SettingUI.SetActive(!SettingUI.activeSelf);
+        if(SettingUI2.activeSelf) SettingUI2.SetActive(false);
     }
 
     private void HandleObjectSelection()

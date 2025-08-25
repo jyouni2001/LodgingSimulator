@@ -10,6 +10,8 @@ public class EscUI : MonoBehaviour
     [SerializeField] private GameObject PreExitUI;
     [SerializeField] private Button m_CheckYesButton;
     [SerializeField] private Button m_CheckNoButton;
+
+    [SerializeField] private GameObject SettingUI;
     private void Start()
     {
         if (PreExitUI != null)
@@ -31,7 +33,7 @@ public class EscUI : MonoBehaviour
 
     private void Btn_Setting()
     {
-
+        SettingUI.SetActive(true);
     }
 
     private void Btn_Exit()
