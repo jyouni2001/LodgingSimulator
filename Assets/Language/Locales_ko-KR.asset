@@ -101,6 +101,22 @@ MonoBehaviour:
       \n\uADF8\uB798\uB3C4 \uC885\uB8CC\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
     m_Metadata:
       m_Items: []
+  - m_Id: 2079048113446912
+    m_Localized: "\uBCBD"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2079078325018624
+    m_Localized: "\uBC14\n\n\uB2E5"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2079109866184704
+    m_Localized: "\uAC00\n\n\uAD6C"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2079125674516480
+    m_Localized: "\uC7A5\n\n\uC2DD"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds:

@@ -100,6 +100,22 @@ MonoBehaviour:
     m_Localized: "You have unsaved progress. \nDo you still want to exit?"
     m_Metadata:
       m_Items: []
+  - m_Id: 2079048113446912
+    m_Localized: Wall
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2079078325018624
+    m_Localized: Floor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2079109866184704
+    m_Localized: Furniture
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2079125674516480
+    m_Localized: Deco
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds:
