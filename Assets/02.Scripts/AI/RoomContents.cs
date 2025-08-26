@@ -198,6 +198,23 @@ namespace JY
             isRoomUsed = false;
             DebugLog($"방 {roomID} 사용 완료", true);
         }
+        
+        /// <summary>
+        /// 방을 다시 사용 가능한 상태로 리셋 (청소 완료 후)
+        /// </summary>
+        public void ResetRoom()
+        {
+            isRoomUsed = false;
+            DebugLog($"방 {roomID}이(가) 청소되어 다시 사용 가능한 상태가 되었습니다.", true);
+        }
+        
+        /// <summary>
+        /// 방의 중심 위치 반환
+        /// </summary>
+        public Vector3 GetRoomCenter()
+        {
+            return roomBounds.center;
+        }
 
         /// <summary>
         /// 기즈모 그리기 (방 범위 시각화)
