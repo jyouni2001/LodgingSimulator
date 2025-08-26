@@ -30,6 +30,7 @@ public class InputManager : MonoBehaviour
     public GameObject BuildUI;
     public GameObject SettingUI;
     public GameObject SettingUI2;
+    public GameObject QuestUI;
     public Button     SettingBtn;
 
     public RaycastHit   hit;
@@ -64,6 +65,8 @@ public class InputManager : MonoBehaviour
 
             ChangeFloorForBuildMode();
         }
+
+        if (Input.GetKeyDown(KeyCode.Q)) QuestUI.SetActive(!QuestUI.activeSelf);
 
         if(Input.GetKeyDown(KeyCode.Escape))
         {

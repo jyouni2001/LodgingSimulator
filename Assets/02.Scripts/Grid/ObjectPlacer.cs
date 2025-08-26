@@ -1,5 +1,6 @@
 using DG.Tweening;
 using JY;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 public class ObjectPlacer : MonoBehaviour
@@ -9,6 +10,7 @@ public class ObjectPlacer : MonoBehaviour
     public Ease fallEase = Ease.OutBounce; // 애니메이션 이징(부드러움) 효과
     public Ease destroyEase = Ease.InElastic;
     public static ObjectPlacer Instance { get; set; }
+
     private void Awake()
     {
         // 싱글톤 설정
@@ -107,7 +109,6 @@ public class ObjectPlacer : MonoBehaviour
         }
 
         navMeshBaker?.RebuildNavMesh();
-
         return index;
     }
 
