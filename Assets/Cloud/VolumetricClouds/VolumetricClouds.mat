@@ -75,7 +75,7 @@ Material:
     - _ShapeScale: 5
     - _SmallWindSpeed: 0.25
     - _SunLightDimmer: 1
-    - _VerticalErosionWindDisplacement: -0.11136768
+    - _VerticalErosionWindDisplacement: -50.98931
     - _VerticalShapeNoiseOffset: 0
     - _VerticalShapeWindDisplacement: 0
     m_Colors:

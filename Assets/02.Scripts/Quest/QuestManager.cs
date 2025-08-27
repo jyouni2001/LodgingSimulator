@@ -51,7 +51,7 @@ public class QuestManager : MonoBehaviour
         availableQuests.AddRange(allQuests);
         // 시간 변경 이벤트를 구독하여 퀘스트 발생을 체크
         TimeSystem.Instance.OnHourChanged += CheckForAvailableQuests;
-
+        TimeSystem.Instance.OnMinuteChanged += CheckForAvailableQuests;
         // 이벤트 구독
         PlayerWallet.Instance.OnMoneyChanged += OnMoneyChanged;
     }
@@ -64,9 +64,13 @@ public class QuestManager : MonoBehaviour
     private void OnDestroy()
     {
         // 구독 해제 (메모리 누수 방지)
-        if (TimeSystem.Instance != null) TimeSystem.Instance.OnHourChanged -= CheckForAvailableQuests;
-        if (PlayerWallet.Instance != null) PlayerWallet.Instance.OnMoneyChanged -= OnMoneyChanged;
-    
+        if (TimeSystem.Instance != null)
+        {
+            TimeSystem.Instance.OnHourChanged -= CheckForAvailableQuests;
+            TimeSystem.Instance.OnMinuteChanged -= CheckForAvailableQuests;
+        }
+        if (PlayerWallet.Instance != null) PlayerWallet.Instance.OnMoneyChanged -= OnMoneyChanged;       
+
     }
 
     /// <summary>
@@ -90,7 +94,7 @@ public class QuestManager : MonoBehaviour
         // 현재 시간까지 발생했어야 하는 모든 퀘스트를 찾습니다. (ToList()로 복사하여 순회 중 변경 문제 방지)
         List<QuestData> questsToTrigger = availableQuests.Where(q =>
             (q.requiredDay < currentDay) ||
-            (q.requiredDay == currentDay && q.requiredHour <= hour)
+            (q.requiredDay == currentDay && q.requiredHour <= hour && q.requiredMin <= minute)
         ).ToList();
 
         foreach (var quest in questsToTrigger)

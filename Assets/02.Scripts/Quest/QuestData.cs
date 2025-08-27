@@ -29,6 +29,7 @@ public class QuestData : ScriptableObject
     [Header("퀘스트 발생 조건")]
     public int requiredDay; // 퀘스트가 발생하는 날짜
     public int requiredHour; // 퀘스트가 발생하는 시간
+    public int requiredMin;
 
     [Header("퀘스트 완료 조건")]
     public QuestCompletionType completionType; // 완료 조건 타입
