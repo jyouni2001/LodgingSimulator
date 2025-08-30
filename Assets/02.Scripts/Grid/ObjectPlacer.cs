@@ -59,7 +59,7 @@ public class ObjectPlacer : MonoBehaviour
         newObject.transform.DOMove(position, fallDuration)
                  .SetEase(fallEase);
 
-        SoundManager.PlaySound(SoundType.Build, 0.1f);
+        SFXManager.PlaySound(SoundType.Build, 0.1f);
 
         spawnEffect.OnBuildingPlaced(position);
 
