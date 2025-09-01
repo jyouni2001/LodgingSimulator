@@ -113,8 +113,10 @@ public class AIAgent : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void InitializeStatics()
     {
-        roomList.Clear();
+        roomList = new List<RoomInfo>();
+        OnRoomsUpdated -= UpdateRoomList;
         OnRoomsUpdated = null;
+        globalShowDebugUI = true;
     }
 
     void Start()
@@ -147,7 +149,7 @@ public class AIAgent : MonoBehaviour
             return false;
         }
 
-        roomManager = FindObjectOfType<RoomManager>();
+        roomManager = FindFirstObjectByType<RoomManager>();
         spawnPoint = spawn.transform;
 
         GameObject counter = GameObject.FindGameObjectWithTag("Counter");
@@ -155,7 +157,7 @@ public class AIAgent : MonoBehaviour
 
         if (counterManager == null)
         {
-            counterManager = FindObjectOfType<CounterManager>();
+            counterManager = FindFirstObjectByType<CounterManager>();
             if (counterManager == null)
             {
                 Debug.LogWarning($"AI {gameObject.name}: CounterManager를 찾을 수 없습니다.");
@@ -243,7 +245,6 @@ public class AIAgent : MonoBehaviour
 
         lock (lockObject)
         {
-            bool isUpdated = false;
             HashSet<string> processedRoomIds = new HashSet<string>();
             List<RoomInfo> updatedRoomList = new List<RoomInfo>();
 
@@ -264,7 +265,6 @@ public class AIAgent : MonoBehaviour
                         else
                         {
                             updatedRoomList.Add(newRoom);
-                            isUpdated = true;
                         }
                     }
                 }
@@ -919,7 +919,7 @@ public class AIAgent : MonoBehaviour
             }
         }
 
-        var roomManager = FindObjectOfType<RoomManager>();
+        var roomManager = FindFirstObjectByType<RoomManager>();
         if (roomManager != null)
         {
             Debug.Log($"[AIAgent] RoomManager 발견. ProcessRoomPayment 호출 - AI: {gameObject.name}");
