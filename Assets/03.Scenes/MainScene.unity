@@ -10392,6 +10392,7 @@ RectTransform:
   - {fileID: 1100742735}
   - {fileID: 2115922732}
   - {fileID: 6696820958519506273}
+  - {fileID: 2085983671}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -10642,7 +10643,6 @@ MonoBehaviour:
   shipPrefab: {fileID: 8642108410424812284, guid: 4f2848ccc4f74e748bd9584830d1a685, type: 3}
   maxShipCount: 1
   spawnTimeBeforeArrival: 10
-  dockingDuration: 30
   shipRoutes:
   - routeId: 1Route
     routeName: "1\uB8E8\uD2B8"
@@ -11184,7 +11184,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 744441104324538277, guid: f24a712248b286949a393ff150d5b7da, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: 0.00002670288
       objectReference: {fileID: 0}
     - target: {fileID: 1705309398115754880, guid: f24a712248b286949a393ff150d5b7da, type: 3}
       propertyPath: m_Size
@@ -15393,7 +15393,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1526090434
 Transform:
   m_ObjectHideFlags: 0
@@ -16806,6 +16806,57 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1573763742}
   m_CullTransparentMesh: 1
+--- !u!1 &1579863493
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1579863495}
+  - component: {fileID: 1579863494}
+  m_Layer: 0
+  m_Name: Daily
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1579863494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1579863493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2111f41341db21a4fb6ba68e77520272, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableDataCollection: 1
+  enableAutoSave: 1
+  saveInterval: 300
+  maxStorageDays: 7
+  showDebugLogs: 0
+  showImportantLogsOnly: 1
+  fileName: DailyStatistics.json
+--- !u!4 &1579863495
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1579863493}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -19.069508, y: 0.055970907, z: 178.14523}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1583306310
 GameObject:
   m_ObjectHideFlags: 0
@@ -23535,6 +23586,75 @@ MonoBehaviour:
   inputManager: {fileID: 519522462}
   mainCamera: {fileID: 330585545}
   currentFloor: 1
+--- !u!1 &2085983670
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2085983671}
+  - component: {fileID: 2085983672}
+  m_Layer: 5
+  m_Name: DAILY
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2085983671
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085983670}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 974466840}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2085983672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085983670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a2a1659f60286c46bd34ecd382540f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  statisticsPanel: {fileID: 0}
+  toggleButton: {fileID: 0}
+  toggleButtonText: {fileID: 0}
+  reputationChartArea: {fileID: 0}
+  goldChartArea: {fileID: 0}
+  visitorChartArea: {fileID: 0}
+  currentReputationText: {fileID: 0}
+  currentGoldText: {fileID: 0}
+  currentVisitorText: {fileID: 0}
+  totalReputationText: {fileID: 0}
+  totalGoldText: {fileID: 0}
+  totalVisitorText: {fileID: 0}
+  reputationLegendText: {fileID: 0}
+  goldLegendText: {fileID: 0}
+  visitorLegendText: {fileID: 0}
+  timeLabels: []
+  panelPosition: {x: 0, y: 0}
+  panelSize: {x: 800, y: 600}
+  chartSize: {x: 300, y: 200}
+  updateInterval: 5
+  showDebugLogs: 0
 --- !u!1 &2086116939
 GameObject:
   m_ObjectHideFlags: 0
@@ -25693,3 +25813,4 @@ SceneRoots:
   - {fileID: 533859734}
   - {fileID: 1855775602}
   - {fileID: 1475756802}
+  - {fileID: 1579863495}
