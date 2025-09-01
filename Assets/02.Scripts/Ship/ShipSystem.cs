@@ -18,7 +18,6 @@ namespace JY
         
         [Header("시간 설정")]
         [SerializeField] private float spawnTimeBeforeArrival = 5f; // 도착 5분 전 스폰 (분)
-        [SerializeField] private float dockingDuration = 30f; // 정박 시간 (분)
         
         [Header("루트 설정")]
         [SerializeField] private List<ShipRoute> shipRoutes = new List<ShipRoute>();
@@ -44,8 +43,6 @@ namespace JY
         
         // 이벤트
         public event Action<ShipController> OnShipSpawned;
-        public event Action<ShipController> OnShipDocked;
-        public event Action<ShipController> OnShipDeparted;
         
         private void Awake()
         {
@@ -400,8 +397,6 @@ namespace JY
         {
             // 이벤트 정리
             OnShipSpawned = null;
-            OnShipDocked = null;
-            OnShipDeparted = null;
         }
     }
     

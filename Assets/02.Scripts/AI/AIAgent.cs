@@ -31,9 +31,7 @@ public class AIAgent : MonoBehaviour
     private bool isWaitingForService = false;     // 서비스 대기 중인지 여부
 
     private AIState currentState = AIState.MovingToQueue;  // 현재 AI 상태
-    private float counterWaitTime = 5f;           // 카운터 처리 시간
     private string currentDestination = "대기열로 이동 중";  // 현재 목적지 (UI 표시용)
-    private bool isBeingServed = false;           // 서비스 받고 있는지 여부
 
     private static readonly object lockObject = new object();  // 스레드 동기화용 잠금 객체
     private Coroutine wanderingCoroutine;         // 배회 코루틴 참조
@@ -815,10 +813,6 @@ public class AIAgent : MonoBehaviour
     private void TransitionToState(AIState newState)
     {
         CleanupCoroutines();
-        if (currentState == AIState.UsingRoom)
-        {
-            isBeingServed = false;
-        }
 
         currentState = newState;
         currentDestination = GetStateDescription(newState);
@@ -1428,7 +1422,6 @@ public class AIAgent : MonoBehaviour
             }
         }
 
-        isBeingServed = false;
         isInQueue = false;
         isWaitingForService = false;
         isScheduledForDespawn = false; // 디스폰 예정 플래그 리셋
@@ -1463,7 +1456,6 @@ public class AIAgent : MonoBehaviour
     {
         currentState = AIState.MovingToQueue;
         currentDestination = "대기열로 이동 중";
-        isBeingServed = false;
         isInQueue = false;
         isWaitingForService = false;
         currentRoomIndex = -1;
